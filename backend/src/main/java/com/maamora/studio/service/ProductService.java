@@ -50,7 +50,6 @@ public class ProductService {
         productRepository.delete(product);
     }
 
-    /** Loads a product and verifies it belongs to the authenticated user's brand (IDOR guard). */
     public Product getOwned(String userId, String productId) {
         BrandSettings brand = brandSettingsService.getForUser(userId);
         return productRepository.findByIdAndBrandId(productId, brand.getId())

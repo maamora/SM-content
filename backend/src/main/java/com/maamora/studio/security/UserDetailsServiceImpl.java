@@ -11,12 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-/**
- * Loads the authenticated principal by USER ID (not email).
- * The JWT subject claim is the user id, so this is what JwtAuthFilter calls
- * after validating the token. Login itself (email + password) is handled
- * directly in AuthService, without going through this service.
- */
 @Service
 @RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {

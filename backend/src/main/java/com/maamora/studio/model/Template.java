@@ -17,7 +17,6 @@ public class Template {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    // Nullable brand: null = global/default template available to every brand
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_id")
     private BrandSettings brand;
@@ -29,7 +28,6 @@ public class Template {
     @Column(nullable = false)
     private Format format;
 
-    // Filename under src/main/resources/creative-templates/, e.g. "bold.html"
     @Column(nullable = false)
     private String htmlPath;
 

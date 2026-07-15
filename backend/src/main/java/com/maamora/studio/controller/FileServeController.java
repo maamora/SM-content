@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.nio.file.Path;
 
-/** Serves files uploaded via LocalDiskStorageService back over HTTP. Dev-only convenience. */
 @RestController
 public class FileServeController {
 
