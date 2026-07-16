@@ -62,6 +62,7 @@ export default function CreativeStudio({ products }: CreativeStudioProps) {
     const [selectedProductId, setSelectedProductId] = useState<string>("");
     const [selectedFormat, setSelectedFormat] = useState<string>("instagram");
     const [selectedTemplate, setSelectedTemplate] = useState<string>("bold");
+    const [currentPostId, setCurrentPostId] = useState<string | null>(null);
     const [promoText, setPromoText] = useState<string>("OFFRE SPÉCIALE !");
     const [accentColor, setAccentColor] = useState<string>("#f97316"); // default orange
     const [badgeText, setBadgeText] = useState<string>("-20% TODAY");
@@ -105,27 +106,57 @@ export default function CreativeStudio({ products }: CreativeStudioProps) {
         setTimeout(() => setCopiedLang(null), 2000);
     };
 
-    const handleSimulateCaptionGeneration = () => {
+    const handleSimulateCaptionGeneration = async () => {
         setIsGeneratingCaptions(true);
-        setTimeout(() => {
-            setIsGeneratingCaptions(false);
-            // Mix text updates to show refreshing simulation
-            let key = "generic";
-            if (selectedProduct.name.toLowerCase().includes("sho")) key = "shoes";
-            else if (selectedProduct.name.toLowerCase().includes("mat")) key = "mat";
-            else if (selectedProduct.name.toLowerCase().includes("earbud")) key = "earbuds";
-
-            const base = CAPTION_TEMPLATES[key];
-            setCaptionOutput({
-                fr: base.fr + "\n\n🔥 Offre de la semaine !",
-                ar: base.ar + "\n\n🔥 عرض خاص وحصري!",
-                darija: base.darija + "\n\n🔥 تخفيض الهبال ديال السيمانة!"
+        try {
+            // First step: get an actual Post ID from the backend by triggering generateImage
+            const imgRes = await fetch("http://localhost:8080/api/posts/generate-image", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    productId: selectedProductId,
+                    templateId: selectedTemplate,
+                    badgeText,
+                    promoText,
+                    accentColor,
+                })
             });
-        }, 1200);
+            const imgData = await imgRes.json();
+            const postId = imgData.data?.id;
+            setCurrentPostId(postId);
+
+            if (postId) {
+                // Second step: generate captions using the new Post ID
+                const capRes = await fetch("http://localhost:8080/api/posts/generate-captions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ postId, languages: ["fr", "ar", "darija"] })
+                });
+                const capData = await capRes.json();
+                const post = capData.data;
+
+                if (post) {
+                    setCaptionOutput({
+                        fr: post.captionFr || "",
+                        ar: post.captionAr || "",
+                        darija: post.captionDarija || ""
+                    });
+                }
+            }
+        } catch (error) {
+            console.error("Backend generation error:", error);
+            alert("Ensure backend is running on :8080");
+        } finally {
+            setIsGeneratingCaptions(false);
+        }
     };
 
     const handleSimulateDownload = () => {
-        alert("Downloading assets package (creative-card.png + text-copy.txt) to your downloads folder!");
+        if (!currentPostId) {
+            alert("Couln't find an active generation. Please Generate first!");
+            return;
+        }
+        window.location.href = `http://localhost:8080/api/posts/${currentPostId}/export`;
     };
 
     return (
