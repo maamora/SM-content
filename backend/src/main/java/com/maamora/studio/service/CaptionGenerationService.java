@@ -10,10 +10,6 @@ import org.springframework.web.client.RestClient;
 
 import java.util.Map;
 
-/**
- * Calls the Claude API to draft social captions in French, Arabic, and Darija.
- * Server-side only — the API key must never reach the frontend.
- */
 @Service
 public class CaptionGenerationService {
 
@@ -37,11 +33,6 @@ public class CaptionGenerationService {
                 .build();
     }
 
-    /**
-     * Generates one caption for a single language. Called up to 3x per post
-     * (fr, ar, darija) — see BatchJobService for how batches cap concurrency
-     * so this doesn't blow through the Claude API rate limit.
-     */
     public String generateCaption(Product product, BrandSettings brand, String language) {
         String prompt = buildPrompt(product, brand, language);
 
