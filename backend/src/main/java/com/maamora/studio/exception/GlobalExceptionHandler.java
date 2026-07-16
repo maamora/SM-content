@@ -29,6 +29,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(ApiResponse.error(message));
     }
 
+    @ExceptionHandler({ CaptionGenerationException.class, ExportProcessingException.class,
+            BatchProcessingException.class })
+    public ResponseEntity<ApiResponse<Object>> handleDomainProcessingException(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGeneric(Exception ex) {
         return ResponseEntity.internalServerError().body(ApiResponse.error("Unexpected error: " + ex.getMessage()));
