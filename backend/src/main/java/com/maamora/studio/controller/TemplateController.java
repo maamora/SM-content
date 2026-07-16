@@ -7,6 +7,7 @@ import com.maamora.studio.security.CurrentUserProvider;
 import com.maamora.studio.service.TemplateService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,6 +28,7 @@ public class TemplateController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<TemplateResponse> create(@Valid @RequestBody TemplateRequest request) {
         var template = templateService.create(currentUser.getCurrentUserId(), request);
         return ApiResponse.ok(new TemplateResponse(template));

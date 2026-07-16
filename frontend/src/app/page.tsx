@@ -1,10 +1,14 @@
-import { Suspense } from "react";
-import Image from "next/image";
+"use client";
+
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { RequireAuth } from "@/components/features/auth/RequireAuth";
+import { LogoutButton } from "@/components/features/auth/LogoutButton";
 import { ProductForm } from "@/components/features/products/ProductForm";
 import ProductList from "@/components/features/products/ProductList";
 import CreativeStudio from "@/components/features/studio/CreativeStudio";
-import prisma from "@/lib/prisma";
+import { listProducts, type Product } from "@/lib/api/products";
 import {
   LayoutDashboard,
   Package,
@@ -12,26 +16,9 @@ import {
   Sparkles,
   Calendar,
   BarChart3,
-  ExternalLink,
-  Plus,
-  Trash2,
-  Copy,
-  Download,
-  Info,
-  CheckCircle,
-  FileText,
-  Clock,
   ArrowUpRight,
   TrendingUp,
-  Settings,
-  HelpCircle,
-  Check
 } from "lucide-react";
-
-// ─── Demo brand ID ────────────────────────────────────────────────────────────
-const DEMO_BRAND_ID = "demo-brand-001";
-
-// ─── Skeleton loaders ─────────────────────────────────────────────────────────
 
 function ProductListSkeleton() {
   return (
@@ -53,30 +40,6 @@ function ProductListSkeleton() {
   );
 }
 
-// ─── DB error fallback ────────────────────────────────────────────────────────
-
-async function ProductListWithFallback({ brandId }: { brandId: string }) {
-  try {
-    return <ProductList workspaceBrandId={brandId} />;
-  } catch {
-    return (
-      <div className="flex h-56 w-full flex-col items-center justify-center gap-3.5 rounded-xl border border-dashed border-zinc-800 bg-zinc-900/5 p-6">
-        <div className="flex h-10 w-10 rounded-lg bg-zinc-900 border border-zinc-800 items-center justify-center text-zinc-400 text-sm font-mono font-bold">
-          !
-        </div>
-        <div className="text-center space-y-1">
-          <p className="text-sm font-semibold text-zinc-200">Database connection offline</p>
-          <p className="text-xs text-zinc-500 max-w-xs mx-auto">
-            Please check that your configuration and environment local drivers are running correctly.
-          </p>
-        </div>
-      </div>
-    );
-  }
-}
-
-// ─── Navigation Layout ────────────────────────────────────────────────────────
-
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: "Dashboard", tab: "dashboard" },
   { icon: Package, label: "Products", tab: "products" },
@@ -86,19 +49,25 @@ const NAV_ITEMS = [
   { icon: BarChart3, label: "Analytics", tab: "analytics" },
 ];
 
-interface PageProps {
-  searchParams: Promise<{ tab?: string }>;
-}
+function DashboardPageInner() {
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get("tab") || "dashboard";
 
-export default async function DashboardPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const currentTab = params.tab || "dashboard";
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Pull telemetry metrics from DB
-  const products = await prisma.product.findMany({
-    where: { brandId: DEMO_BRAND_ID },
-    orderBy: { createdAt: "desc" },
-  }).catch(() => []);
+  const refetchProducts = useCallback(() => {
+    setLoading(true);
+    listProducts()
+      .then(setProducts)
+      .catch((err) => setLoadError(err instanceof Error ? err.message : "Failed to load products"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    refetchProducts();
+  }, [refetchProducts]);
 
   const productCount = products.length;
 
@@ -106,7 +75,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     <div className="flex min-h-screen bg-zinc-950 text-zinc-50 font-sans antialiased text-sm">
       {/* ── Sidebar ─────────────────────────────────────────────────── */}
       <aside className="hidden lg:flex flex-col w-64 border-r border-zinc-900 bg-zinc-950 shrink-0 select-none">
-        {/* Logo */}
         <div className="px-6 py-6 border-b border-zinc-900 flex flex-col items-center">
           <div className="relative w-full h-12 bg-white rounded-lg p-3 border border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.5)] flex items-center justify-center overflow-hidden">
             <img
@@ -118,7 +86,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 mt-3 font-semibold font-mono">WORKSPACE PLATFORM</span>
         </div>
 
-        {/* Nav list */}
         <nav className="flex-1 px-4 py-6 space-y-1">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
@@ -139,17 +106,19 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           })}
         </nav>
 
-        {/* Workspace Account badge */}
         <div className="m-4 rounded-xl border border-zinc-900 bg-zinc-950 p-4">
           <p className="text-[9px] uppercase tracking-widest text-zinc-500 mb-2 font-mono">Current Account</p>
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-orange-600/10 border border-orange-500/20 flex items-center justify-center text-xs font-bold text-orange-400 uppercase">
-              DB
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-orange-600/10 border border-orange-500/20 flex items-center justify-center text-xs font-bold text-orange-400 uppercase">
+                DB
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-zinc-300">Your Brand</p>
+                <p className="text-[10px] text-zinc-500">Signed in</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-semibold text-zinc-300">Demo Brand</p>
-              <p className="text-[10px] text-zinc-500">Premium Sync Enabled</p>
-            </div>
+            <LogoutButton />
           </div>
         </div>
       </aside>
@@ -157,7 +126,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       {/* ── Main area ───────────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col min-w-0">
 
-        {/* ── Header ────────────────────────────────────────────────── */}
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-zinc-900 bg-zinc-950/90 px-8 py-4 backdrop-blur-md">
           <div>
             <h1 className="text-lg font-bold text-zinc-100 tracking-tight leading-tight uppercase font-mono">
@@ -179,26 +147,22 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           </div>
 
           <div className="flex items-center gap-4 select-none">
-            {/* Environment Indicator */}
             <span className="hidden sm:flex items-center gap-2 rounded-md border border-zinc-900 bg-zinc-900/30 px-3 py-1.5 text-xs font-mono font-semibold text-zinc-400">
               <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-              DEMO-WORKSPACE
+              WORKSPACE
             </span>
 
-            {/* Avatar Profile */}
             <div className="h-8.5 w-8.5 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-300">
               SM
             </div>
           </div>
         </header>
 
-        {/* ── Dynamic Views Switcher ────────────────────────────────── */}
         <main className="flex-1 overflow-y-auto px-8 py-8">
 
           {/* TAB 1: DASHBOARD */}
           {currentTab === "dashboard" && (
             <div className="space-y-8 fade-in">
-              {/* Top stats block */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   { label: "Indexed Products", value: String(productCount), desc: "Registered items" },
@@ -214,10 +178,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                 ))}
               </div>
 
-              {/* Grid content split */}
               <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-8">
-
-                {/* Recent creation activity log */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold tracking-tight text-zinc-300 uppercase font-mono">Recent Creations</h3>
@@ -257,7 +218,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                   </div>
                 </div>
 
-                {/* Quick actions panel */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-bold tracking-tight text-zinc-300 uppercase font-mono">Actions</h3>
 
@@ -278,7 +238,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
           )}
@@ -287,7 +246,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           {currentTab === "products" && (
             <div className="grid grid-cols-1 gap-8 xl:grid-cols-[380px_1fr] fade-in">
               <div>
-                <ProductForm workspaceBrandId={DEMO_BRAND_ID} />
+                <ProductForm onCreated={refetchProducts} />
               </div>
 
               <div className="min-w-0">
@@ -299,9 +258,21 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                   <span className="text-xs font-mono text-zinc-600">LIMIT: 24 SHOWN</span>
                 </div>
 
-                <Suspense fallback={<ProductListSkeleton />}>
-                  <ProductListWithFallback brandId={DEMO_BRAND_ID} />
-                </Suspense>
+                {loading ? (
+                  <ProductListSkeleton />
+                ) : loadError ? (
+                  <div className="flex h-56 w-full flex-col items-center justify-center gap-3.5 rounded-xl border border-dashed border-zinc-800 bg-zinc-900/5 p-6">
+                    <div className="flex h-10 w-10 rounded-lg bg-zinc-900 border border-zinc-800 items-center justify-center text-zinc-400 text-sm font-mono font-bold">
+                      !
+                    </div>
+                    <div className="text-center space-y-1">
+                      <p className="text-sm font-semibold text-zinc-200">Could not reach the backend</p>
+                      <p className="text-xs text-zinc-500 max-w-xs mx-auto">{loadError}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <ProductList products={products} />
+                )}
               </div>
             </div>
           )}
@@ -315,7 +286,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                   <p className="text-xs text-zinc-500">Configure visual themes and brand parameters.</p>
                 </div>
                 <div className="space-y-6">
-                  {/* Brand logo display */}
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-zinc-400">Current Logo Asset</label>
                     <div className="flex items-center gap-4">
@@ -329,7 +299,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                     </div>
                   </div>
 
-                  {/* Brand Voice select */}
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-zinc-400">Linguistic Copywriting Direction</label>
                     <select className="flex w-full rounded-md border border-zinc-900 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-200 focus:outline-none focus:ring-1 focus:ring-orange-500/50">
@@ -339,7 +308,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                     </select>
                   </div>
 
-                  {/* Palette selectors */}
                   <div className="space-y-3">
                     <label className="text-xs font-semibold text-zinc-400 block">Workspace Colors</label>
                     <div className="flex items-center gap-3">
@@ -358,7 +326,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                     </div>
                   </div>
 
-                  {/* Actions */}
                   <div className="pt-4 border-t border-zinc-900">
                     <button className="text-xs bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-6 rounded-md shadow shadow-orange-700/20">
                       Save Brand Configuration
@@ -382,7 +349,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                   <div className="text-center space-y-1">
                     <p className="text-sm font-semibold text-zinc-200">Catalogue Workspace Empty</p>
                     <p className="text-xs text-zinc-500 max-w-xs mx-auto">
-                      Please seed or add products via the Catalogue page before using the Creative Content Studio.
+                      Please add products via the Catalogue page before using the Creative Content Studio.
                     </p>
                     <div className="pt-3">
                       <Link href="/?tab=products" className="text-xs text-orange-400 font-semibold hover:underline">
@@ -479,13 +446,12 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
         </main>
 
-        {/* ── Footer ────────────────────────────────────────────────── */}
         <footer className="border-t border-zinc-900 px-8 py-4 flex items-center justify-between">
           <p className="text-xs font-mono font-medium text-zinc-500 select-none">
             MAAMORA PLATFORM ENGINE <span className="mx-1.5 text-zinc-700">·</span> v0.1.0
           </p>
           <p className="text-xs text-zinc-650 font-mono select-none">
-            NEXT.JS · PRISMA · SQLITE
+            NEXT.JS · SPRING BOOT · POSTGRESQL
           </p>
         </footer>
       </div>
@@ -493,4 +459,12 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   );
 }
 
-
+export default function DashboardPage() {
+  return (
+    <RequireAuth>
+      <Suspense fallback={null}>
+        <DashboardPageInner />
+      </Suspense>
+    </RequireAuth>
+  );
+}

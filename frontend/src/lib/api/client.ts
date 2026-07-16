@@ -1,21 +1,12 @@
-/**
- * Thin fetch wrapper around the Spring Boot backend.
- *
- * The backend now owns auth, the database, image rendering, and Claude calls
- * (see backend/README.md). This frontend is a pure API client: it never talks
- * to Prisma or a database directly anymore.
- *
- * JWT is kept in localStorage for now (simplest thing that works for a 2-person
- * internal tool). If you want to harden this later, move to an httpOnly cookie
- * set by a Next.js route handler that proxies to the backend, so the token
- * never touches client-side JS.
- */
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
-function getToken(): string | null {
+export function getToken(): string | null {
     if (typeof window === "undefined") return null;
     return window.localStorage.getItem("maamora_token");
+}
+
+export function isAuthenticated(): boolean {
+    return getToken() !== null;
 }
 
 export function setToken(token: string) {

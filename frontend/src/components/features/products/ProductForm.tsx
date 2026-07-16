@@ -1,14 +1,10 @@
 "use client";
 
-import { useForm, UseFormRegisterReturn, FieldError } from "react-hook-form";
+import { useForm, FieldError } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTransition } from "react";
-import { createProductAction } from "@/server/actions/product.actions";
+import { useState } from "react";
+import { createProduct } from "@/lib/api/products";
 import { ProductSchema, ProductInput } from "@/schemas/product";
-
-// ----------------------------------------------------------------------
-// Reusable UI Sub-Components (Abstracts Tailwind & A11y bindings)
-// ----------------------------------------------------------------------
 
 interface FormGroupProps {
     id: string;
@@ -35,40 +31,37 @@ function FormGroup({ id, label, error, children }: FormGroupProps) {
 
 const inputStyles = "flex w-full rounded-md border border-zinc-900 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-1 focus-visible:ring-orange-500 focus-visible:outline-none transition-colors disabled:opacity-50";
 
-// ----------------------------------------------------------------------
-// Main Feature Component
-// ----------------------------------------------------------------------
-
 interface ProductFormProps {
-    workspaceBrandId?: string;
+    onCreated?: () => void;
 }
 
-export function ProductForm({ workspaceBrandId = "default-brand-temp" }: ProductFormProps) {
-    const [isPending, startTransition] = useTransition();
+export function ProductForm({ onCreated }: ProductFormProps) {
+    const [isPending, setIsPending] = useState(false);
+    const [serverError, setServerError] = useState<string | null>(null);
 
     const form = useForm<ProductInput>({
         resolver: zodResolver(ProductSchema),
         defaultValues: {
             name: "",
             description: "",
+            sellingPoint: "",
             price: undefined,
             imageUrl: "",
-            brandId: workspaceBrandId,
         },
     });
 
-    const onSubmit = (data: ProductInput) => {
-        startTransition(async () => {
-            const result = await createProductAction(data);
-            if (result.success) {
-                // TODO: Replace with shadcn/ui toast.success
-                console.log("Success: Product created");
-                form.reset();
-            } else {
-                // TODO: Replace with shadcn/ui toast.error
-                console.error("Error: ", result.error);
-            }
-        });
+    const onSubmit = async (data: ProductInput) => {
+        setServerError(null);
+        setIsPending(true);
+        try {
+            await createProduct(data);
+            form.reset();
+            onCreated?.();
+        } catch (err) {
+            setServerError(err instanceof Error ? err.message : "Failed to create product");
+        } finally {
+            setIsPending(false);
+        }
     };
 
     return (
@@ -101,6 +94,15 @@ export function ProductForm({ workspaceBrandId = "default-brand-temp" }: Product
                     />
                 </FormGroup>
 
+                <FormGroup id="product-selling-point" label="Key selling point (optional)" error={form.formState.errors.sellingPoint}>
+                    <input
+                        id="product-selling-point"
+                        className={`${inputStyles} h-9`}
+                        placeholder="e.g. Waterproof, 32h battery life"
+                        {...form.register("sellingPoint")}
+                    />
+                </FormGroup>
+
                 <div className="grid grid-cols-2 gap-4">
                     <FormGroup id="product-price" label="Price (Optional)" error={form.formState.errors.price}>
                         <input
@@ -124,6 +126,12 @@ export function ProductForm({ workspaceBrandId = "default-brand-temp" }: Product
                     </FormGroup>
                 </div>
 
+                {serverError && (
+                    <p role="alert" className="text-xs text-red-500 font-medium">
+                        {serverError}
+                    </p>
+                )}
+
                 <button
                     type="submit"
                     disabled={isPending}
@@ -134,5 +142,4 @@ export function ProductForm({ workspaceBrandId = "default-brand-temp" }: Product
             </form>
         </div>
     );
-
 }

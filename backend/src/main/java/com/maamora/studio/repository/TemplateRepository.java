@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface TemplateRepository extends JpaRepository<Template, String> {
     List<Template> findByBrandIdOrBrandIdIsNull(String brandId);
+    boolean existsByHtmlPath(String htmlPath);
 }

@@ -64,9 +64,18 @@ public class CaptionGenerationService {
     private String buildPrompt(Product product, BrandSettings brand, String language) {
         String languageInstruction = switch (language) {
             case "ar" -> "Write in Modern Standard Arabic.";
-            case "darija" -> "Write in Moroccan Darija, using Arabic script, the way a real Moroccan social "
-                    + "media manager would write it — never a literal translation from French/MSA. It must "
-                    + "sound natural and local, not machine-translated.";
+            case "darija" -> """
+                    Write in Moroccan Darija using Arabic script — never a literal translation from French or \
+                    Modern Standard Arabic. It must read like a real Moroccan social media manager wrote it. \
+                    Match the tone and phrasing of these examples:
+
+                    "باغي تجري بلا ما تضرك رجلك؟ هاد الصباط خفيف ومريح، كيعاونك تزيد القدام. جودة عالية وتوصيل فابور 📦"
+                    "ملّيتي من الطابي القديمة لي كتزلق؟ هاد وحدة ما كتخلّيكش تطيح، وغليظة باش تحمي مفاصلك. كوموندي دابا ✨"
+                    "عييتي من السماعات لي كيطيحو فالجري؟ هادو ما كيطيحوش، والباتري كيدوز حتى لـ32 ساعة. الكمية محدودة 🚀"
+
+                    Short sentences, a question up front, everyday words rather than formal Arabic vocabulary, \
+                    light emoji use, a sense of urgency near the end.
+                    """;
             default -> "Write in French.";
         };
 

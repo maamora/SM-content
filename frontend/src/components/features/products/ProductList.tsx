@@ -1,25 +1,11 @@
 import Image from "next/image";
-import prisma from "@/lib/prisma";
+import type { Product } from "@/lib/api/products";
 
 interface ProductListProps {
-    workspaceBrandId: string;
+    products: Product[];
 }
 
-// Strictly a Server Component: Fetches securely natively on the server, ships 0kb of interactivity JS.
-export default async function ProductList({ workspaceBrandId }: ProductListProps) {
-    // Performance: Highly targeted query avoiding massive blob data (like descriptions/metadata) when unnecessary.
-    const products = await prisma.product.findMany({
-        where: { brandId: workspaceBrandId },
-        select: {
-            id: true,
-            name: true,
-            price: true,
-            imageUrl: true
-        },
-        take: 24, // Performance: Edge-safe pagination limits
-        orderBy: { createdAt: "desc" },
-    });
-
+export default function ProductList({ products }: ProductListProps) {
     if (products.length === 0) {
         return (
             <div className="flex h-56 w-full flex-col items-center justify-center rounded-xl border border-dashed border-zinc-900 bg-zinc-900/5">
@@ -38,7 +24,6 @@ export default async function ProductList({ workspaceBrandId }: ProductListProps
                 >
                     <div className="relative h-48 w-full bg-zinc-950 border-b border-zinc-900 overflow-hidden">
                         {product.imageUrl ? (
-                            /* Performance: next/image automatically generates webp, resizes according to device, and lazy loads */
                             <Image
                                 src={product.imageUrl}
                                 alt={`Image of ${product.name}`}
@@ -69,5 +54,4 @@ export default async function ProductList({ workspaceBrandId }: ProductListProps
             ))}
         </div>
     );
-
 }
