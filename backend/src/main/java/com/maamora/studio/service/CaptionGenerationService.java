@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.maamora.studio.model.BrandSettings;
 import com.maamora.studio.model.Product;
+import com.maamora.studio.exception.CaptionGenerationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -15,6 +17,7 @@ import java.util.Map;
  * Server-side only — the API key must never reach the frontend.
  */
 @Service
+@Slf4j
 public class CaptionGenerationService {
 
     @Value("${app.anthropic.api-key}")
@@ -48,10 +51,9 @@ public class CaptionGenerationService {
         Map<String, Object> body = Map.of(
                 "model", model,
                 "max_tokens", 400,
-                "messages", new Object[]{
+                "messages", new Object[] {
                         Map.of("role", "user", "content", prompt)
-                }
-        );
+                });
 
         String rawResponse = client().post()
                 .body(body)
@@ -92,8 +94,7 @@ public class CaptionGenerationService {
                 product.getDescription(),
                 product.getSellingPoint() != null ? product.getSellingPoint() : "-",
                 product.getPrice() != null ? product.getPrice() + " MAD" : "-",
-                languageInstruction
-        );
+                languageInstruction);
     }
 
     private String extractText(String rawJson) {
@@ -101,7 +102,8 @@ public class CaptionGenerationService {
             JsonNode root = objectMapper.readTree(rawJson);
             return root.path("content").get(0).path("text").asText().trim();
         } catch (Exception e) {
-            throw new RuntimeException("Could not parse Claude response: " + rawJson, e);
+            log.error("Caption generation failed. JSON response: {}", rawJson, e);
+            throw new CaptionGenerationException("Could not parse Claude response", e);
         }
     }
 }

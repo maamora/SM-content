@@ -10,6 +10,7 @@ import com.maamora.studio.model.Post;
 import com.maamora.studio.model.enums.BatchStatus;
 import com.maamora.studio.repository.BatchJobRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,6 +32,7 @@ import java.util.concurrent.Semaphore;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BatchJobService {
 
     private static final int MAX_CONCURRENT = 3;
@@ -63,7 +65,7 @@ public class BatchJobService {
                         processOneProduct(userId, job, productId, request.getTemplateId());
                     } catch (Exception e) {
                         // Logged and skipped: one failing product must not sink the whole batch.
-                        System.err.println("Batch item failed for product " + productId + ": " + e.getMessage());
+                        log.error("Batch item failed for product {}: {}", productId, e.getMessage(), e);
                     } finally {
                         semaphore.release();
                     }

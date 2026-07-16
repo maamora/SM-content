@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { generateImage, generateCaptions, editCaption, approvePost, exportPost } from "@/lib/api/posts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -62,6 +63,7 @@ export default function CreativeStudio({ products }: CreativeStudioProps) {
     const [selectedProductId, setSelectedProductId] = useState<string>("");
     const [selectedFormat, setSelectedFormat] = useState<string>("instagram");
     const [selectedTemplate, setSelectedTemplate] = useState<string>("bold");
+    const [currentPostId, setCurrentPostId] = useState<string | null>(null);
     const [promoText, setPromoText] = useState<string>("OFFRE SPÉCIALE !");
     const [accentColor, setAccentColor] = useState<string>("#f97316"); // default orange
     const [badgeText, setBadgeText] = useState<string>("-20% TODAY");
@@ -105,27 +107,70 @@ export default function CreativeStudio({ products }: CreativeStudioProps) {
         setTimeout(() => setCopiedLang(null), 2000);
     };
 
-    const handleSimulateCaptionGeneration = () => {
+    const handleSimulateCaptionGeneration = async () => {
         setIsGeneratingCaptions(true);
-        setTimeout(() => {
-            setIsGeneratingCaptions(false);
-            // Mix text updates to show refreshing simulation
-            let key = "generic";
-            if (selectedProduct.name.toLowerCase().includes("sho")) key = "shoes";
-            else if (selectedProduct.name.toLowerCase().includes("mat")) key = "mat";
-            else if (selectedProduct.name.toLowerCase().includes("earbud")) key = "earbuds";
-
-            const base = CAPTION_TEMPLATES[key];
-            setCaptionOutput({
-                fr: base.fr + "\n\n🔥 Offre de la semaine !",
-                ar: base.ar + "\n\n🔥 عرض خاص وحصري!",
-                darija: base.darija + "\n\n🔥 تخفيض الهبال ديال السيمانة!"
+        try {
+            const post = await generateImage({
+                productId: selectedProductId,
+                templateId: selectedTemplate,
+                badgeText,
+                promoText,
+                accentColor,
             });
-        }, 1200);
+            setCurrentPostId(post.id);
+
+            const updated = await generateCaptions(post.id, ["fr", "ar", "darija"]);
+            setCaptionOutput({
+                fr: updated.captionFr || "",
+                ar: updated.captionAr || "",
+                darija: updated.captionDarija || ""
+            });
+        } catch (err) {
+            console.error("Generation failed:", err);
+            alert("Make sure the backend is running on :8080");
+        } finally {
+            setIsGeneratingCaptions(false);
+        }
     };
 
-    const handleSimulateDownload = () => {
-        alert("Downloading assets package (creative-card.png + text-copy.txt) to your downloads folder!");
+    const handleCaptionEdit = async (lang: "fr" | "ar" | "darija", text: string) => {
+        setCaptionOutput(prev => ({ ...prev, [lang]: text }));
+        if (currentPostId) {
+            try {
+                await editCaption(currentPostId, lang, text);
+            } catch (err) {
+                console.error("Failed to save caption edit:", err);
+            }
+        }
+    };
+
+    const handleApprovePost = async () => {
+        if (!currentPostId) return;
+        try {
+            await approvePost(currentPostId);
+            alert("Post approved!");
+        } catch (err) {
+            console.error("Approval failed:", err);
+        }
+    };
+
+    const handleSimulateDownload = async () => {
+        if (!currentPostId) {
+            alert("Generate content first before downloading.");
+            return;
+        }
+        try {
+            const blob = await exportPost(currentPostId);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `post-${currentPostId}.zip`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("Export failed:", err);
+            alert("Export failed. Check console for details.");
+        }
     };
 
     return (
