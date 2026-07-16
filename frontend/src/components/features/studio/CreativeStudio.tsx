@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { generateImage, generateCaptions, editCaption, approvePost, exportPost } from "@/lib/api/posts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -109,54 +110,67 @@ export default function CreativeStudio({ products }: CreativeStudioProps) {
     const handleSimulateCaptionGeneration = async () => {
         setIsGeneratingCaptions(true);
         try {
-            // First step: get an actual Post ID from the backend by triggering generateImage
-            const imgRes = await fetch("http://localhost:8080/api/posts/generate-image", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    productId: selectedProductId,
-                    templateId: selectedTemplate,
-                    badgeText,
-                    promoText,
-                    accentColor,
-                })
+            const post = await generateImage({
+                productId: selectedProductId,
+                templateId: selectedTemplate,
+                badgeText,
+                promoText,
+                accentColor,
             });
-            const imgData = await imgRes.json();
-            const postId = imgData.data?.id;
-            setCurrentPostId(postId);
+            setCurrentPostId(post.id);
 
-            if (postId) {
-                // Second step: generate captions using the new Post ID
-                const capRes = await fetch("http://localhost:8080/api/posts/generate-captions", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ postId, languages: ["fr", "ar", "darija"] })
-                });
-                const capData = await capRes.json();
-                const post = capData.data;
-
-                if (post) {
-                    setCaptionOutput({
-                        fr: post.captionFr || "",
-                        ar: post.captionAr || "",
-                        darija: post.captionDarija || ""
-                    });
-                }
-            }
-        } catch (error) {
-            console.error("Backend generation error:", error);
-            alert("Ensure backend is running on :8080");
+            const updated = await generateCaptions(post.id, ["fr", "ar", "darija"]);
+            setCaptionOutput({
+                fr: updated.captionFr || "",
+                ar: updated.captionAr || "",
+                darija: updated.captionDarija || ""
+            });
+        } catch (err) {
+            console.error("Generation failed:", err);
+            alert("Make sure the backend is running on :8080");
         } finally {
             setIsGeneratingCaptions(false);
         }
     };
 
-    const handleSimulateDownload = () => {
+    const handleCaptionEdit = async (lang: "fr" | "ar" | "darija", text: string) => {
+        setCaptionOutput(prev => ({ ...prev, [lang]: text }));
+        if (currentPostId) {
+            try {
+                await editCaption(currentPostId, lang, text);
+            } catch (err) {
+                console.error("Failed to save caption edit:", err);
+            }
+        }
+    };
+
+    const handleApprovePost = async () => {
+        if (!currentPostId) return;
+        try {
+            await approvePost(currentPostId);
+            alert("Post approved!");
+        } catch (err) {
+            console.error("Approval failed:", err);
+        }
+    };
+
+    const handleSimulateDownload = async () => {
         if (!currentPostId) {
-            alert("Couln't find an active generation. Please Generate first!");
+            alert("Generate content first before downloading.");
             return;
         }
-        window.location.href = `http://localhost:8080/api/posts/${currentPostId}/export`;
+        try {
+            const blob = await exportPost(currentPostId);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `post-${currentPostId}.zip`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("Export failed:", err);
+            alert("Export failed. Check console for details.");
+        }
     };
 
     return (
