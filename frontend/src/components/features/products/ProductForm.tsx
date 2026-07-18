@@ -54,7 +54,10 @@ export function ProductForm({ onCreated }: ProductFormProps) {
         setServerError(null);
         setIsPending(true);
         try {
-            await createProduct(data);
+            await createProduct({
+                ...data,
+                price: data.price !== undefined ? Number(data.price) : undefined,
+            });
             form.reset();
             onCreated?.();
         } catch (err) {

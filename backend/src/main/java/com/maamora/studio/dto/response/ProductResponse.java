@@ -11,6 +11,7 @@ public class ProductResponse {
     private final String sellingPoint;
     private final Double price;
     private final String imageUrl;
+    private final String status;
 
     public ProductResponse(Product p) {
         this.id = p.getId();
@@ -19,5 +20,6 @@ public class ProductResponse {
         this.sellingPoint = p.getSellingPoint();
         this.price = p.getPrice();
         this.imageUrl = p.getImageUrl();
+        this.status = p.getStatus().name();
     }
 }

@@ -15,6 +15,20 @@ export function setToken(token: string) {
 
 export function clearToken() {
     window.localStorage.removeItem("maamora_token");
+    window.localStorage.removeItem("maamora_role");
+}
+
+export function getRole(): string | null {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem("maamora_role");
+}
+
+export function setRole(role: string) {
+    window.localStorage.setItem("maamora_role", role);
+}
+
+export function isAdmin(): boolean {
+    return getRole() === "ADMIN";
 }
 
 export interface ApiEnvelope<T> {

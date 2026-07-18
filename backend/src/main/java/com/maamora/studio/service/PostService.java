@@ -3,8 +3,10 @@ package com.maamora.studio.service;
 import com.maamora.studio.dto.request.GenerateCaptionsRequest;
 import com.maamora.studio.dto.request.GenerateImageRequest;
 import com.maamora.studio.exception.ResourceNotFoundException;
+import com.maamora.studio.exception.UnauthorizedException;
 import com.maamora.studio.model.*;
 import com.maamora.studio.model.enums.PostStatus;
+import com.maamora.studio.model.enums.ProductStatus;
 import com.maamora.studio.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,9 @@ public class PostService {
     /** Same as above, but attaches the Post to a BatchJob (used by BatchJobService). */
     public Post generateImage(String userId, GenerateImageRequest request, BatchJob batchJob) {
         Product product = productService.getOwned(userId, request.getProductId());
+        if (product.getStatus() != ProductStatus.APPROVED) {
+            throw new UnauthorizedException("Product is pending admin approval and cannot be used yet.");
+        }
         Template template = templateService.getById(request.getTemplateId());
 
         byte[] png = imageRenderService.renderToPng(

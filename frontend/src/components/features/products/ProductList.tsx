@@ -5,6 +5,18 @@ interface ProductListProps {
     products: Product[];
 }
 
+const STATUS_STYLES: Record<Product["status"], string> = {
+    PENDING: "bg-orange-950/30 text-orange-400 border border-orange-900/40",
+    APPROVED: "bg-emerald-950/30 text-emerald-400 border border-emerald-900/40",
+    REJECTED: "bg-red-950/30 text-red-400 border border-red-900/40",
+};
+
+const STATUS_LABELS: Record<Product["status"], string> = {
+    PENDING: "Pending approval",
+    APPROVED: "Approved",
+    REJECTED: "Rejected",
+};
+
 export default function ProductList({ products }: ProductListProps) {
     if (products.length === 0) {
         return (
@@ -23,6 +35,9 @@ export default function ProductList({ products }: ProductListProps) {
                     className="group relative overflow-hidden rounded-xl border border-zinc-900 bg-zinc-900/10 transition-all duration-300 hover:border-zinc-800 hover:bg-zinc-900/20 hover:shadow-lg shadow-sm"
                 >
                     <div className="relative h-48 w-full bg-zinc-950 border-b border-zinc-900 overflow-hidden">
+                        <span className={`absolute top-2 right-2 z-10 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${STATUS_STYLES[product.status]}`}>
+                            {STATUS_LABELS[product.status]}
+                        </span>
                         {product.imageUrl ? (
                             <Image
                                 src={product.imageUrl}

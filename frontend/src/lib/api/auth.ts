@@ -1,9 +1,10 @@
-import { apiFetch, setToken, clearToken } from "./client";
+import { apiFetch, setToken, setRole, clearToken } from "./client";
 
 export interface AuthResponse {
     token: string;
     email: string;
     brandId: string;
+    role: string;
 }
 
 export async function register(input: { name: string; email: string; password: string; brandName: string }) {
@@ -12,6 +13,7 @@ export async function register(input: { name: string; email: string; password: s
         body: JSON.stringify(input),
     });
     setToken(res.token);
+    setRole(res.role);
     return res;
 }
 
@@ -21,6 +23,7 @@ export async function login(input: { email: string; password: string }) {
         body: JSON.stringify(input),
     });
     setToken(res.token);
+    setRole(res.role);
     return res;
 }
 

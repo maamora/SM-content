@@ -7,6 +7,7 @@ import com.maamora.studio.security.CurrentUserProvider;
 import com.maamora.studio.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -42,5 +43,24 @@ public class ProductController {
     public ApiResponse<Void> delete(@PathVariable String id) {
         productService.delete(currentUser.getCurrentUserId(), id);
         return ApiResponse.ok(null);
+    }
+
+    @GetMapping("/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<ProductResponse>> pending() {
+        var products = productService.listPending().stream().map(ProductResponse::new).toList();
+        return ApiResponse.ok(products);
+    }
+
+    @PostMapping("/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<ProductResponse> approve(@PathVariable String id) {
+        return ApiResponse.ok(new ProductResponse(productService.approve(id)));
+    }
+
+    @PostMapping("/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<ProductResponse> reject(@PathVariable String id) {
+        return ApiResponse.ok(new ProductResponse(productService.reject(id)));
     }
 }

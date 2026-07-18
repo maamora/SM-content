@@ -7,8 +7,10 @@ import { RequireAuth } from "@/components/features/auth/RequireAuth";
 import { LogoutButton } from "@/components/features/auth/LogoutButton";
 import { ProductForm } from "@/components/features/products/ProductForm";
 import ProductList from "@/components/features/products/ProductList";
+import ApprovalsQueue from "@/components/features/products/ApprovalsQueue";
 import CreativeStudio from "@/components/features/studio/CreativeStudio";
 import { listProducts, type Product } from "@/lib/api/products";
+import { isAdmin } from "@/lib/api/client";
 import {
   LayoutDashboard,
   Package,
@@ -18,6 +20,7 @@ import {
   BarChart3,
   ArrowUpRight,
   TrendingUp,
+  ShieldCheck,
 } from "lucide-react";
 
 function ProductListSkeleton() {
@@ -49,6 +52,8 @@ const NAV_ITEMS = [
   { icon: BarChart3, label: "Analytics", tab: "analytics" },
 ];
 
+const ADMIN_NAV_ITEM = { icon: ShieldCheck, label: "Approvals", tab: "approvals" };
+
 function DashboardPageInner() {
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") || "dashboard";
@@ -56,6 +61,8 @@ function DashboardPageInner() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isAdminUser] = useState(() => isAdmin());
+  const navItems = isAdminUser ? [...NAV_ITEMS, ADMIN_NAV_ITEM] : NAV_ITEMS;
 
   const refetchProducts = useCallback(() => {
     setLoading(true);
@@ -78,7 +85,7 @@ function DashboardPageInner() {
         <div className="px-6 py-6 border-b border-zinc-900 flex flex-col items-center">
           <div className="relative w-full h-12 bg-white rounded-lg p-3 border border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.5)] flex items-center justify-center overflow-hidden">
             <img
-              src="/maamora-logo.jpg"
+              src="/maamora-logo.png"
               alt="Maamora Logo"
               className="h-full object-contain"
             />
@@ -87,7 +94,7 @@ function DashboardPageInner() {
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-1">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentTab === item.tab;
             return (
@@ -135,6 +142,7 @@ function DashboardPageInner() {
               {currentTab === "content-studio" && "Creative Content Studio"}
               {currentTab === "schedule" && "Approved Creative Calendar"}
               {currentTab === "analytics" && "Workspace Analytics"}
+              {currentTab === "approvals" && "Product Approvals"}
             </h1>
             <p className="text-xs text-zinc-400 mt-0.5">
               {currentTab === "dashboard" && "Overview of active workspace creations and catalogue state."}
@@ -143,6 +151,7 @@ function DashboardPageInner() {
               {currentTab === "content-studio" && "Generate promotional cards, Darija captions, and exports."}
               {currentTab === "schedule" && "Timeline tracking of campaign assets approved for distribution."}
               {currentTab === "analytics" && "Review performance charts and download conversion metrics."}
+              {currentTab === "approvals" && "Review products submitted by the team before they go live."}
             </p>
           </div>
 
@@ -290,11 +299,11 @@ function DashboardPageInner() {
                     <label className="text-xs font-semibold text-zinc-400">Current Logo Asset</label>
                     <div className="flex items-center gap-4">
                       <div className="h-16 w-44 bg-white rounded-lg border border-zinc-800 p-3.5 flex items-center justify-center overflow-hidden shrink-0">
-                        <img src="/maamora-logo.jpg" alt="Brand Logo" className="h-full object-contain" />
+                        <img src="/maamora-logo.png" alt="Brand Logo" className="h-full object-contain" />
                       </div>
                       <div className="space-y-1">
-                        <span className="text-xs font-semibold text-zinc-200 block">maamora-logo.jpg</span>
-                        <span className="text-[10px] text-zinc-500 font-mono">18.8 KB · JPEG</span>
+                        <span className="text-xs font-semibold text-zinc-200 block">maamora-logo.png</span>
+                        <span className="text-[10px] text-zinc-500 font-mono">Transparent background · PNG</span>
                       </div>
                     </div>
                   </div>
@@ -441,6 +450,13 @@ function DashboardPageInner() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* TAB 7: APPROVALS (admin only) */}
+          {currentTab === "approvals" && isAdminUser && (
+            <div className="max-w-2xl mx-auto space-y-6 fade-in">
+              <ApprovalsQueue onChange={refetchProducts} />
             </div>
           )}
 

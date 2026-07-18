@@ -1,5 +1,6 @@
 package com.maamora.studio.model;
 
+import com.maamora.studio.model.enums.ProductStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -33,6 +34,11 @@ public class Product {
     private Double price;
 
     private String imageUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private ProductStatus status = ProductStatus.PENDING;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;

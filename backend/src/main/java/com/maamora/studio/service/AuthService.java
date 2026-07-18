@@ -45,7 +45,7 @@ public class AuthService {
         brandSettingsRepository.save(brand);
 
         String token = jwtService.generateToken(user.getId(), user.getEmail());
-        return new AuthResponse(token, user.getEmail(), brand.getId());
+        return new AuthResponse(token, user.getEmail(), brand.getId(), user.getRole().name());
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -60,6 +60,6 @@ public class AuthService {
                 .orElseThrow(() -> new UnauthorizedException("No brand configured for this account."));
 
         String token = jwtService.generateToken(user.getId(), user.getEmail());
-        return new AuthResponse(token, user.getEmail(), brand.getId());
+        return new AuthResponse(token, user.getEmail(), brand.getId(), user.getRole().name());
     }
 }
