@@ -32,6 +32,10 @@ public class ExportService {
                     zip.closeEntry();
                 }
 
+                zip.putNextEntry(new ZipEntry(folder + "caption-en.txt"));
+                zip.write(orEmpty(post.getCaptionEn()).getBytes());
+                zip.closeEntry();
+
                 zip.putNextEntry(new ZipEntry(folder + "caption-fr.txt"));
                 zip.write(orEmpty(post.getCaptionFr()).getBytes());
                 zip.closeEntry();

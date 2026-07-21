@@ -35,7 +35,7 @@ interface CreativeStudioProps {
     products: Product[];
 }
 
-type CaptionLang = "fr" | "ar" | "darija";
+type CaptionLang = "fr" | "ar" | "darija" | "en";
 
 export default function CreativeStudio({ products }: CreativeStudioProps) {
     const [templates, setTemplates] = useState<Template[]>([]);
@@ -99,6 +99,7 @@ export default function CreativeStudio({ products }: CreativeStudioProps) {
     function captionFor(p: Post, lang: CaptionLang): string | null {
         if (lang === "fr") return p.captionFr;
         if (lang === "ar") return p.captionAr;
+        if (lang === "en") return p.captionEn;
         return p.captionDarija;
     }
 
@@ -394,7 +395,8 @@ export default function CreativeStudio({ products }: CreativeStudioProps) {
                                         {[
                                             { id: "darija" as const, label: "Moroccan Darija" },
                                             { id: "fr" as const, label: "French" },
-                                            { id: "ar" as const, label: "Arabic" }
+                                            { id: "ar" as const, label: "Arabic" },
+                                            { id: "en" as const, label: "English" }
                                         ].map(lang => (
                                             <button
                                                 key={lang.id}

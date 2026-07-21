@@ -10,6 +10,6 @@ public class GenerateCaptionsRequest {
     @NotBlank
     private String postId;
 
-    // Languages to (re)generate: "fr", "ar", "darija". Defaults to all three.
-    private List<String> languages = List.of("fr", "ar", "darija");
+    // Languages to (re)generate: "fr", "ar", "darija", "en". Defaults to all four.
+    private List<String> languages = List.of("fr", "ar", "darija", "en");
 }

@@ -66,6 +66,7 @@ public class PostService {
         for (String lang : request.getLanguages()) {
             String caption = captionGenerationService.generateCaption(post.getProduct(), brand, lang);
             switch (lang) {
+                case "en" -> post.setCaptionEn(caption);
                 case "ar" -> post.setCaptionAr(caption);
                 case "darija" -> post.setCaptionDarija(caption);
                 default -> post.setCaptionFr(caption);
@@ -78,6 +79,7 @@ public class PostService {
     public Post editCaption(String userId, String postId, String language, String text) {
         Post post = getOwned(userId, postId);
         switch (language) {
+            case "en" -> post.setCaptionEn(text);
             case "ar" -> post.setCaptionAr(text);
             case "darija" -> post.setCaptionDarija(text);
             case "fr" -> post.setCaptionFr(text);

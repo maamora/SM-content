@@ -1,5 +1,6 @@
 package com.maamora.studio.service;
 
+import com.maamora.studio.config.ProductSeeder;
 import com.maamora.studio.dto.request.LoginRequest;
 import com.maamora.studio.dto.request.RegisterRequest;
 import com.maamora.studio.dto.response.AuthResponse;
@@ -23,6 +24,7 @@ public class AuthService {
     private final BrandSettingsRepository brandSettingsRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final ProductSeeder productSeeder;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -43,6 +45,7 @@ public class AuthService {
                 .name(request.getBrandName())
                 .build();
         brandSettingsRepository.save(brand);
+        productSeeder.seedFor(brand);
 
         String token = jwtService.generateToken(user.getId(), user.getEmail());
         return new AuthResponse(token, user.getEmail(), brand.getId(), user.getRole().name());
