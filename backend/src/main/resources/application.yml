@@ -29,6 +29,10 @@ app:
   storage:
     local-path: ${STORAGE_LOCAL_PATH:./uploads}
     public-base-url: ${STORAGE_PUBLIC_BASE_URL:http://localhost:8080/files}
+  cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+    api-key: ${CLOUDINARY_API_KEY:}
+    api-secret: ${CLOUDINARY_API_SECRET:}
   gemini:
     api-key: ${GEMINI_API_KEY:}
     model: ${GEMINI_MODEL:gemini-flash-latest}

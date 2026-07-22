@@ -82,9 +82,14 @@ export default function ApprovalsQueue({ onChange }: ApprovalsQueueProps) {
                     <div className="min-w-0">
                         <p className="text-sm font-semibold text-zinc-200 truncate">{product.name}</p>
                         <p className="text-xs text-zinc-500 mt-0.5 line-clamp-1">{product.description}</p>
-                        {product.price != null && (
-                            <p className="text-xs font-mono text-orange-400 mt-1">${product.price.toFixed(2)}</p>
-                        )}
+                        <div className="flex items-center gap-2 mt-1">
+                            {product.price != null && (
+                                <p className="text-xs font-mono text-orange-400">${product.price.toFixed(2)}</p>
+                            )}
+                            {product.createdByName && (
+                                <p className="text-[10px] text-zinc-600">Submitted by {product.createdByName}</p>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">

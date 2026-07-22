@@ -7,7 +7,7 @@ export interface AuthResponse {
     role: string;
 }
 
-export async function register(input: { name: string; email: string; password: string; brandName: string }) {
+export async function register(input: { name: string; email: string; password: string }) {
     const res = await apiFetch<AuthResponse>("/api/auth/register", {
         method: "POST",
         body: JSON.stringify(input),

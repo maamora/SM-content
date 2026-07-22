@@ -40,7 +40,7 @@ export default function RegisterPage() {
 
     const form = useForm<RegisterInput>({
         resolver: zodResolver(RegisterSchema),
-        defaultValues: { name: "", email: "", password: "", brandName: "" },
+        defaultValues: { name: "", email: "", password: "" },
     });
 
     const onSubmit = async (data: RegisterInput) => {
@@ -61,7 +61,7 @@ export default function RegisterPage() {
             <div className="w-full max-w-sm p-8 bg-zinc-900/10 border border-zinc-900 rounded-xl shadow-sm">
                 <div className="mb-6 space-y-1">
                     <h1 className="text-lg font-semibold text-zinc-100 tracking-tight">Create account</h1>
-                    <p className="text-xs text-zinc-500">Set up your brand workspace.</p>
+                    <p className="text-xs text-zinc-500">Join the Maamora workspace.</p>
                 </div>
 
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
@@ -94,16 +94,6 @@ export default function RegisterPage() {
                             placeholder="At least 8 characters"
                             aria-invalid={!!form.formState.errors.password}
                             {...form.register("password")}
-                        />
-                    </FormGroup>
-
-                    <FormGroup id="brandName" label="Brand name" error={form.formState.errors.brandName}>
-                        <input
-                            id="brandName"
-                            className={inputStyles}
-                            placeholder="Maamora"
-                            aria-invalid={!!form.formState.errors.brandName}
-                            {...form.register("brandName")}
                         />
                     </FormGroup>
 

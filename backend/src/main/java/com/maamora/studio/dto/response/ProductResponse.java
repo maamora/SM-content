@@ -12,6 +12,7 @@ public class ProductResponse {
     private final Double price;
     private final String imageUrl;
     private final String status;
+    private final String createdByName;
 
     public ProductResponse(Product p) {
         this.id = p.getId();
@@ -21,5 +22,6 @@ public class ProductResponse {
         this.price = p.getPrice();
         this.imageUrl = p.getImageUrl();
         this.status = p.getStatus().name();
+        this.createdByName = p.getCreatedBy() != null ? p.getCreatedBy().getName() : null;
     }
 }

@@ -66,3 +66,28 @@ export async function apiFetch<T>(
 
     return body.data as T;
 }
+
+// Multipart upload — deliberately skipped by apiFetch's JSON body handling.
+// The browser sets its own Content-Type (with the multipart boundary), so we
+// must not override it here the way apiFetch does for JSON requests.
+export async function apiUpload<T>(path: string, file: File): Promise<T> {
+    const token = getToken();
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+        method: "POST",
+        headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+    });
+
+    const body: ApiEnvelope<T> = await res.json();
+
+    if (!res.ok || !body.success) {
+        throw new Error(body.error ?? `Upload failed: ${res.status}`);
+    }
+
+    return body.data as T;
+}

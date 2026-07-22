@@ -60,7 +60,8 @@ public class ProductController {
 
     @PostMapping("/{id}/reject")
     @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<ProductResponse> reject(@PathVariable String id) {
-        return ApiResponse.ok(new ProductResponse(productService.reject(id)));
+    public ApiResponse<Void> reject(@PathVariable String id) {
+        productService.reject(id);
+        return ApiResponse.ok(null);
     }
 }

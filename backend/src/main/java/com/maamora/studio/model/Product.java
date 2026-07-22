@@ -23,6 +23,11 @@ public class Product {
     @JoinColumn(name = "brand_id", nullable = false)
     private BrandSettings brand;
 
+    /** Who submitted this product — used to scope PENDING visibility to its own submitter. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_user_id")
+    private User createdBy;
+
     @Column(nullable = false)
     private String name;
 

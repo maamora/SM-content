@@ -19,10 +19,6 @@ public class BrandSettings {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @OneToOne
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private User user;
-
     @Column(nullable = false)
     private String name;
 

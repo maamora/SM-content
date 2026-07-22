@@ -4,8 +4,11 @@ import com.maamora.studio.dto.request.ProductRequest;
 import com.maamora.studio.exception.ResourceNotFoundException;
 import com.maamora.studio.model.BrandSettings;
 import com.maamora.studio.model.Product;
+import com.maamora.studio.model.User;
 import com.maamora.studio.model.enums.ProductStatus;
+import com.maamora.studio.model.enums.Role;
 import com.maamora.studio.repository.ProductRepository;
+import com.maamora.studio.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,21 +20,41 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final BrandSettingsService brandSettingsService;
+    private final UserRepository userRepository;
 
+    /**
+     * Everyone in the workspace sees every APPROVED product. PENDING products
+     * are only visible to the person who submitted them (plus admins, via
+     * listPending()) — a teammate shouldn't see someone else's submission
+     * sitting in the catalogue before it's been reviewed.
+     */
     public List<Product> listForUser(String userId) {
         BrandSettings brand = brandSettingsService.getForUser(userId);
-        return productRepository.findByBrandId(brand.getId());
+        return productRepository.findByBrandId(brand.getId()).stream()
+                .filter(p -> p.getStatus() == ProductStatus.APPROVED
+                        || (p.getStatus() == ProductStatus.PENDING
+                            && p.getCreatedBy() != null
+                            && p.getCreatedBy().getId().equals(userId)))
+                .toList();
     }
 
+    /** Admins skip the review queue — their own submissions go live immediately. */
     public Product create(String userId, ProductRequest request) {
         BrandSettings brand = brandSettingsService.getForUser(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found."));
+
+        ProductStatus status = user.getRole() == Role.ADMIN ? ProductStatus.APPROVED : ProductStatus.PENDING;
+
         Product product = Product.builder()
                 .brand(brand)
+                .createdBy(user)
                 .name(request.getName())
                 .description(request.getDescription())
                 .sellingPoint(request.getSellingPoint())
                 .price(request.getPrice())
                 .imageUrl(request.getImageUrl())
+                .status(status)
                 .build();
         return productRepository.save(product);
     }
@@ -57,7 +80,7 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found."));
     }
 
-    /** Admin-only: products awaiting review, across all brands. */
+    /** Admin-only: every product currently awaiting review. */
     public List<Product> listPending() {
         return productRepository.findByStatus(ProductStatus.PENDING);
     }
@@ -69,10 +92,10 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    public Product reject(String productId) {
+    /** Rejected products aren't kept around in a "rejected" state — they're removed outright. */
+    public void reject(String productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found."));
-        product.setStatus(ProductStatus.REJECTED);
-        return productRepository.save(product);
+        productRepository.delete(product);
     }
 }

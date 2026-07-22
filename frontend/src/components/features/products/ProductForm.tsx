@@ -3,7 +3,7 @@
 import { useForm, FieldError } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { createProduct } from "@/lib/api/products";
+import { createProduct, uploadProductImage } from "@/lib/api/products";
 import { ProductSchema, ProductInput } from "@/schemas/product";
 
 interface FormGroupProps {
@@ -38,6 +38,9 @@ interface ProductFormProps {
 export function ProductForm({ onCreated }: ProductFormProps) {
     const [isPending, setIsPending] = useState(false);
     const [serverError, setServerError] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     const form = useForm<ProductInput>({
         resolver: zodResolver(ProductSchema),
@@ -59,11 +62,29 @@ export function ProductForm({ onCreated }: ProductFormProps) {
                 price: data.price !== undefined ? Number(data.price) : undefined,
             });
             form.reset();
+            setPreviewUrl(null);
             onCreated?.();
         } catch (err) {
             setServerError(err instanceof Error ? err.message : "Failed to create product");
         } finally {
             setIsPending(false);
+        }
+    };
+
+    const handleImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploadError(null);
+        setIsUploading(true);
+        try {
+            const { url } = await uploadProductImage(file);
+            form.setValue("imageUrl", url, { shouldValidate: true });
+            setPreviewUrl(url);
+        } catch (err) {
+            setUploadError(err instanceof Error ? err.message : "Failed to upload image");
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -118,14 +139,21 @@ export function ProductForm({ onCreated }: ProductFormProps) {
                         />
                     </FormGroup>
 
-                    <FormGroup id="product-image" label="Image URL" error={form.formState.errors.imageUrl}>
+                    <FormGroup id="product-image" label="Product Photo" error={form.formState.errors.imageUrl}>
                         <input
                             id="product-image"
-                            type="url"
-                            className={`${inputStyles} h-9`}
-                            placeholder="https://..."
-                            {...form.register("imageUrl")}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageSelected}
+                            disabled={isUploading}
+                            className={`${inputStyles} h-9 pt-1.5 file:mr-3 file:rounded file:border-0 file:bg-zinc-800 file:px-2 file:py-1 file:text-xs file:text-zinc-300`}
                         />
+                        <input type="hidden" {...form.register("imageUrl")} />
+                        {isUploading && <p className="text-xs text-zinc-500">Uploading...</p>}
+                        {uploadError && <p className="text-xs text-red-500 font-medium">{uploadError}</p>}
+                        {previewUrl && !isUploading && (
+                            <img src={previewUrl} alt="Preview" className="h-16 w-16 rounded-md object-cover border border-zinc-800" />
+                        )}
                     </FormGroup>
                 </div>
 
@@ -137,7 +165,7 @@ export function ProductForm({ onCreated }: ProductFormProps) {
 
                 <button
                     type="submit"
-                    disabled={isPending}
+                    disabled={isPending || isUploading}
                     className="inline-flex items-center justify-center rounded-md text-xs font-semibold h-9 px-6 w-full bg-orange-600 hover:bg-orange-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_1px_5px_rgba(234,88,12,0.3)]"
                 >
                     {isPending ? "Syncing Catalogue..." : "Register Product"}
