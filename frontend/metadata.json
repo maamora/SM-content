@@ -1,0 +1,6 @@
+{
+  "name": "Maamora Social Studio",
+  "description": "Create premium 3D-styled social media creatives and Moroccan Darija, Arabic, and French AI captions in seconds.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
