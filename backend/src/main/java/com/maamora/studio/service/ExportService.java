@@ -1,6 +1,8 @@
 package com.maamora.studio.service;
 
 import com.maamora.studio.model.Post;
+import com.maamora.studio.exception.ExportProcessingException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -14,6 +16,7 @@ import java.util.zip.ZipOutputStream;
  * ready to download and paste into Instagram/Facebook/WhatsApp.
  */
 @Service
+@Slf4j
 public class ExportService {
 
     public byte[] buildZip(List<Post> posts) {
@@ -26,10 +29,15 @@ public class ExportService {
                 String folder = posts.size() > 1 ? (i++ + "-" + safeName(post.getProduct().getName())) + "/" : "";
 
                 if (post.getImageUrl() != null) {
-                    byte[] image = http.get().uri(post.getImageUrl()).retrieve().body(byte[].class);
-                    zip.putNextEntry(new ZipEntry(folder + "creative.png"));
-                    zip.write(image != null ? image : new byte[0]);
-                    zip.closeEntry();
+                    try {
+                        byte[] image = http.get().uri(post.getImageUrl()).retrieve().body(byte[].class);
+                        zip.putNextEntry(new ZipEntry(folder + "creative.png"));
+                        zip.write(image != null ? image : new byte[0]);
+                        zip.closeEntry();
+                    } catch (Exception e) {
+                        log.warn("Failed to download image for post {} (Product: {}). Adding captions only.",
+                                post.getId(), post.getProduct().getName(), e);
+                    }
                 }
 
                 zip.putNextEntry(new ZipEntry(folder + "caption-en.txt"));
@@ -49,7 +57,8 @@ public class ExportService {
                 zip.closeEntry();
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to build export ZIP", e);
+            log.error("Failed to build export ZIP", e);
+            throw new ExportProcessingException("Failed to build export ZIP", e);
         }
 
         return buffer.toByteArray();
