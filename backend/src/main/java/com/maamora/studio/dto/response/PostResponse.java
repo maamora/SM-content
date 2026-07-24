@@ -10,6 +10,7 @@ public class PostResponse {
     private final String templateId;
     private final String format;
     private final String imageUrl;
+    private final String captionEn;
     private final String captionFr;
     private final String captionAr;
     private final String captionDarija;
@@ -21,6 +22,7 @@ public class PostResponse {
         this.templateId = post.getTemplate().getId();
         this.format = post.getFormat().name();
         this.imageUrl = post.getImageUrl();
+        this.captionEn = post.getCaptionEn();
         this.captionFr = post.getCaptionFr();
         this.captionAr = post.getCaptionAr();
         this.captionDarija = post.getCaptionDarija();

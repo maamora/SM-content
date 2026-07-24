@@ -39,6 +39,9 @@ public class Post {
     private String imageUrl;
 
     @Column(length = 2000)
+    private String captionEn;
+
+    @Column(length = 2000)
     private String captionFr;
 
     @Column(length = 2000)

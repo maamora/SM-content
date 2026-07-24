@@ -25,6 +25,13 @@ public class PostController {
     private final ExportService exportService;
     private final CurrentUserProvider currentUser;
 
+    @GetMapping
+    public ApiResponse<List<PostResponse>> list() {
+        var posts = postService.listForUser(currentUser.getCurrentUserId())
+                .stream().map(PostResponse::new).toList();
+        return ApiResponse.ok(posts);
+    }
+
     @PostMapping("/generate-image")
     public ApiResponse<PostResponse> generateImage(@Valid @RequestBody GenerateImageRequest request) {
         var post = postService.generateImage(currentUser.getCurrentUserId(), request);
@@ -53,6 +60,7 @@ public class PostController {
     public ResponseEntity<byte[]> exportOne(@PathVariable String id) {
         var post = postService.getOwned(currentUser.getCurrentUserId(), id);
         byte[] zip = exportService.buildZip(List.of(post));
+        postService.markExported(currentUser.getCurrentUserId(), id);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"post-" + id + ".zip\"")
                 .body(zip);

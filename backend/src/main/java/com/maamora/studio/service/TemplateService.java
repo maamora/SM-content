@@ -17,7 +17,6 @@ public class TemplateService {
     private final TemplateRepository templateRepository;
     private final BrandSettingsService brandSettingsService;
 
-    /** Global templates (available to everyone) + this brand's own templates. */
     public List<Template> listForUser(String userId) {
         BrandSettings brand = brandSettingsService.getForUser(userId);
         return templateRepository.findByBrandIdOrBrandIdIsNull(brand.getId());

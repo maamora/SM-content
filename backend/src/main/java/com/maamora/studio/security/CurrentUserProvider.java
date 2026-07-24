@@ -7,11 +7,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class CurrentUserProvider {
 
-    /** Returns the id of the authenticated user (the JWT subject). */
     public String getCurrentUserId() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (principal instanceof UserDetails userDetails) {
-            return userDetails.getUsername(); // holds the user id, see UserDetailsServiceImpl
+            return userDetails.getUsername();
         }
         return null;
     }

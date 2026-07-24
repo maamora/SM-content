@@ -14,14 +14,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-/**
- * Renders a Template (HTML/CSS file with {{placeholders}}) + a Product's data
- * into a PNG, using ONE long-lived headless Chromium instance (Playwright).
- *
- * Reusing a single Browser across requests matters especially in batch mode:
- * relaunching Chromium for every product in a batch would be far too slow.
- * Each render only opens a lightweight page/context on the shared browser.
- */
 @Service
 public class ImageRenderService {
 
