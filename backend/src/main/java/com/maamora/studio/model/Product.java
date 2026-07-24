@@ -40,6 +40,11 @@ public class Product {
 
     private String imageUrl;
 
+    /** Optional 2nd and 3rd product photos, shown on the product detail page. */
+    private String imageUrl2;
+
+    private String imageUrl3;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default

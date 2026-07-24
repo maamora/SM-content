@@ -18,4 +18,8 @@ public class ProductRequest {
     private Double price;
 
     private String imageUrl;
+
+    private String imageUrl2;
+
+    private String imageUrl3;
 }

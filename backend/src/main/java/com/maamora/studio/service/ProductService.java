@@ -2,6 +2,7 @@ package com.maamora.studio.service;
 
 import com.maamora.studio.dto.request.ProductRequest;
 import com.maamora.studio.exception.ResourceNotFoundException;
+import com.maamora.studio.exception.UnauthorizedException;
 import com.maamora.studio.model.BrandSettings;
 import com.maamora.studio.model.Product;
 import com.maamora.studio.model.User;
@@ -54,30 +55,66 @@ public class ProductService {
                 .sellingPoint(request.getSellingPoint())
                 .price(request.getPrice())
                 .imageUrl(request.getImageUrl())
+                .imageUrl2(request.getImageUrl2())
+                .imageUrl3(request.getImageUrl3())
                 .status(status)
                 .build();
         return productRepository.save(product);
     }
 
+    /** Regular members can only edit their own submissions; admins can edit anyone's. */
     public Product update(String userId, String productId, ProductRequest request) {
         Product product = getOwned(userId, productId);
+        assertCanEdit(userId, product);
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setSellingPoint(request.getSellingPoint());
         product.setPrice(request.getPrice());
         product.setImageUrl(request.getImageUrl());
+        product.setImageUrl2(request.getImageUrl2());
+        product.setImageUrl3(request.getImageUrl3());
         return productRepository.save(product);
     }
 
     public void delete(String userId, String productId) {
         Product product = getOwned(userId, productId);
+        assertCanEdit(userId, product);
         productRepository.delete(product);
     }
 
+    private void assertCanEdit(String userId, Product product) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found."));
+        boolean isOwner = product.getCreatedBy() != null && product.getCreatedBy().getId().equals(userId);
+        if (user.getRole() != Role.ADMIN && !isOwner) {
+            throw new UnauthorizedException("You can only edit or delete your own products.");
+        }
+    }
+
+    /** Brand-scoped lookup used for edit/delete authorization checks. */
     public Product getOwned(String userId, String productId) {
         BrandSettings brand = brandSettingsService.getForUser(userId);
         return productRepository.findByIdAndBrandId(productId, brand.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found."));
+    }
+
+    /**
+     * Single-product lookup for the detail page — applies the same
+     * visibility rule as listForUser(): APPROVED is visible to everyone,
+     * PENDING only to its submitter or an admin.
+     */
+    public Product getVisible(String userId, String productId) {
+        Product product = getOwned(userId, productId);
+        if (product.getStatus() == ProductStatus.APPROVED) {
+            return product;
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found."));
+        boolean isOwner = product.getCreatedBy() != null && product.getCreatedBy().getId().equals(userId);
+        if (user.getRole() == Role.ADMIN || isOwner) {
+            return product;
+        }
+        throw new ResourceNotFoundException("Product not found.");
     }
 
     /** Admin-only: every product currently awaiting review. */

@@ -27,6 +27,12 @@ public class ProductController {
         return ApiResponse.ok(products);
     }
 
+    @GetMapping("/{id}")
+    public ApiResponse<ProductResponse> getOne(@PathVariable String id) {
+        var product = productService.getVisible(currentUser.getCurrentUserId(), id);
+        return ApiResponse.ok(new ProductResponse(product));
+    }
+
     @PostMapping
     public ApiResponse<ProductResponse> create(@Valid @RequestBody ProductRequest request) {
         var product = productService.create(currentUser.getCurrentUserId(), request);

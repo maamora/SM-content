@@ -31,4 +31,15 @@ public class LocalDiskStorageService implements StorageService {
             throw new RuntimeException("Failed to store file: " + relativePath, e);
         }
     }
+
+    @Override
+    public void delete(String url) {
+        if (url == null || !url.startsWith(publicBaseUrl)) return;
+        try {
+            String relativePath = url.substring(publicBaseUrl.length()).replaceFirst("^/", "");
+            Files.deleteIfExists(Path.of(localPath, relativePath));
+        } catch (IOException ignored) {
+            // Best-effort cleanup — not worth failing the caller's request over.
+        }
+    }
 }

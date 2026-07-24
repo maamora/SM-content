@@ -13,6 +13,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
             router.replace("/login");
             return;
         }
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time auth check on mount before rendering protected content
         setChecked(true);
     }, [router]);
 

@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface PostRepository extends JpaRepository<Post, String> {
     List<Post> findByBatchJobId(String batchJobId);
     Optional<Post> findByIdAndProduct_Brand_Id(String id, String brandId);
+    List<Post> findByProduct_Brand_IdOrderByCreatedAtDesc(String brandId);
 }

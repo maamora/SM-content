@@ -3,6 +3,10 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { motion } from "motion/react";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
+} from "recharts";
 import { RequireAuth } from "@/components/features/auth/RequireAuth";
 import { LogoutButton } from "@/components/features/auth/LogoutButton";
 import { ProductForm } from "@/components/features/products/ProductForm";
@@ -10,17 +14,17 @@ import ProductList from "@/components/features/products/ProductList";
 import ApprovalsQueue from "@/components/features/products/ApprovalsQueue";
 import CreativeStudio from "@/components/features/studio/CreativeStudio";
 import { listProducts, type Product } from "@/lib/api/products";
+import { listPosts, type Post } from "@/lib/api/posts";
 import { isAdmin } from "@/lib/api/client";
 import {
   LayoutDashboard,
   Package,
-  Palette,
   Sparkles,
-  Calendar,
-  BarChart3,
-  ArrowUpRight,
-  TrendingUp,
   ShieldCheck,
+  PenTool,
+  TrendingUp,
+  Languages,
+  ChevronRight,
 } from "lucide-react";
 
 function ProductListSkeleton() {
@@ -29,13 +33,13 @@ function ProductListSkeleton() {
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
-          className="overflow-hidden rounded-xl border border-zinc-900 bg-zinc-950"
+          className="overflow-hidden rounded-2xl border-3 border-stone-900 bg-white"
           style={{ animationDelay: `${i * 60}ms` }}
         >
-          <div className="h-44 w-full bg-zinc-900 animate-pulse" />
+          <div className="h-44 w-full bg-stone-100 animate-pulse" />
           <div className="p-4 space-y-2">
-            <div className="h-4 w-3/4 bg-zinc-900 rounded" />
-            <div className="h-3 w-1/3 bg-zinc-900 rounded" />
+            <div className="h-4 w-3/4 bg-stone-100 rounded" />
+            <div className="h-3 w-1/3 bg-stone-100 rounded" />
           </div>
         </div>
       ))}
@@ -44,21 +48,27 @@ function ProductListSkeleton() {
 }
 
 const NAV_ITEMS = [
-  { icon: LayoutDashboard, label: "Dashboard", tab: "dashboard" },
-  { icon: Package, label: "Products", tab: "products" },
-  { icon: Palette, label: "Brand Kit", tab: "brand-kit" },
-  { icon: Sparkles, label: "Content Studio", tab: "content-studio" },
-  { icon: Calendar, label: "Schedule", tab: "schedule" },
-  { icon: BarChart3, label: "Analytics", tab: "analytics" },
+  { icon: LayoutDashboard, label: "Tableau de bord", tab: "dashboard" },
+  { icon: Package, label: "Produits", tab: "products" },
+  { icon: Sparkles, label: "Atelier Créatif", tab: "studio" },
 ];
 
-const ADMIN_NAV_ITEM = { icon: ShieldCheck, label: "Approvals", tab: "approvals" };
+const ADMIN_NAV_ITEM = { icon: ShieldCheck, label: "Revue Admin", tab: "admin" };
+
+const FORMAT_LABELS: Record<string, string> = {
+  SQUARE_POST: "Post carré",
+  STORY: "Story",
+  WHATSAPP_STATUS: "WhatsApp",
+};
+
+const CHART_COLORS = ["#F47315", "#2D5A41", "#1B5E4F", "#9A3412"];
 
 function DashboardPageInner() {
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") || "dashboard";
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isAdminUser] = useState(() => isAdmin());
@@ -66,34 +76,53 @@ function DashboardPageInner() {
 
   const refetchProducts = useCallback(() => {
     setLoading(true);
-    listProducts()
-      .then(setProducts)
-      .catch((err) => setLoadError(err instanceof Error ? err.message : "Failed to load products"))
+    Promise.all([listProducts(), listPosts()])
+      .then(([p, po]) => {
+        setProducts(p);
+        setPosts(po);
+      })
+      .catch((err) => setLoadError(err instanceof Error ? err.message : "Failed to load workspace data"))
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial workspace data fetch on mount
     refetchProducts();
   }, [refetchProducts]);
 
   const productCount = products.length;
+  const pendingCount = products.filter((p) => p.status === "PENDING").length;
+  const approvedPostsCount = posts.filter((p) => p.status === "APPROVED" || p.status === "EXPORTED").length;
+  const draftPostsCount = posts.filter((p) => p.status === "DRAFT").length;
+
+  const barChartData = [
+    { name: "Brouillons", count: draftPostsCount, fill: "#F47315" },
+    { name: "Approuvés", count: posts.filter((p) => p.status === "APPROVED").length, fill: "#2D5A41" },
+    { name: "Exportés", count: posts.filter((p) => p.status === "EXPORTED").length, fill: "#1B5E4F" },
+  ];
+
+  const formatCounts = posts.reduce<Record<string, number>>((acc, p) => {
+    acc[p.format] = (acc[p.format] || 0) + 1;
+    return acc;
+  }, {});
+  const formatStatsData = Object.entries(formatCounts).map(([format, value]) => ({
+    name: FORMAT_LABELS[format] || format,
+    value,
+  }));
 
   return (
-    <div className="flex min-h-screen bg-zinc-950 text-zinc-50 font-sans antialiased text-sm">
+    <div className="flex min-h-screen bg-[#FDFBF7] text-stone-900 font-sans antialiased text-sm">
       {/* ── Sidebar ─────────────────────────────────────────────────── */}
-      <aside className="hidden lg:flex flex-col w-64 border-r border-zinc-900 bg-zinc-950 shrink-0 select-none">
-        <div className="px-6 py-6 border-b border-zinc-900 flex flex-col items-center">
-          <div className="relative w-full h-12 bg-white rounded-lg p-3 border border-zinc-800 shadow-[0_2px_10px_rgba(0,0,0,0.5)] flex items-center justify-center overflow-hidden">
-            <img
-              src="/maamora-logo.png"
-              alt="Maamora Logo"
-              className="h-full object-contain"
-            />
+      <aside className="hidden lg:flex flex-col w-64 border-r-3 border-stone-900 bg-white shrink-0 select-none">
+        <div className="px-6 py-7 border-b-3 border-stone-900 flex flex-col items-center">
+          <div className="relative w-full h-24 bg-white rounded-lg flex items-center justify-center overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/maamora-logo.png" alt="Maamora Logo" className="h-full w-full object-contain" />
           </div>
-          <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 mt-3 font-semibold font-mono">WORKSPACE PLATFORM</span>
+          <span className="text-[10px] uppercase tracking-[0.2em] text-stone-400 mt-3 font-black">WORKSPACE</span>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-1">
+        <nav className="flex-1 px-4 py-6 space-y-1.5">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentTab === item.tab;
@@ -101,28 +130,28 @@ function DashboardPageInner() {
               <Link
                 key={item.tab}
                 href={`/?tab=${item.tab}`}
-                className={`flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all duration-200 ${isActive
-                  ? "bg-gradient-to-r from-orange-950/20 to-transparent border-l-2 border-orange-500 text-orange-400 font-medium pl-3"
-                  : "text-zinc-400 border-l-2 border-transparent hover:text-zinc-200 hover:bg-zinc-900/30"
+                className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 transition-all duration-150 font-bold text-xs ${isActive
+                  ? "bg-[#F47315] text-white border-2 border-stone-900 shadow-[3px_3px_0px_0px_rgba(28,25,23,1)]"
+                  : "text-stone-500 border-2 border-transparent hover:text-stone-900 hover:bg-stone-100"
                   }`}
               >
-                <Icon className={`h-4 w-4 ${isActive ? "text-orange-450" : "text-zinc-500"}`} />
+                <Icon className="h-4 w-4" />
                 {item.label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="m-4 rounded-xl border border-zinc-900 bg-zinc-950 p-4">
-          <p className="text-[9px] uppercase tracking-widest text-zinc-500 mb-2 font-mono">Current Account</p>
+        <div className="m-4 rounded-2xl border-2 border-stone-900 bg-stone-50 p-4">
+          <p className="text-[9px] uppercase tracking-widest text-stone-400 mb-2 font-black">Compte actuel</p>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-orange-600/10 border border-orange-500/20 flex items-center justify-center text-xs font-bold text-orange-400 uppercase">
-                DB
+              <div className="h-8 w-8 rounded-lg bg-[#F47315]/10 border border-[#F47315]/30 flex items-center justify-center text-xs font-black text-[#F47315] uppercase">
+                {isAdminUser ? "AD" : "SM"}
               </div>
               <div>
-                <p className="text-xs font-semibold text-zinc-300">Your Brand</p>
-                <p className="text-[10px] text-zinc-500">Signed in</p>
+                <p className="text-xs font-bold text-stone-800">Maamora</p>
+                <p className="text-[10px] text-stone-400">{isAdminUser ? "Admin" : "Membre équipe"}</p>
               </div>
             </div>
             <LogoutButton />
@@ -133,340 +162,246 @@ function DashboardPageInner() {
       {/* ── Main area ───────────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col min-w-0">
 
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-zinc-900 bg-zinc-950/90 px-8 py-4 backdrop-blur-md">
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b-3 border-stone-900 bg-white/90 px-8 py-4 backdrop-blur-md">
           <div>
-            <h1 className="text-lg font-bold text-zinc-100 tracking-tight leading-tight uppercase font-mono">
-              {currentTab === "dashboard" && "Dashboard Workspace"}
-              {currentTab === "products" && "Product Catalogue"}
-              {currentTab === "brand-kit" && "Brand Settings"}
-              {currentTab === "content-studio" && "Creative Content Studio"}
-              {currentTab === "schedule" && "Approved Creative Calendar"}
-              {currentTab === "analytics" && "Workspace Analytics"}
-              {currentTab === "approvals" && "Product Approvals"}
+            <h1 className="text-lg font-black text-stone-900 tracking-tight leading-tight font-serif">
+              {currentTab === "dashboard" && "Console d'activité"}
+              {currentTab === "products" && "Catalogue Produits"}
+              {currentTab === "studio" && "Atelier de Composition"}
+              {currentTab === "admin" && "Revue Admin"}
             </h1>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              {currentTab === "dashboard" && "Overview of active workspace creations and catalogue state."}
-              {currentTab === "products" && "Manage product specifications inside the campaign database."}
-              {currentTab === "brand-kit" && "Adjust brand assets, specific hex colors, and custom voices."}
-              {currentTab === "content-studio" && "Generate promotional cards, Darija captions, and exports."}
-              {currentTab === "schedule" && "Timeline tracking of campaign assets approved for distribution."}
-              {currentTab === "analytics" && "Review performance charts and download conversion metrics."}
-              {currentTab === "approvals" && "Review products submitted by the team before they go live."}
+            <p className="text-xs text-stone-400 mt-0.5 font-medium">
+              {currentTab === "dashboard" && "Données et statistiques d'automatisation sociale."}
+              {currentTab === "products" && "Gérez les fiches produits partagées par toute l'équipe."}
+              {currentTab === "studio" && "Composez un visuel, générez les légendes, exportez."}
+              {currentTab === "admin" && "Approuvez les produits soumis avant qu'ils ne soient utilisables."}
             </p>
           </div>
 
           <div className="flex items-center gap-4 select-none">
-            <span className="hidden sm:flex items-center gap-2 rounded-md border border-zinc-900 bg-zinc-900/30 px-3 py-1.5 text-xs font-mono font-semibold text-zinc-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-              WORKSPACE
+            <span className="hidden sm:flex items-center gap-2 rounded-full border-2 border-stone-900 bg-white px-3 py-1.5 text-xs font-black text-stone-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#F47315]" />
+              MAAMORA
             </span>
-
-            <div className="h-8.5 w-8.5 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-300">
-              SM
-            </div>
           </div>
         </header>
 
         <main className="flex-1 overflow-y-auto px-8 py-8">
 
-          {/* TAB 1: DASHBOARD */}
-          {currentTab === "dashboard" && (
-            <div className="space-y-8 fade-in">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  { label: "Indexed Products", value: String(productCount), desc: "Registered items" },
-                  { label: "Total Generations", value: "24", desc: "Templates compiled" },
-                  { label: "Queued Posts", value: "3", desc: "Approved in timeline" },
-                  { label: "Workspace Members", value: "1 Active", desc: "Team workspace tier" }
-                ].map((stat, i) => (
-                  <div key={i} className="rounded-xl border border-zinc-900 bg-zinc-950 p-5 hover:border-zinc-800 transition-colors">
-                    <span className="text-xs text-zinc-500 font-semibold block">{stat.label}</span>
-                    <span className="text-2xl font-bold font-mono text-zinc-100 block mt-1 tracking-tight">{stat.value}</span>
-                    <span className="text-[10px] text-zinc-400 mt-1 block font-mono">{stat.desc}</span>
-                  </div>
-                ))}
+          {/* Tabs stay mounted once visited (hidden via CSS, not removed from
+              the tree) instead of unmounting on switch. Studio in particular
+              needs this: an in-flight caption/image generation is a plain
+              awaited fetch with no AbortController, so it always completes
+              server-side — but unmounting the component used to throw away
+              the local `post` state that shows the result, making it look
+              like navigating away "stopped" the work. */}
+
+          {/* TAB: DASHBOARD */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={currentTab === "dashboard" ? "space-y-8" : "hidden"}
+          >
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h2 className="text-2xl font-black font-serif text-stone-900">Bienvenue sur Maamora Studio</h2>
+                  <p className="text-stone-400 text-xs font-bold uppercase tracking-wider mt-1">Vue d&apos;ensemble du workspace partagé</p>
+                </div>
+                <Link
+                  href="/?tab=studio"
+                  className="bg-[#F47315] hover:bg-[#ff852e] text-white font-extrabold px-5 py-2.5 rounded-xl border-b-2 border-stone-900 shadow-[3px_3px_0px_0px_rgba(28,25,23,1)] flex items-center gap-2 cursor-pointer select-none text-xs"
+                >
+                  <PenTool className="w-4 h-4" />
+                  Créer un Post
+                </Link>
               </div>
 
-              <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-8">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold tracking-tight text-zinc-300 uppercase font-mono">Recent Creations</h3>
-                    <Link href="/?tab=content-studio" className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1">
-                      New Creative
-                      <ArrowUpRight className="h-3 w-3" />
-                    </Link>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-white border-3 border-stone-900 p-6 rounded-2xl shadow-[5px_5px_0px_0px_rgba(28,25,23,1)] flex items-center justify-between">
+                  <div>
+                    <span className="text-stone-400 text-[10px] font-black uppercase tracking-wider block">PRODUITS REGISTRÉS</span>
+                    <span className="text-3xl font-black text-stone-900 mt-1 block">{productCount}</span>
                   </div>
+                </div>
 
-                  <div className="rounded-xl border border-zinc-900 bg-zinc-950/20 overflow-hidden">
-                    <div className="p-4 border-b border-zinc-900 bg-zinc-950 flex items-center justify-between">
-                      <span className="text-xs font-bold text-zinc-400">Campaign Output</span>
-                      <span className="text-xs text-zinc-500 font-mono">Format</span>
-                    </div>
+                <div className="bg-white border-3 border-stone-900 p-6 rounded-2xl shadow-[5px_5px_0px_0px_rgba(244,115,21,0.9)] flex items-center justify-between">
+                  <div>
+                    <span className="text-[#F47315] text-[10px] font-black uppercase tracking-wider block">EN ATTENTE D&apos;APPROBATION</span>
+                    <span className="text-3xl font-black text-[#F47315] mt-1 block">{pendingCount}</span>
+                  </div>
+                </div>
 
-                    <div className="divide-y divide-zinc-900">
-                      {[
-                        { title: "Classic Running Shoes Promo", date: "2 hours ago", lang: "Darija + French", ratio: "Instagram (1:1)" },
-                        { title: "Yoga Performance Mat Launch", date: "Yesterday", lang: "Moroccan Darija", ratio: "Story (9:16)" },
-                        { title: "Wireless Sport Earbuds Audio", date: "3 days ago", lang: "French", ratio: "WhatsApp Story" },
-                      ].map((item, i) => (
-                        <div key={i} className="p-4 flex items-center justify-between hover:bg-zinc-900/10 transition-colors">
-                          <div className="space-y-1">
-                            <span className="text-xs font-semibold text-zinc-300 block">{item.title}</span>
-                            <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
-                              <span>{item.date}</span>
-                              <span>·</span>
-                              <span>{item.lang}</span>
-                            </div>
-                          </div>
-                          <span className="text-[10px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded font-mono">
-                            {item.ratio}
-                          </span>
+                <div className="bg-white border-3 border-stone-900 p-6 rounded-2xl shadow-[5px_5px_0px_0px_rgba(16,185,129,0.9)] flex items-center justify-between">
+                  <div>
+                    <span className="text-emerald-600 text-[10px] font-black uppercase tracking-wider block">POSTS APPROUVÉS</span>
+                    <span className="text-3xl font-black text-emerald-600 mt-1 block">{approvedPostsCount}</span>
+                  </div>
+                </div>
+
+                <div className="bg-white border-3 border-stone-900 p-6 rounded-2xl shadow-[5px_5px_0px_0px_rgba(28,25,23,0.6)] flex items-center justify-between">
+                  <div>
+                    <span className="text-stone-500 text-[10px] font-black uppercase tracking-wider block">BROUILLONS EN COURS</span>
+                    <span className="text-3xl font-black text-stone-700 mt-1 block">{draftPostsCount}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 bg-white border-3 border-stone-900 rounded-3xl p-6 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+                  <h3 className="font-extrabold text-stone-800 text-lg mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-[#F47315]" />
+                    Répartition des posts par statut
+                  </h3>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={barChartData} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
+                        <XAxis dataKey="name" tick={{ fill: "#78716c", fontSize: 11, fontWeight: "bold" }} />
+                        <YAxis tick={{ fill: "#78716c", fontSize: 11 }} allowDecimals={false} />
+                        <Tooltip contentStyle={{ backgroundColor: "#1c1917", color: "#fff", borderRadius: "12px", border: "none" }} />
+                        <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                          {barChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="bg-white border-3 border-stone-900 rounded-3xl p-6 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)] flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-extrabold text-stone-800 text-lg mb-4">Formats les plus utilisés</h3>
+                    {formatStatsData.length > 0 ? (
+                      <div className="h-44 flex items-center justify-center relative">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie data={formatStatsData} cx="50%" cy="50%" innerRadius={45} outerRadius={65} paddingAngle={5} dataKey="value">
+                              {formatStatsData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                              ))}
+                            </Pie>
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                          <span className="text-xl font-black text-stone-800">{posts.length}</span>
+                          <span className="text-[9px] text-stone-400 font-bold uppercase tracking-wider">Posts Totaux</span>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-stone-400 text-center py-10">Aucun post généré pour l&apos;instant.</p>
+                    )}
                   </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-sm font-bold tracking-tight text-zinc-300 uppercase font-mono">Actions</h3>
-
-                  <div className="rounded-xl border border-zinc-900 bg-zinc-950 p-5 space-y-4">
-                    <p className="text-xs text-zinc-400 leading-relaxed font-sans">
-                      Start generating content instantly. Products indexed here can be formatted into custom creatives matching your brand templates.
-                    </p>
-
-                    <div className="grid grid-cols-1 gap-2">
-                      <Link href="/?tab=content-studio" className="w-full flex items-center justify-between text-xs bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-md py-2.5 px-4 shadow shadow-orange-700/20 text-center">
-                        Launch Content Studio
-                        <Sparkles className="h-3.5 w-3.5" />
-                      </Link>
-
-                      <Link href="/?tab=products" className="w-full text-center text-xs bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-semibold rounded-md py-2.5 px-4 transition-colors block">
-                        Manage Product Catalog
-                      </Link>
-                    </div>
+                  <div className="space-y-1.5 pt-4 border-t border-stone-100">
+                    {formatStatsData.map((entry, index) => (
+                      <div key={entry.name} className="flex justify-between text-xs font-semibold">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }} />
+                          <span className="text-stone-600">{entry.name}</span>
+                        </div>
+                        <span className="text-stone-800 font-bold">{entry.value} posts</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* TAB 2: PRODUCTS */}
-          {currentTab === "products" && (
-            <div className="grid grid-cols-1 gap-8 xl:grid-cols-[380px_1fr] fade-in">
+              <div className="bg-stone-900 text-stone-100 rounded-3xl p-8 border-2 border-stone-900 shadow-[6px_6px_0px_0px_rgba(244,115,21,1)] flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="space-y-2 text-center md:text-left">
+                  <h3 className="text-lg md:text-xl font-black flex items-center justify-center md:justify-start gap-2">
+                    <Languages className="w-5 h-5 text-amber-400" />
+                    Légendes Darija Naturelles
+                  </h3>
+                  <p className="text-stone-400 text-xs font-medium max-w-xl">
+                    Générées avec des expressions culturelles marocaines authentiques, pour des posts qui sonnent vrais.
+                  </p>
+                </div>
+                <Link
+                  href="/?tab=studio"
+                  className="bg-white text-stone-900 hover:bg-stone-100 font-extrabold px-6 py-3 rounded-xl border-b-2 border-stone-950 flex items-center gap-2 cursor-pointer transition-all select-none text-xs"
+                >
+                  Ouvrir l&apos;Atelier
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+          </motion.div>
+
+          {/* TAB: PRODUCTS */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={currentTab === "products" ? "grid grid-cols-1 gap-8 xl:grid-cols-[380px_1fr]" : "hidden"}
+          >
               <div>
                 <ProductForm onCreated={refetchProducts} />
               </div>
 
               <div className="min-w-0">
                 <div className="mb-4 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 font-mono">Product Inventory</span>
-                    <div className="h-px bg-zinc-900 w-16" />
-                  </div>
-                  <span className="text-xs font-mono text-zinc-600">LIMIT: 24 SHOWN</span>
+                  <span className="text-xs font-black uppercase tracking-wider text-stone-500">Catalogue de l&apos;équipe</span>
                 </div>
 
                 {loading ? (
                   <ProductListSkeleton />
                 ) : loadError ? (
-                  <div className="flex h-56 w-full flex-col items-center justify-center gap-3.5 rounded-xl border border-dashed border-zinc-800 bg-zinc-900/5 p-6">
-                    <div className="flex h-10 w-10 rounded-lg bg-zinc-900 border border-zinc-800 items-center justify-center text-zinc-400 text-sm font-mono font-bold">
-                      !
-                    </div>
+                  <div className="flex h-56 w-full flex-col items-center justify-center gap-3.5 rounded-2xl border-2 border-dashed border-stone-300 bg-white p-6">
+                    <div className="flex h-10 w-10 rounded-lg bg-stone-100 border border-stone-300 items-center justify-center text-stone-500 text-sm font-black">!</div>
                     <div className="text-center space-y-1">
-                      <p className="text-sm font-semibold text-zinc-200">Could not reach the backend</p>
-                      <p className="text-xs text-zinc-500 max-w-xs mx-auto">{loadError}</p>
+                      <p className="text-sm font-bold text-stone-800">Impossible de contacter le serveur</p>
+                      <p className="text-xs text-stone-400 max-w-xs mx-auto">{loadError}</p>
                     </div>
                   </div>
                 ) : (
                   <ProductList products={products} />
                 )}
               </div>
-            </div>
-          )}
+          </motion.div>
 
-          {/* TAB 3: BRAND KIT */}
-          {currentTab === "brand-kit" && (
-            <div className="max-w-xl mx-auto space-y-8 fade-in">
-              <div className="rounded-xl border border-zinc-900 bg-zinc-950 p-6 space-y-6">
-                <div>
-                  <h3 className="text-sm font-bold text-zinc-300 uppercase font-mono">Brand Visual Assets</h3>
-                  <p className="text-xs text-zinc-500">Configure visual themes and brand parameters.</p>
-                </div>
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-zinc-400">Current Logo Asset</label>
-                    <div className="flex items-center gap-4">
-                      <div className="h-16 w-44 bg-white rounded-lg border border-zinc-800 p-3.5 flex items-center justify-center overflow-hidden shrink-0">
-                        <img src="/maamora-logo.png" alt="Brand Logo" className="h-full object-contain" />
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-xs font-semibold text-zinc-200 block">maamora-logo.png</span>
-                        <span className="text-[10px] text-zinc-500 font-mono">Transparent background · PNG</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-zinc-400">Linguistic Copywriting Direction</label>
-                    <select className="flex w-full rounded-md border border-zinc-900 bg-zinc-950 px-3.5 py-2.5 text-xs text-zinc-200 focus:outline-none focus:ring-1 focus:ring-orange-500/50">
-                      <option>Casual Moroccan Darija + Professional French (Default)</option>
-                      <option>Formal Standard Arabic Only</option>
-                      <option>Linguistic Hybrid - Bold Local Focus</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-3">
-                    <label className="text-xs font-semibold text-zinc-400 block">Workspace Colors</label>
-                    <div className="flex items-center gap-3">
-                      <div className="flex flex-col items-center gap-1.5">
-                        <div className="h-8 w-8 rounded-full bg-orange-500 border border-orange-600 shadow" />
-                        <span className="text-[10px] font-mono text-zinc-500">Primary</span>
-                      </div>
-                      <div className="flex flex-col items-center gap-1.5">
-                        <div className="h-8 w-8 rounded-full bg-white border border-zinc-300 shadow" />
-                        <span className="text-[10px] font-mono text-zinc-500">Secondary</span>
-                      </div>
-                      <div className="flex flex-col items-center gap-1.5">
-                        <div className="h-8 w-8 rounded-full bg-zinc-950 border border-zinc-900 shadow" />
-                        <span className="text-[10px] font-mono text-zinc-500">Accent</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-zinc-900">
-                    <button className="text-xs bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-6 rounded-md shadow shadow-orange-700/20">
-                      Save Brand Configuration
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: CONTENT STUDIO */}
-          {currentTab === "content-studio" && (
-            <div className="fade-in">
+          {/* TAB: STUDIO */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={currentTab === "studio" ? "" : "hidden"}
+          >
               {products.length > 0 ? (
-                <CreativeStudio products={products} />
+                <CreativeStudio products={products} onPostChange={refetchProducts} />
               ) : (
-                <div className="flex h-64 w-full flex-col items-center justify-center gap-3.5 rounded-xl border border-dashed border-zinc-900 bg-zinc-900/5 p-6">
-                  <div className="h-9 w-9 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+                <div className="flex h-64 w-full flex-col items-center justify-center gap-3.5 rounded-2xl border-2 border-dashed border-stone-300 bg-white p-6">
+                  <div className="h-9 w-9 rounded-lg bg-stone-100 border border-stone-300 flex items-center justify-center text-stone-500">
                     <Sparkles className="h-4 w-4" />
                   </div>
                   <div className="text-center space-y-1">
-                    <p className="text-sm font-semibold text-zinc-200">Catalogue Workspace Empty</p>
-                    <p className="text-xs text-zinc-500 max-w-xs mx-auto">
-                      Please add products via the Catalogue page before using the Creative Content Studio.
+                    <p className="text-sm font-bold text-stone-800">Aucun produit disponible</p>
+                    <p className="text-xs text-stone-400 max-w-xs mx-auto">
+                      Ajoutez un produit dans le Catalogue avant d&apos;utiliser l&apos;Atelier Créatif.
                     </p>
                     <div className="pt-3">
-                      <Link href="/?tab=products" className="text-xs text-orange-400 font-semibold hover:underline">
-                        Add product now &rarr;
+                      <Link href="/?tab=products" className="text-xs text-[#F47315] font-bold hover:underline">
+                        Ajouter un produit &rarr;
                       </Link>
                     </div>
                   </div>
                 </div>
               )}
-            </div>
-          )}
+          </motion.div>
 
-          {/* TAB 5: SCHEDULE */}
-          {currentTab === "schedule" && (
-            <div className="max-w-xl mx-auto space-y-6 fade-in">
-              <div className="rounded-xl border border-zinc-900 bg-zinc-950 p-6 space-y-6">
-                <div>
-                  <h3 className="text-sm font-bold text-zinc-300 uppercase font-mono flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-orange-500" />
-                    Approval Calendar Timeline
-                  </h3>
-                  <p className="text-xs text-zinc-500">Track asset queues. Human approval is required before distribution.</p>
-                </div>
-                <div className="space-y-4">
-                  {[
-                    { title: "Yoga Performance Mat - Promo Launch", platform: "WhatsApp Story", status: "Approved", date: "July 12, 10:00 AM", variant: "bg-emerald-950/10 text-emerald-400 border border-emerald-950/40" },
-                    { title: "Classic Running Shoes - Performance Post", platform: "Instagram Square", status: "Review", date: "July 15, 04:00 PM", variant: "bg-orange-950/10 text-orange-400 border border-orange-950/40" },
-                    { title: "Wireless Sport Earbuds - Audio Deal", platform: "Facebook Post", status: "Draft", date: "July 20, 11:30 AM", variant: "bg-zinc-900 text-zinc-500 border border-zinc-800" },
-                  ].map((item, i) => (
-                    <div key={i} className="p-4 border border-zinc-900 rounded-lg flex items-center justify-between">
-                      <div className="space-y-1">
-                        <span className="text-xs font-semibold text-zinc-200 block">{item.title}</span>
-                        <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
-                          <span>{item.platform}</span>
-                          <span>·</span>
-                          <span>{item.date}</span>
-                        </div>
-                      </div>
-                      <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0 ${item.variant}`}>
-                        {item.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 6: ANALYTICS */}
-          {currentTab === "analytics" && (
-            <div className="space-y-6 fade-in max-w-xl mx-auto">
-              <div className="rounded-xl border border-zinc-900 bg-zinc-950 p-6 space-y-6">
-                <div>
-                  <h3 className="text-sm font-bold text-zinc-300 uppercase font-mono flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-orange-500" />
-                    Marketing Analytics Summary
-                  </h3>
-                  <p className="text-xs text-zinc-500">Track and review package downloads.</p>
-                </div>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 rounded-lg bg-zinc-950 border border-zinc-900">
-                      <span className="text-[10px] text-zinc-500 font-semibold uppercase block leading-none">Total Downloads</span>
-                      <span className="text-2xl font-bold font-mono text-orange-400 block mt-2">142</span>
-                    </div>
-                    <div className="p-4 rounded-lg bg-zinc-950 border border-zinc-900">
-                      <span className="text-[10px] text-zinc-500 font-semibold uppercase block leading-none">Average Copy Rate</span>
-                      <span className="text-2xl font-bold font-mono text-zinc-250 block mt-2">87%</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3.5">
-                    <span className="text-xs font-semibold text-zinc-400 block">Export Format Distribution</span>
-                    {[
-                      { label: "Instagram Square (1:1)", value: 68 },
-                      { label: "Story / Status (9:16)", value: 45 },
-                      { label: "Facebook Post (4:5)", value: 29 },
-                    ].map((row, i) => (
-                      <div key={i} className="space-y-1.5">
-                        <div className="flex justify-between text-[11px] text-zinc-400 font-mono">
-                          <span>{row.label}</span>
-                          <span>{row.value} exports</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-zinc-950 rounded overflow-hidden">
-                          <div className="h-full bg-orange-650 rounded animate-pulse" style={{ width: `${(row.value / 142) * 100}%` }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 7: APPROVALS (admin only) */}
-          {currentTab === "approvals" && isAdminUser && (
-            <div className="max-w-2xl mx-auto space-y-6 fade-in">
+          {/* TAB: ADMIN (approvals, admin only) */}
+          {isAdminUser && (
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={currentTab === "admin" ? "max-w-2xl mx-auto space-y-6" : "hidden"}
+            >
               <ApprovalsQueue onChange={refetchProducts} />
-            </div>
+            </motion.div>
           )}
 
         </main>
 
-        <footer className="border-t border-zinc-900 px-8 py-4 flex items-center justify-between">
-          <p className="text-xs font-mono font-medium text-zinc-500 select-none">
-            MAAMORA PLATFORM ENGINE <span className="mx-1.5 text-zinc-700">·</span> v0.1.0
+        <footer className="border-t-3 border-stone-900 px-8 py-4 flex items-center justify-between bg-white">
+          <p className="text-xs font-black text-stone-400 select-none">
+            MAAMORA STUDIO <span className="mx-1.5 text-stone-300">·</span> v0.2.0
           </p>
-          <p className="text-xs text-zinc-650 font-mono select-none">
+          <p className="text-xs text-stone-300 font-bold select-none">
             NEXT.JS · SPRING BOOT · POSTGRESQL
           </p>
         </footer>

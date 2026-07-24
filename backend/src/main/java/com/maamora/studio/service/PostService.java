@@ -11,6 +11,7 @@ import com.maamora.studio.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -24,6 +25,12 @@ public class PostService {
     private final ImageRenderService imageRenderService;
     private final CaptionGenerationService captionGenerationService;
     private final StorageService storageService;
+
+    /** Every post in the shared workspace — powers the dashboard's real stats. */
+    public List<Post> listForUser(String userId) {
+        BrandSettings brand = brandSettingsService.getForUser(userId);
+        return postRepository.findByProduct_Brand_IdOrderByCreatedAtDesc(brand.getId());
+    }
 
     /** Step 4 of the pipeline: renders the image and creates the Post. */
     public Post generateImage(String userId, GenerateImageRequest request) {
@@ -91,6 +98,13 @@ public class PostService {
     public Post approve(String userId, String postId) {
         Post post = getOwned(userId, postId);
         post.setStatus(PostStatus.APPROVED);
+        return postRepository.save(post);
+    }
+
+    /** Marks a post EXPORTED once its ZIP has actually been downloaded. */
+    public Post markExported(String userId, String postId) {
+        Post post = getOwned(userId, postId);
+        post.setStatus(PostStatus.EXPORTED);
         return postRepository.save(post);
     }
 

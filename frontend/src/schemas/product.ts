@@ -7,6 +7,8 @@ export const ProductSchema = z.object({
     price: z.number().min(0, "Price cannot be negative").optional()
         .or(z.string().transform(val => val ? parseFloat(val) : undefined)),
     imageUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+    imageUrl2: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+    imageUrl3: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
 
 export type ProductInput = z.input<typeof ProductSchema>;

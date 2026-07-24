@@ -13,6 +13,8 @@ export interface Post {
     status: "DRAFT" | "APPROVED" | "EXPORTED";
 }
 
+export const listPosts = () => apiFetch<Post[]>("/api/posts");
+
 export const generateImage = (input: {
     productId: string;
     templateId: string;

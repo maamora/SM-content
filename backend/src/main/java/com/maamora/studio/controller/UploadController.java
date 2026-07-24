@@ -4,6 +4,7 @@ import com.maamora.studio.dto.response.ApiResponse;
 import com.maamora.studio.dto.response.UploadResponse;
 import com.maamora.studio.service.StorageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -33,7 +34,19 @@ public class UploadController {
             return ApiResponse.ok(new UploadResponse(url));
         } catch (IOException e) {
             return ApiResponse.error("Failed to read uploaded file.");
+        } catch (Exception e) {
+            // Catches Cloudinary/storage failures (bad credentials, network
+            // issues, etc.) so the client always gets a JSON error instead of
+            // an unhandled exception that GlobalExceptionHandler would still
+            // wrap, but with a less specific message than we can give here.
+            return ApiResponse.error("Image upload failed: " + e.getMessage());
         }
+    }
+
+    @DeleteMapping("/image")
+    public ApiResponse<Void> deleteImage(@RequestParam("url") String url) {
+        storageService.delete(url);
+        return ApiResponse.ok(null);
     }
 
     private String extensionOf(String filename) {
