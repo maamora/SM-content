@@ -1,39 +1,45 @@
-server:
-  port: 8080
-
 spring:
   application:
-    name: studio-backend
+    name: maamora-studio
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/${DB_NAME:maamora_studio}
-    username: ${DB_USERNAME:maamora}
-    password: ${DB_PASSWORD:maamora}
+    url: jdbc:h2:mem:maamora_studio
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
+    show-sql: true
     properties:
       hibernate:
         format_sql: true
-    show-sql: false
-  servlet:
-    multipart:
-      max-file-size: 15MB
-      max-request-size: 15MB
+        dialect: org.hibernate.dialect.H2Dialect
 
 app:
+  anthropic:
+    api-key: ${ANTHROPIC_API_KEY}
+    model: ${ANTHROPIC_MODEL:claude-3-5-sonnet-20240620}
+    base-url: https://api.anthropic.com/v1/messages
+  
   jwt:
-    secret: ${JWT_SECRET:change-me-to-a-long-random-secret-in-prod}
+    secret: ${JWT_SECRET}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
-  cors:
-    allowed-origins: ${FRONTEND_ORIGIN:http://localhost:3000}
+    
   storage:
     local-path: ${STORAGE_LOCAL_PATH:./uploads}
     public-base-url: ${STORAGE_PUBLIC_BASE_URL:http://localhost:8080/files}
+
   cloudinary:
-    cloud-name: ${CLOUDINARY_CLOUD_NAME:}
-    api-key: ${CLOUDINARY_API_KEY:}
-    api-secret: ${CLOUDINARY_API_SECRET:}
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:placeholder}
+    api-key: ${CLOUDINARY_API_KEY:placeholder}
+    api-secret: ${CLOUDINARY_API_SECRET:placeholder}
+
   gemini:
-    api-key: ${GEMINI_API_KEY:}
-    model: ${GEMINI_MODEL:gemini-flash-latest}
-    base-url: https://generativelanguage.googleapis.com/v1beta
+    api-key: ${GEMINI_API_KEY}
+    model: ${GEMINI_MODEL:gemini-1.5-pro}
+    base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+    
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}

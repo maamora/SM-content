@@ -13,6 +13,8 @@ import { ProductForm } from "@/components/features/products/ProductForm";
 import ProductList from "@/components/features/products/ProductList";
 import ApprovalsQueue from "@/components/features/products/ApprovalsQueue";
 import CreativeStudio from "@/components/features/studio/CreativeStudio";
+import BatchStudio from "@/components/features/studio/BatchStudio";
+import SocialGenerator from "@/components/features/social/SocialGenerator";
 import { listProducts, type Product } from "@/lib/api/products";
 import { listPosts, type Post } from "@/lib/api/posts";
 import { isAdmin } from "@/lib/api/client";
@@ -25,6 +27,7 @@ import {
   TrendingUp,
   Languages,
   ChevronRight,
+  Layers,
 } from "lucide-react";
 
 function ProductListSkeleton() {
@@ -51,6 +54,8 @@ const NAV_ITEMS = [
   { icon: LayoutDashboard, label: "Tableau de bord", tab: "dashboard" },
   { icon: Package, label: "Produits", tab: "products" },
   { icon: Sparkles, label: "Atelier Créatif", tab: "studio" },
+  { icon: Layers, label: "Génération en lot", tab: "batch" },
+  { icon: PenTool, label: "Générateur Social", tab: "social-generator" },
 ];
 
 const ADMIN_NAV_ITEM = { icon: ShieldCheck, label: "Revue Admin", tab: "admin" };
@@ -168,12 +173,16 @@ function DashboardPageInner() {
               {currentTab === "dashboard" && "Console d'activité"}
               {currentTab === "products" && "Catalogue Produits"}
               {currentTab === "studio" && "Atelier de Composition"}
+              {currentTab === "batch" && "Traitement par Lots"}
+              {currentTab === "social-generator" && "Générateur Social"}
               {currentTab === "admin" && "Revue Admin"}
             </h1>
             <p className="text-xs text-stone-400 mt-0.5 font-medium">
               {currentTab === "dashboard" && "Données et statistiques d'automatisation sociale."}
               {currentTab === "products" && "Gérez les fiches produits partagées par toute l'équipe."}
               {currentTab === "studio" && "Composez un visuel, générez les légendes, exportez."}
+              {currentTab === "batch" && "Générez des visuels pour plusieurs produits en un clic."}
+              {currentTab === "social-generator" && "Générez dynamiquement des posts via Gemini sans templates prédéfinis."}
               {currentTab === "admin" && "Approuvez les produits soumis avant qu'ils ne soient utilisables."}
             </p>
           </div>
@@ -202,127 +211,127 @@ function DashboardPageInner() {
             animate={{ opacity: 1, y: 0 }}
             className={currentTab === "dashboard" ? "space-y-8" : "hidden"}
           >
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h2 className="text-2xl font-black font-serif text-stone-900">Bienvenue sur Maamora Studio</h2>
+                <p className="text-stone-400 text-xs font-bold uppercase tracking-wider mt-1">Vue d&apos;ensemble du workspace partagé</p>
+              </div>
+              <Link
+                href="/?tab=studio"
+                className="bg-[#F47315] hover:bg-[#ff852e] text-white font-extrabold px-5 py-2.5 rounded-xl border-b-2 border-stone-900 shadow-[3px_3px_0px_0px_rgba(28,25,23,1)] flex items-center gap-2 cursor-pointer select-none text-xs"
+              >
+                <PenTool className="w-4 h-4" />
+                Créer un Post
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-white border-3 border-stone-900 p-6 rounded-2xl shadow-[5px_5px_0px_0px_rgba(28,25,23,1)] flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-black font-serif text-stone-900">Bienvenue sur Maamora Studio</h2>
-                  <p className="text-stone-400 text-xs font-bold uppercase tracking-wider mt-1">Vue d&apos;ensemble du workspace partagé</p>
-                </div>
-                <Link
-                  href="/?tab=studio"
-                  className="bg-[#F47315] hover:bg-[#ff852e] text-white font-extrabold px-5 py-2.5 rounded-xl border-b-2 border-stone-900 shadow-[3px_3px_0px_0px_rgba(28,25,23,1)] flex items-center gap-2 cursor-pointer select-none text-xs"
-                >
-                  <PenTool className="w-4 h-4" />
-                  Créer un Post
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white border-3 border-stone-900 p-6 rounded-2xl shadow-[5px_5px_0px_0px_rgba(28,25,23,1)] flex items-center justify-between">
-                  <div>
-                    <span className="text-stone-400 text-[10px] font-black uppercase tracking-wider block">PRODUITS REGISTRÉS</span>
-                    <span className="text-3xl font-black text-stone-900 mt-1 block">{productCount}</span>
-                  </div>
-                </div>
-
-                <div className="bg-white border-3 border-stone-900 p-6 rounded-2xl shadow-[5px_5px_0px_0px_rgba(244,115,21,0.9)] flex items-center justify-between">
-                  <div>
-                    <span className="text-[#F47315] text-[10px] font-black uppercase tracking-wider block">EN ATTENTE D&apos;APPROBATION</span>
-                    <span className="text-3xl font-black text-[#F47315] mt-1 block">{pendingCount}</span>
-                  </div>
-                </div>
-
-                <div className="bg-white border-3 border-stone-900 p-6 rounded-2xl shadow-[5px_5px_0px_0px_rgba(16,185,129,0.9)] flex items-center justify-between">
-                  <div>
-                    <span className="text-emerald-600 text-[10px] font-black uppercase tracking-wider block">POSTS APPROUVÉS</span>
-                    <span className="text-3xl font-black text-emerald-600 mt-1 block">{approvedPostsCount}</span>
-                  </div>
-                </div>
-
-                <div className="bg-white border-3 border-stone-900 p-6 rounded-2xl shadow-[5px_5px_0px_0px_rgba(28,25,23,0.6)] flex items-center justify-between">
-                  <div>
-                    <span className="text-stone-500 text-[10px] font-black uppercase tracking-wider block">BROUILLONS EN COURS</span>
-                    <span className="text-3xl font-black text-stone-700 mt-1 block">{draftPostsCount}</span>
-                  </div>
+                  <span className="text-stone-400 text-[10px] font-black uppercase tracking-wider block">PRODUITS REGISTRÉS</span>
+                  <span className="text-3xl font-black text-stone-900 mt-1 block">{productCount}</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-white border-3 border-stone-900 rounded-3xl p-6 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
-                  <h3 className="font-extrabold text-stone-800 text-lg mb-4 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-[#F47315]" />
-                    Répartition des posts par statut
-                  </h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={barChartData} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
-                        <XAxis dataKey="name" tick={{ fill: "#78716c", fontSize: 11, fontWeight: "bold" }} />
-                        <YAxis tick={{ fill: "#78716c", fontSize: 11 }} allowDecimals={false} />
-                        <Tooltip contentStyle={{ backgroundColor: "#1c1917", color: "#fff", borderRadius: "12px", border: "none" }} />
-                        <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                          {barChartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.fill} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+              <div className="bg-white border-3 border-stone-900 p-6 rounded-2xl shadow-[5px_5px_0px_0px_rgba(244,115,21,0.9)] flex items-center justify-between">
+                <div>
+                  <span className="text-[#F47315] text-[10px] font-black uppercase tracking-wider block">EN ATTENTE D&apos;APPROBATION</span>
+                  <span className="text-3xl font-black text-[#F47315] mt-1 block">{pendingCount}</span>
                 </div>
+              </div>
 
-                <div className="bg-white border-3 border-stone-900 rounded-3xl p-6 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)] flex flex-col justify-between">
-                  <div>
-                    <h3 className="font-extrabold text-stone-800 text-lg mb-4">Formats les plus utilisés</h3>
-                    {formatStatsData.length > 0 ? (
-                      <div className="h-44 flex items-center justify-center relative">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie data={formatStatsData} cx="50%" cy="50%" innerRadius={45} outerRadius={65} paddingAngle={5} dataKey="value">
-                              {formatStatsData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                              ))}
-                            </Pie>
-                          </PieChart>
-                        </ResponsiveContainer>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                          <span className="text-xl font-black text-stone-800">{posts.length}</span>
-                          <span className="text-[9px] text-stone-400 font-bold uppercase tracking-wider">Posts Totaux</span>
-                        </div>
+              <div className="bg-white border-3 border-stone-900 p-6 rounded-2xl shadow-[5px_5px_0px_0px_rgba(16,185,129,0.9)] flex items-center justify-between">
+                <div>
+                  <span className="text-emerald-600 text-[10px] font-black uppercase tracking-wider block">POSTS APPROUVÉS</span>
+                  <span className="text-3xl font-black text-emerald-600 mt-1 block">{approvedPostsCount}</span>
+                </div>
+              </div>
+
+              <div className="bg-white border-3 border-stone-900 p-6 rounded-2xl shadow-[5px_5px_0px_0px_rgba(28,25,23,0.6)] flex items-center justify-between">
+                <div>
+                  <span className="text-stone-500 text-[10px] font-black uppercase tracking-wider block">BROUILLONS EN COURS</span>
+                  <span className="text-3xl font-black text-stone-700 mt-1 block">{draftPostsCount}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 bg-white border-3 border-stone-900 rounded-3xl p-6 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
+                <h3 className="font-extrabold text-stone-800 text-lg mb-4 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-[#F47315]" />
+                  Répartition des posts par statut
+                </h3>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={barChartData} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
+                      <XAxis dataKey="name" tick={{ fill: "#78716c", fontSize: 11, fontWeight: "bold" }} />
+                      <YAxis tick={{ fill: "#78716c", fontSize: 11 }} allowDecimals={false} />
+                      <Tooltip contentStyle={{ backgroundColor: "#1c1917", color: "#fff", borderRadius: "12px", border: "none" }} />
+                      <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                        {barChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="bg-white border-3 border-stone-900 rounded-3xl p-6 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)] flex flex-col justify-between">
+                <div>
+                  <h3 className="font-extrabold text-stone-800 text-lg mb-4">Formats les plus utilisés</h3>
+                  {formatStatsData.length > 0 ? (
+                    <div className="h-44 flex items-center justify-center relative">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={formatStatsData} cx="50%" cy="50%" innerRadius={45} outerRadius={65} paddingAngle={5} dataKey="value">
+                            {formatStatsData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                            ))}
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-xl font-black text-stone-800">{posts.length}</span>
+                        <span className="text-[9px] text-stone-400 font-bold uppercase tracking-wider">Posts Totaux</span>
                       </div>
-                    ) : (
-                      <p className="text-xs text-stone-400 text-center py-10">Aucun post généré pour l&apos;instant.</p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5 pt-4 border-t border-stone-100">
-                    {formatStatsData.map((entry, index) => (
-                      <div key={entry.name} className="flex justify-between text-xs font-semibold">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }} />
-                          <span className="text-stone-600">{entry.name}</span>
-                        </div>
-                        <span className="text-stone-800 font-bold">{entry.value} posts</span>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-stone-400 text-center py-10">Aucun post généré pour l&apos;instant.</p>
+                  )}
+                </div>
+                <div className="space-y-1.5 pt-4 border-t border-stone-100">
+                  {formatStatsData.map((entry, index) => (
+                    <div key={entry.name} className="flex justify-between text-xs font-semibold">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }} />
+                        <span className="text-stone-600">{entry.name}</span>
                       </div>
-                    ))}
-                  </div>
+                      <span className="text-stone-800 font-bold">{entry.value} posts</span>
+                    </div>
+                  ))}
                 </div>
               </div>
+            </div>
 
-              <div className="bg-stone-900 text-stone-100 rounded-3xl p-8 border-2 border-stone-900 shadow-[6px_6px_0px_0px_rgba(244,115,21,1)] flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="space-y-2 text-center md:text-left">
-                  <h3 className="text-lg md:text-xl font-black flex items-center justify-center md:justify-start gap-2">
-                    <Languages className="w-5 h-5 text-amber-400" />
-                    Légendes Darija Naturelles
-                  </h3>
-                  <p className="text-stone-400 text-xs font-medium max-w-xl">
-                    Générées avec des expressions culturelles marocaines authentiques, pour des posts qui sonnent vrais.
-                  </p>
-                </div>
-                <Link
-                  href="/?tab=studio"
-                  className="bg-white text-stone-900 hover:bg-stone-100 font-extrabold px-6 py-3 rounded-xl border-b-2 border-stone-950 flex items-center gap-2 cursor-pointer transition-all select-none text-xs"
-                >
-                  Ouvrir l&apos;Atelier
-                  <ChevronRight className="w-4 h-4" />
-                </Link>
+            <div className="bg-stone-900 text-stone-100 rounded-3xl p-8 border-2 border-stone-900 shadow-[6px_6px_0px_0px_rgba(244,115,21,1)] flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="space-y-2 text-center md:text-left">
+                <h3 className="text-lg md:text-xl font-black flex items-center justify-center md:justify-start gap-2">
+                  <Languages className="w-5 h-5 text-amber-400" />
+                  Légendes Darija Naturelles
+                </h3>
+                <p className="text-stone-400 text-xs font-medium max-w-xl">
+                  Générées avec des expressions culturelles marocaines authentiques, pour des posts qui sonnent vrais.
+                </p>
               </div>
+              <Link
+                href="/?tab=studio"
+                className="bg-white text-stone-900 hover:bg-stone-100 font-extrabold px-6 py-3 rounded-xl border-b-2 border-stone-950 flex items-center gap-2 cursor-pointer transition-all select-none text-xs"
+              >
+                Ouvrir l&apos;Atelier
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
           </motion.div>
 
           {/* TAB: PRODUCTS */}
@@ -331,29 +340,29 @@ function DashboardPageInner() {
             animate={{ opacity: 1, y: 0 }}
             className={currentTab === "products" ? "grid grid-cols-1 gap-8 xl:grid-cols-[380px_1fr]" : "hidden"}
           >
-              <div>
-                <ProductForm onCreated={refetchProducts} />
+            <div>
+              <ProductForm onCreated={refetchProducts} />
+            </div>
+
+            <div className="min-w-0">
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-stone-500">Catalogue de l&apos;équipe</span>
               </div>
 
-              <div className="min-w-0">
-                <div className="mb-4 flex items-center justify-between gap-2">
-                  <span className="text-xs font-black uppercase tracking-wider text-stone-500">Catalogue de l&apos;équipe</span>
-                </div>
-
-                {loading ? (
-                  <ProductListSkeleton />
-                ) : loadError ? (
-                  <div className="flex h-56 w-full flex-col items-center justify-center gap-3.5 rounded-2xl border-2 border-dashed border-stone-300 bg-white p-6">
-                    <div className="flex h-10 w-10 rounded-lg bg-stone-100 border border-stone-300 items-center justify-center text-stone-500 text-sm font-black">!</div>
-                    <div className="text-center space-y-1">
-                      <p className="text-sm font-bold text-stone-800">Impossible de contacter le serveur</p>
-                      <p className="text-xs text-stone-400 max-w-xs mx-auto">{loadError}</p>
-                    </div>
+              {loading ? (
+                <ProductListSkeleton />
+              ) : loadError ? (
+                <div className="flex h-56 w-full flex-col items-center justify-center gap-3.5 rounded-2xl border-2 border-dashed border-stone-300 bg-white p-6">
+                  <div className="flex h-10 w-10 rounded-lg bg-stone-100 border border-stone-300 items-center justify-center text-stone-500 text-sm font-black">!</div>
+                  <div className="text-center space-y-1">
+                    <p className="text-sm font-bold text-stone-800">Impossible de contacter le serveur</p>
+                    <p className="text-xs text-stone-400 max-w-xs mx-auto">{loadError}</p>
                   </div>
-                ) : (
-                  <ProductList products={products} />
-                )}
-              </div>
+                </div>
+              ) : (
+                <ProductList products={products} />
+              )}
+            </div>
           </motion.div>
 
           {/* TAB: STUDIO */}
@@ -362,26 +371,44 @@ function DashboardPageInner() {
             animate={{ opacity: 1, y: 0 }}
             className={currentTab === "studio" ? "" : "hidden"}
           >
-              {products.length > 0 ? (
-                <CreativeStudio products={products} onPostChange={refetchProducts} />
-              ) : (
-                <div className="flex h-64 w-full flex-col items-center justify-center gap-3.5 rounded-2xl border-2 border-dashed border-stone-300 bg-white p-6">
-                  <div className="h-9 w-9 rounded-lg bg-stone-100 border border-stone-300 flex items-center justify-center text-stone-500">
-                    <Sparkles className="h-4 w-4" />
-                  </div>
-                  <div className="text-center space-y-1">
-                    <p className="text-sm font-bold text-stone-800">Aucun produit disponible</p>
-                    <p className="text-xs text-stone-400 max-w-xs mx-auto">
-                      Ajoutez un produit dans le Catalogue avant d&apos;utiliser l&apos;Atelier Créatif.
-                    </p>
-                    <div className="pt-3">
-                      <Link href="/?tab=products" className="text-xs text-[#F47315] font-bold hover:underline">
-                        Ajouter un produit &rarr;
-                      </Link>
-                    </div>
+            {products.length > 0 ? (
+              <CreativeStudio products={products} onPostChange={refetchProducts} />
+            ) : (
+              <div className="flex h-64 w-full flex-col items-center justify-center gap-3.5 rounded-2xl border-2 border-dashed border-stone-300 bg-white p-6">
+                <div className="h-9 w-9 rounded-lg bg-stone-100 border border-stone-300 flex items-center justify-center text-stone-500">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-bold text-stone-800">Aucun produit disponible</p>
+                  <p className="text-xs text-stone-400 max-w-xs mx-auto">
+                    Ajoutez un produit dans le Catalogue avant d&apos;utiliser l&apos;Atelier Créatif.
+                  </p>
+                  <div className="pt-3">
+                    <Link href="/?tab=products" className="text-xs text-[#F47315] font-bold hover:underline">
+                      Ajouter un produit &rarr;
+                    </Link>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
+          </motion.div>
+
+          {/* TAB: BATCH */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={currentTab === "batch" ? "" : "hidden"}
+          >
+            <BatchStudio products={products} onBatchChange={refetchProducts} />
+          </motion.div>
+
+          {/* TAB: SOCIAL GENERATOR */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={currentTab === "social-generator" ? "" : "hidden"}
+          >
+            <SocialGenerator />
           </motion.div>
 
           {/* TAB: ADMIN (approvals, admin only) */}

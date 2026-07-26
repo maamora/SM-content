@@ -25,6 +25,41 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
   const [exporting, setExporting] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // Dynamic AI Image logic using Gemini API via server endpoint
+  const [aiImageUrl, setAiImageUrl] = useState<string>("");
+  const [imageLoading, setImageLoading] = useState<boolean>(false);
+  const [imageError, setImageError] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Generate a fresh AI image whenever the product changes
+    const generateImage = async () => {
+      setImageLoading(true);
+      setImageError(false);
+      setAiImageUrl("");
+      try {
+        const res = await fetch("/api/generate-product-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: product.name, sellingPoint: product.sellingPoint }),
+        });
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+        const data = await res.json();
+        if (data.imageUrl) {
+          setAiImageUrl(data.imageUrl);
+        } else {
+          throw new Error("No image URL returned");
+        }
+      } catch (err) {
+        console.error("AI image generation failed:", err);
+        setImageError(true);
+      } finally {
+        setImageLoading(false);
+      }
+    };
+
+    generateImage();
+  }, [product.name, product.sellingPoint]);
+
   // Sizing definitions for different social formats in UI
   const formatAspectRatios = {
     square: "aspect-square w-full max-w-[420px]",
@@ -140,89 +175,50 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     ctx.fillStyle = textThemeColor;
     ctx.font = "bold 64px 'Playfair Display', Georgia, serif";
     ctx.fillText(product.name, width / 2, height * 0.32);
-    
+
     ctx.fillStyle = isDark ? "#94A3B8" : "#57534E";
     ctx.font = "italic 32px 'Inter', sans-serif";
     ctx.fillText(product.sellingPoint, width / 2, height * 0.36);
     ctx.restore();
 
-    // 6. Draw 3D-styled Bottle representation (We draw a gorgeous luxury cosmetic bottle mockup in high-res)
-    const centerX = width / 2;
-    const centerY = height * 0.60;
-    const bottleW = width * 0.32;
-    const bottleH = height * 0.32;
+    // 6. Draw AI-Generated Product Image (Loaded dynamically)
+    if (aiImageUrl) {
+      try {
+        const img = new Image();
+        // No crossOrigin needed — aiImageUrl is a base64 data URL from our own server
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = aiImageUrl;
+        });
 
-    ctx.save();
-    // Drop shadow
-    ctx.beginPath();
-    ctx.ellipse(centerX, centerY + bottleH / 2, bottleW * 0.6, 25, 0, 0, 2 * Math.PI);
-    ctx.fillStyle = "rgba(0,0,0,0.12)";
-    ctx.fill();
+        ctx.save();
+        // Create a rounded rect clipping mask for the image
+        ctx.beginPath();
+        const imgW = width * 0.7;
+        const imgH = height * 0.45;
+        const imgX = (width - imgW) / 2;
+        const imgY = height * 0.4;
 
-    // Draw luxury glass container body based on preset product
-    let mainColor = "#B45309"; // Argan oil amber
-    let capColor = "#EAB308";  // Gold cap
-    let hasLabel = true;
-    let labelTitle = product.name;
-    let labelSub = "PURE NATURE";
+        ctx.roundRect(imgX, imgY, imgW, imgH, 30);
+        ctx.clip();
 
-    if (product.photo === "honey-jar") {
-      mainColor = "#F59E0B"; // Honey golden amber
-      capColor = "#1E293B";  // Slate Cap
-    } else if (product.photo === "rose-serum") {
-      mainColor = "#FDA4AF"; // Rose pink
-      capColor = "#E2E8F0";  // Frosted dropper
-    } else if (product.photo === "savon-jar") {
-      mainColor = "#1E293B"; // Dark soap charcoal
-      capColor = "#F47315";  // Orange trim lid
-    } else if (product.photo === "figue-dropper") {
-      mainColor = "#064E3B"; // Deep forest emerald green
-      capColor = "#F59E0B";  // Luxury gold
+        // Draw the image
+        ctx.drawImage(img, imgX, imgY, imgW, imgH);
+        ctx.restore();
+
+        // Add a subtle inner shadow/border to the image
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(imgX, imgY, imgW, imgH, 30);
+        ctx.strokeStyle = "rgba(0,0,0,0.1)";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.restore();
+      } catch (e) {
+        console.error("Failed to load AI image for canvas export:", e);
+      }
     }
-
-    // Draw simple luxury mockup
-    // Neck
-    ctx.fillStyle = capColor;
-    ctx.fillRect(centerX - bottleW * 0.2, centerY - bottleH * 0.52, bottleW * 0.4, bottleH * 0.08);
-    // Cap top
-    ctx.fillRect(centerX - bottleW * 0.25, centerY - bottleH * 0.6, bottleW * 0.5, bottleH * 0.08);
-
-    // Bottle Glass body
-    ctx.fillStyle = mainColor;
-    ctx.beginPath();
-    ctx.roundRect(centerX - bottleW / 2, centerY - bottleH / 2, bottleW, bottleH, [40, 40, 20, 20]);
-    ctx.fill();
-
-    // Inner glow / glass reflection line
-    const glassRef = ctx.createLinearGradient(centerX - bottleW / 2, 0, centerX - bottleW * 0.3, 0);
-    glassRef.addColorStop(0, "rgba(255,255,255,0.4)");
-    glassRef.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = glassRef;
-    ctx.beginPath();
-    ctx.roundRect(centerX - bottleW * 0.45, centerY - bottleH * 0.45, bottleW * 0.15, bottleH * 0.9, [30, 0, 0, 15]);
-    ctx.fill();
-
-    // Golden/light label
-    if (hasLabel) {
-      ctx.fillStyle = "#FCFAF7";
-      ctx.strokeStyle = "rgba(0,0,0,0.1)";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.roundRect(centerX - bottleW * 0.4, centerY - bottleH * 0.15, bottleW * 0.8, bottleH * 0.4, 10);
-      ctx.fill();
-      ctx.stroke();
-
-      // Label Text
-      ctx.fillStyle = "#1C1917";
-      ctx.font = "bold 28px 'Inter', sans-serif";
-      ctx.fillText("MAAMORA", centerX, centerY - bottleH * 0.02);
-      ctx.font = "italic 20px 'Inter', sans-serif";
-      ctx.fillText(labelTitle.split(' ')[0], centerX, centerY + bottleH * 0.1);
-      ctx.fillStyle = "#F47315";
-      ctx.font = "bold 16px 'Inter', sans-serif";
-      ctx.fillText("MAROC • 100% BIO", centerX, centerY + bottleH * 0.2);
-    }
-    ctx.restore();
 
     // 7. Draw Price Stamp / Badge
     ctx.save();
@@ -330,7 +326,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
         <div className="relative flex flex-col items-center justify-center my-auto py-4 z-10">
           {/* Subtle reflection backing */}
           <div className="absolute w-40 h-40 bg-white/20 rounded-full blur-2xl pointer-events-none" />
-          
+
           <div className="text-center mb-3">
             <h3 className={`text-lg font-bold font-serif leading-tight ${template.textColor}`}>
               {product.name}
@@ -340,34 +336,41 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
             </p>
           </div>
 
-          {/* 3D Bottle rendered dynamically */}
-          <div className="relative transform scale-110 drop-shadow-xl">
-            {/* Standard 3D model with custom styles based on selection */}
-            <div className="w-32 h-40 flex items-center justify-center">
-              {/* Bottle Render */}
-              <div className="relative w-20 h-28 rounded-t-2xl rounded-b-xl bg-gradient-to-r from-amber-600 to-amber-800 shadow-lg flex flex-col items-center justify-center">
-                {/* Simulated fluid */}
-                <div className="absolute inset-x-0 bottom-0 top-6 rounded-b-xl bg-gradient-to-r from-amber-500 to-amber-700 shadow-inner flex items-center justify-center">
-                  <div className="bg-white/90 px-1 py-0.5 rounded text-[5px] font-bold text-stone-800 border shadow-sm">
-                    MAAMORA
-                  </div>
+          {/* AI Generated Image */}
+          <div className="relative mt-2 drop-shadow-xl z-20 w-48 h-48 sm:w-56 sm:h-56">
+            <div className="w-full h-full rounded-2xl overflow-hidden border-4 border-white shadow-lg bg-stone-100 flex items-center justify-center relative">
+              {imageLoading ? (
+                <div className="flex flex-col items-center gap-2 p-4">
+                  <RefreshCw className="w-6 h-6 animate-spin text-[#F47315]" />
+                  <span className="text-[8px] text-stone-400 font-medium text-center">Génération IA...</span>
                 </div>
-                {/* Cap */}
-                <div className="absolute -top-3 w-8 h-4 rounded bg-[#EAB308] border border-amber-500" />
-              </div>
+              ) : imageError ? (
+                <div className="flex flex-col items-center gap-1 p-3">
+                  <span className="text-xl">🌿</span>
+                  <span className="text-[8px] text-stone-400 text-center font-medium">{product.name}</span>
+                </div>
+              ) : aiImageUrl ? (
+                <img
+                  src={aiImageUrl}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <RefreshCw className="w-6 h-6 animate-spin text-stone-400" />
+              )}
+            </div>
+
+            {/* Interactive Floating Price Badge stamp over image */}
+            <div className="absolute -bottom-4 -right-4 z-30">
+              <motion.div
+                whileHover={{ scale: 1.1, rotate: 3 }}
+                className={`flex flex-col items-center justify-center rounded-full border-2 border-stone-900 shadow-md ${badgeStyle === 'badge-3d' ? 'w-16 h-16 sm:w-20 sm:h-20 bg-[#F47315] text-white shadow-[3px_3px_0px_0px_rgba(28,25,23,1)]' : 'w-14 h-14 sm:w-16 sm:h-16 bg-white text-stone-900'}`}
+              >
+                <span className="text-[10px] sm:text-xs font-black leading-none">{product.price} DH</span>
+                <span className="text-[5px] sm:text-[6px] font-bold uppercase tracking-wider mt-0.5">BIO NATURAL</span>
+              </motion.div>
             </div>
           </div>
-        </div>
-
-        {/* Interactive Floating Price Badge stamp */}
-        <div className="absolute bottom-16 right-6 z-20">
-          <motion.div
-            whileHover={{ scale: 1.1, rotate: 3 }}
-            className={`flex flex-col items-center justify-center rounded-full border-2 border-stone-900 shadow-md ${badgeStyle === 'badge-3d' ? 'w-20 h-20 bg-[#F47315] text-white shadow-[3px_3px_0px_0px_rgba(28,25,23,1)]' : 'w-16 h-16 bg-white text-stone-900'}`}
-          >
-            <span className="text-xs font-black leading-none">{product.price} DH</span>
-            <span className="text-[6px] font-bold uppercase tracking-wider mt-0.5">BIO NATURAL</span>
-          </motion.div>
         </div>
 
         {/* Bottom footer bar */}

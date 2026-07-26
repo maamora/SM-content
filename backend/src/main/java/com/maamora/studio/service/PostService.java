@@ -37,7 +37,9 @@ public class PostService {
         return generateImage(userId, request, null);
     }
 
-    /** Same as above, but attaches the Post to a BatchJob (used by BatchJobService). */
+    /**
+     * Same as above, but attaches the Post to a BatchJob (used by BatchJobService).
+     */
     public Post generateImage(String userId, GenerateImageRequest request, BatchJob batchJob) {
         Product product = productService.getOwned(userId, request.getProductId());
         if (product.getStatus() != ProductStatus.APPROVED) {
@@ -71,7 +73,7 @@ public class PostService {
         BrandSettings brand = brandSettingsService.getForUser(userId);
 
         for (String lang : request.getLanguages()) {
-            String caption = captionGenerationService.generateCaption(post.getProduct(), brand, lang);
+            String caption = captionGenerationService.generateCaption(post, brand, lang);
             switch (lang) {
                 case "en" -> post.setCaptionEn(caption);
                 case "ar" -> post.setCaptionAr(caption);
@@ -108,7 +110,10 @@ public class PostService {
         return postRepository.save(post);
     }
 
-    /** Loads a Post and verifies it belongs to the authenticated user's brand (IDOR guard). */
+    /**
+     * Loads a Post and verifies it belongs to the authenticated user's brand (IDOR
+     * guard).
+     */
     public Post getOwned(String userId, String postId) {
         BrandSettings brand = brandSettingsService.getForUser(userId);
         return postRepository.findByIdAndProduct_Brand_Id(postId, brand.getId())
