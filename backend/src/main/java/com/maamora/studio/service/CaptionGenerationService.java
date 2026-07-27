@@ -5,8 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.maamora.studio.model.BrandSettings;
 import com.maamora.studio.model.Post;
 import com.maamora.studio.model.Product;
-import com.maamora.studio.exception.CaptionGenerationException;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -15,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@Slf4j
 public class CaptionGenerationService {
 
     @Value("${app.gemini.api-key}")
