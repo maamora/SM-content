@@ -21,6 +21,7 @@ export const generateImage = (input: {
     badgeText?: string;
     promoText?: string;
     accentColor?: string;
+    mood?: string;
 }) => apiFetch<Post>("/api/posts/generate-image", { method: "POST", body: JSON.stringify(input) });
 
 export const generateCaptions = (postId: string, languages: string[] = ["fr", "ar", "darija", "en"]) =>

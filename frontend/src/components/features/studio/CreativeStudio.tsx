@@ -172,6 +172,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                 badgeText,
                 promoText,
                 accentColor,
+                mood: mood.id,
             });
             setPost(result);
             onPostChange?.();

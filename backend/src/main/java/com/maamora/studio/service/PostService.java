@@ -48,7 +48,8 @@ public class PostService {
         Template template = templateService.getById(request.getTemplateId());
 
         byte[] png = imageRenderService.renderToPng(
-                template, product, request.getBadgeText(), request.getPromoText(), request.getAccentColor());
+                template, product, request.getBadgeText(), request.getPromoText(),
+                request.getAccentColor(), request.getMood());
 
         String path = "posts/" + UUID.randomUUID() + ".png";
         String imageUrl = storageService.upload(png, path, "image/png");
