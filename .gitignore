@@ -1,0 +1,31 @@
+# ── Secrets (NEVER commit these) ──────────────────────────────────────────────
+backend/.env
+frontend/.env
+frontend/.env.local
+
+# ── Java / Maven ───────────────────────────────────────────────────────────────
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+*.war
+
+# ── Node / Next.js ─────────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# ── IDEs ───────────────────────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+*.suo
+*.user
+
+# ── OS ─────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Uploads (local disk storage) ───────────────────────────────────────────────
+backend/uploads/
+backend/data/
