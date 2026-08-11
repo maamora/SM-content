@@ -29,3 +29,4 @@ Thumbs.db
 # ── Uploads (local disk storage) ───────────────────────────────────────────────
 backend/uploads/
 backend/data/
+frontend/tsconfig.tsbuildinfo
