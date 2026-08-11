@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+/* ── Design tokens ───────────────────────────────────────────────── */
+:root {
+  --background: #09090b;
+  /* zinc-950 */
+  --foreground: #fafafa;
+  /* zinc-50  */
+  --accent: #f97316;
+  /* orange-500 */
+  --accent-dim: #ea580c;
+  /* orange-600 */
+  --surface: #18181b;
+  /* zinc-900 */
+  --border: #27272a;
+  /* zinc-800 */
+  --muted: #71717a;
+  /* zinc-500 */
+}
+
+/* ── Base ────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ── Scrollbar (Webkit) ──────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* ── Selection ───────────────────────────────────────────────────── */
+::selection {
+  background: rgba(244, 115, 21, 0.3);
+  color: #1c1917;
+}
+
+/* ── Focus ring ──────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #f47315;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Gradient text utility ───────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 50%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Fade-in animation ───────────────────────────────────────────── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease both;
+}

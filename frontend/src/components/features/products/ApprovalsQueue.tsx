@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { listPendingProducts, approveProduct, rejectProduct, type Product } from "@/lib/api/products";
 import { Check, X, ShieldCheck, Loader2 } from "lucide-react";
 
@@ -10,6 +11,7 @@ interface ApprovalsQueueProps {
 }
 
 export default function ApprovalsQueue({ onChange }: ApprovalsQueueProps) {
+    const router = useRouter();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -81,7 +83,8 @@ export default function ApprovalsQueue({ onChange }: ApprovalsQueueProps) {
             {products.map((product) => (
                 <div
                     key={product.id}
-                    className="flex items-center justify-between gap-4 p-4 rounded-2xl border-3 border-stone-900 bg-white shadow-[4px_4px_0px_0px_rgba(28,25,23,1)]"
+                    onClick={() => router.push(`/products/${product.id}`)}
+                    className="flex items-center justify-between gap-4 p-4 rounded-2xl border-3 border-stone-900 bg-white shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] cursor-pointer hover:bg-stone-50 transition-colors"
                 >
                     <div className="flex items-center gap-3 min-w-0">
                         <div className="relative h-14 w-14 shrink-0 rounded-xl overflow-hidden border-2 border-stone-900 bg-stone-100">
@@ -107,7 +110,10 @@ export default function ApprovalsQueue({ onChange }: ApprovalsQueueProps) {
 
                     <div className="flex items-center gap-2 shrink-0">
                         <button
-                            onClick={() => handleReject(product.id)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleReject(product.id);
+                            }}
                             disabled={busyId === product.id}
                             className="h-9 px-3 rounded-xl border-2 border-stone-900 bg-white text-stone-500 text-xs font-extrabold hover:bg-red-50 hover:text-red-600 hover:border-red-500 flex items-center gap-1.5 disabled:opacity-50 transition-colors"
                         >
@@ -115,7 +121,10 @@ export default function ApprovalsQueue({ onChange }: ApprovalsQueueProps) {
                             Rejeter
                         </button>
                         <button
-                            onClick={() => handleApprove(product.id)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleApprove(product.id);
+                            }}
                             disabled={busyId === product.id}
                             className="h-9 px-4 rounded-xl bg-[#F47315] hover:bg-[#ff852e] text-white text-xs font-extrabold flex items-center gap-1.5 disabled:opacity-50 border-b-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] transition-all"
                         >

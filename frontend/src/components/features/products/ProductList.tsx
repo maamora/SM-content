@@ -1,10 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
-import { PackageSearch } from "lucide-react";
-import type { Product } from "@/lib/api/products";
+import { useState } from "react";
+import { PackageSearch, Trash2, Loader2 } from "lucide-react";
+import { deleteProduct, type Product } from "@/lib/api/products";
+import { getUserId, isAdmin } from "@/lib/api/client";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface ProductListProps {
     products: Product[];
+    /** Called after a successful delete so the parent can refetch the list. */
+    onProductDeleted?: () => void;
 }
 
 const STATUS_STYLES: Record<Product["status"], string> = {
@@ -19,7 +24,33 @@ const STATUS_LABELS: Record<Product["status"], string> = {
     REJECTED: "Rejeté",
 };
 
-export default function ProductList({ products }: ProductListProps) {
+export default function ProductList({ products, onProductDeleted }: ProductListProps) {
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [confirmTarget, setConfirmTarget] = useState<Product | null>(null);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
+
+    const requestDelete = (e: React.MouseEvent, product: Product) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDeleteError(null);
+        setConfirmTarget(product);
+    };
+
+    const confirmDelete = async () => {
+        if (!confirmTarget) return;
+        const product = confirmTarget;
+        setDeletingId(product.id);
+        try {
+            await deleteProduct(product.id);
+            setConfirmTarget(null);
+            onProductDeleted?.();
+        } catch (err) {
+            setDeleteError(err instanceof Error ? err.message : "Échec de la suppression du produit");
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
     if (products.length === 0) {
         return (
             <div className="flex h-56 w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-stone-300 bg-white">
@@ -35,8 +66,14 @@ export default function ProductList({ products }: ProductListProps) {
     }
 
     return (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {products.map((product) => (
+        <>
+            {deleteError && (
+                <div className="mb-4 rounded-xl border-2 border-red-500 bg-red-50 px-4 py-2.5 text-xs font-bold text-red-700">
+                    {deleteError}
+                </div>
+            )}
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {products.map((product) => (
                 <Link
                     key={product.id}
                     href={`/products/${product.id}`}
@@ -46,6 +83,21 @@ export default function ProductList({ products }: ProductListProps) {
                         <span className={`absolute top-2 right-2 z-10 text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-lg ${STATUS_STYLES[product.status]}`}>
                             {STATUS_LABELS[product.status]}
                         </span>
+                        {(isAdmin() || product.createdById === getUserId()) && (
+                            <button
+                                type="button"
+                                onClick={(e) => requestDelete(e, product)}
+                                disabled={deletingId === product.id}
+                                aria-label={`Supprimer ${product.name}`}
+                                className="absolute top-2 left-2 z-10 h-7 w-7 rounded-lg bg-white/90 backdrop-blur-sm border-2 border-stone-900 text-red-600 flex items-center justify-center hover:bg-red-50 transition-colors disabled:opacity-50"
+                            >
+                                {deletingId === product.id ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                )}
+                            </button>
+                        )}
                         {product.imageUrl ? (
                             <Image
                                 src={product.imageUrl}
@@ -79,7 +131,17 @@ export default function ProductList({ products }: ProductListProps) {
                         )}
                     </div>
                 </Link>
-            ))}
-        </div>
+                ))}
+            </div>
+
+            <ConfirmDialog
+                open={!!confirmTarget}
+                title="Supprimer ce produit ?"
+                message={confirmTarget ? `Supprimer définitivement "${confirmTarget.name}" ? Cette action est irréversible.` : ""}
+                loading={!!confirmTarget && deletingId === confirmTarget.id}
+                onConfirm={confirmDelete}
+                onCancel={() => setConfirmTarget(null)}
+            />
+        </>
     );
 }

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -41,19 +42,19 @@ public class ExportService {
                 }
 
                 zip.putNextEntry(new ZipEntry(folder + "caption-en.txt"));
-                zip.write(orEmpty(post.getCaptionEn()).getBytes());
+                zip.write(orEmpty(post.getCaptionEn()).getBytes(StandardCharsets.UTF_8));
                 zip.closeEntry();
 
                 zip.putNextEntry(new ZipEntry(folder + "caption-fr.txt"));
-                zip.write(orEmpty(post.getCaptionFr()).getBytes());
+                zip.write(orEmpty(post.getCaptionFr()).getBytes(StandardCharsets.UTF_8));
                 zip.closeEntry();
 
                 zip.putNextEntry(new ZipEntry(folder + "caption-ar.txt"));
-                zip.write(orEmpty(post.getCaptionAr()).getBytes());
+                zip.write(orEmpty(post.getCaptionAr()).getBytes(StandardCharsets.UTF_8));
                 zip.closeEntry();
 
                 zip.putNextEntry(new ZipEntry(folder + "caption-darija.txt"));
-                zip.write(orEmpty(post.getCaptionDarija()).getBytes());
+                zip.write(orEmpty(post.getCaptionDarija()).getBytes(StandardCharsets.UTF_8));
                 zip.closeEntry();
             }
         } catch (Exception e) {

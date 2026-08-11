@@ -11,9 +11,14 @@ export interface Post {
     captionAr: string | null;
     captionDarija: string | null;
     status: "DRAFT" | "APPROVED" | "EXPORTED";
+    productName: string;
+    createdAt: string | null;
 }
 
 export const listPosts = () => apiFetch<Post[]>("/api/posts");
+
+export const deletePost = (id: string) =>
+    apiFetch<void>(`/api/posts/${id}`, { method: "DELETE" });
 
 export const generateImage = (input: {
     productId: string;
@@ -21,6 +26,7 @@ export const generateImage = (input: {
     badgeText?: string;
     promoText?: string;
     accentColor?: string;
+    mood?: string;
 }) => apiFetch<Post>("/api/posts/generate-image", { method: "POST", body: JSON.stringify(input) });
 
 export const generateCaptions = (postId: string, languages: string[] = ["fr", "ar", "darija", "en"]) =>

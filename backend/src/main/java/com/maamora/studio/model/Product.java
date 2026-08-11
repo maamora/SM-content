@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "product")
@@ -54,6 +56,17 @@ public class Product {
     private Instant createdAt;
 
     private Instant updatedAt;
+
+    /**
+     * Deleting a product with existing generated posts used to fail outright
+     * (FK constraint violation on post.product_id) since nothing told
+     * Hibernate to clean up the posts first. Cascading here makes "delete
+     * product" also remove whatever was generated for it, same pattern
+     * BrandSettings already uses for its products/templates.
+     */
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Post> posts = new ArrayList<>();
 
     @PrePersist
     void onCreate() {

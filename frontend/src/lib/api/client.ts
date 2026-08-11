@@ -120,6 +120,19 @@ export async function apiFetch<T>(
         return (await res.blob()) as unknown as T;
     }
 
+    // Only treat 401/403 as "session expired" when we actually had a token —
+    // meaning we were authenticated but the backend rejected it (restart wiped
+    // the H2 DB, token expired, etc.).  If there's no token (e.g. a /login
+    // request that returned 401 for wrong credentials) we fall through to the
+    // normal JSON envelope handler so the real error message is shown.
+    if ((res.status === 401 || res.status === 403) && token) {
+        clearToken();
+        if (typeof window !== "undefined") {
+            window.location.href = "/login";
+        }
+        throw new Error("Session expired. Please log in again.");
+    }
+
     const body = await parseEnvelope<T>(res);
 
     if (!res.ok || !body.success) {

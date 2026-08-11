@@ -15,6 +15,8 @@ public class PostResponse {
     private final String captionAr;
     private final String captionDarija;
     private final String status;
+    private final String productName;
+    private final String createdAt;
 
     public PostResponse(Post post) {
         this.id = post.getId();
@@ -27,5 +29,7 @@ public class PostResponse {
         this.captionAr = post.getCaptionAr();
         this.captionDarija = post.getCaptionDarija();
         this.status = post.getStatus().name();
+        this.productName = post.getProduct().getName();
+        this.createdAt = post.getCreatedAt() != null ? post.getCreatedAt().toString() : null;
     }
 }

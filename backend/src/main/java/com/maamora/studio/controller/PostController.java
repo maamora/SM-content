@@ -56,6 +56,12 @@ public class PostController {
         return ApiResponse.ok(new PostResponse(post));
     }
 
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> delete(@PathVariable String id) {
+        postService.delete(currentUser.getCurrentUserId(), id);
+        return ApiResponse.ok(null);
+    }
+
     @GetMapping("/{id}/export")
     public ResponseEntity<byte[]> exportOne(@PathVariable String id) {
         var post = postService.getOwned(currentUser.getCurrentUserId(), id);

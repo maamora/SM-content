@@ -4,11 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Pencil, Loader2, PackageSearch, User as UserIcon } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Loader2, PackageSearch, User as UserIcon } from "lucide-react";
 import { RequireAuth } from "@/components/features/auth/RequireAuth";
 import { ProductForm } from "@/components/features/products/ProductForm";
-import { getProduct, type Product } from "@/lib/api/products";
+import { getProduct, deleteProduct, type Product } from "@/lib/api/products";
 import { getUserId, isAdmin } from "@/lib/api/client";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 const STATUS_STYLES: Record<Product["status"], string> = {
     PENDING: "bg-amber-50 text-amber-700 border-2 border-amber-500",
@@ -30,6 +31,9 @@ function ProductDetailInner() {
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [activeImage, setActiveImage] = useState(0);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [confirmOpen, setConfirmOpen] = useState(false);
 
     const refetch = useCallback(() => {
         setLoading(true);
@@ -47,6 +51,20 @@ function ProductDetailInner() {
 
     const images = product ? [product.imageUrl, product.imageUrl2, product.imageUrl3].filter((u): u is string => !!u) : [];
     const canEdit = !!product && (isAdmin() || product.createdById === getUserId());
+
+    const handleDelete = async () => {
+        if (!product) return;
+        setDeleteError(null);
+        setIsDeleting(true);
+        try {
+            await deleteProduct(product.id);
+            router.push("/?tab=products");
+        } catch (err) {
+            setDeleteError(err instanceof Error ? err.message : "Échec de la suppression du produit");
+            setIsDeleting(false);
+            setConfirmOpen(false);
+        }
+    };
 
     // Auto-cycle through multiple photos: fade the current one out while the
     // next fades in, looping continuously. Restarts from image 0 whenever the
@@ -86,11 +104,11 @@ function ProductDetailInner() {
         <div className="min-h-screen bg-[#FDFBF7] px-4 py-10">
             <div className="mx-auto max-w-4xl">
                 <button
-                    onClick={() => router.push("/?tab=products")}
+                    onClick={() => router.back()}
                     className="mb-6 inline-flex items-center gap-1.5 text-xs font-extrabold text-stone-500 hover:text-stone-900 transition-colors"
                 >
                     <ArrowLeft className="h-3.5 w-3.5" />
-                    Retour au catalogue
+                    Retour
                 </button>
 
                 {isEditing ? (
@@ -155,16 +173,35 @@ function ProductDetailInner() {
                                     <h1 className="text-2xl font-black text-stone-900 font-serif tracking-tight">{product.name}</h1>
                                 </div>
                                 {canEdit && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsEditing(true)}
-                                        className="shrink-0 inline-flex items-center gap-1.5 rounded-xl text-xs font-extrabold h-9 px-4 bg-stone-900 text-white border-2 border-stone-900 shadow-[3px_3px_0px_0px_rgba(244,115,21,1)] hover:bg-stone-800 transition-colors"
-                                    >
-                                        <Pencil className="h-3.5 w-3.5 text-white" />
-                                        <span className="text-white">Éditer</span>
-                                    </button>
+                                    <div className="flex shrink-0 items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsEditing(true)}
+                                            className="inline-flex items-center gap-1.5 rounded-xl text-xs font-extrabold h-9 px-4 bg-stone-900 text-white border-2 border-stone-900 shadow-[3px_3px_0px_0px_rgba(244,115,21,1)] hover:bg-stone-800 transition-colors"
+                                        >
+                                            <Pencil className="h-3.5 w-3.5 text-white" />
+                                            <span className="text-white">Éditer</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setConfirmOpen(true)}
+                                            disabled={isDeleting}
+                                            className="inline-flex items-center gap-1.5 rounded-xl text-xs font-extrabold h-9 px-4 bg-white text-red-600 border-2 border-red-500 shadow-[3px_3px_0px_0px_rgba(239,68,68,0.5)] hover:bg-red-50 transition-colors disabled:opacity-50"
+                                        >
+                                            {isDeleting ? (
+                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                            ) : (
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            )}
+                                            Supprimer
+                                        </button>
+                                    </div>
                                 )}
                             </div>
+
+                            {deleteError && (
+                                <p className="text-xs text-red-600 font-bold">{deleteError}</p>
+                            )}
 
                             {product.price != null && (
                                 <p className="text-2xl font-mono font-black text-[#F47315]">{product.price.toFixed(2)} MAD</p>
@@ -191,6 +228,15 @@ function ProductDetailInner() {
                     </div>
                 )}
             </div>
+
+            <ConfirmDialog
+                open={confirmOpen}
+                title="Supprimer ce produit ?"
+                message={`Supprimer définitivement "${product.name}" ? Cette action est irréversible.`}
+                loading={isDeleting}
+                onConfirm={handleDelete}
+                onCancel={() => setConfirmOpen(false)}
+            />
         </div>
     );
 }

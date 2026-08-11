@@ -14,4 +14,11 @@ public class GenerateImageRequest {
     private String badgeText;
     private String promoText;
     private String accentColor;
+
+    /**
+     * Mood / ambiance preset chosen by the user in the studio UI.
+     * Examples: "sunset", "moss", "ochre", "mint", "eclipse"
+     * Used to enrich the Stability AI prompt with atmosphere cues.
+     */
+    private String mood;
 }

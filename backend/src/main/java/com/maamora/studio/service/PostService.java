@@ -9,11 +9,13 @@ import com.maamora.studio.model.enums.PostStatus;
 import com.maamora.studio.model.enums.ProductStatus;
 import com.maamora.studio.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PostService {
@@ -37,7 +39,9 @@ public class PostService {
         return generateImage(userId, request, null);
     }
 
-    /** Same as above, but attaches the Post to a BatchJob (used by BatchJobService). */
+    /**
+     * Same as above, but attaches the Post to a BatchJob (used by BatchJobService).
+     */
     public Post generateImage(String userId, GenerateImageRequest request, BatchJob batchJob) {
         Product product = productService.getOwned(userId, request.getProductId());
         if (product.getStatus() != ProductStatus.APPROVED) {
@@ -46,7 +50,8 @@ public class PostService {
         Template template = templateService.getById(request.getTemplateId());
 
         byte[] png = imageRenderService.renderToPng(
-                template, product, request.getBadgeText(), request.getPromoText(), request.getAccentColor());
+                template, product, request.getBadgeText(), request.getPromoText(),
+                request.getAccentColor(), request.getMood());
 
         String path = "posts/" + UUID.randomUUID() + ".png";
         String imageUrl = storageService.upload(png, path, "image/png");
@@ -65,18 +70,36 @@ public class PostService {
         return postRepository.save(post);
     }
 
-    /** Step 5: fills in the requested caption languages on an existing Post. */
+    /**
+     * Step 5: fills in the requested caption languages on an existing Post.
+     *
+     * Each language is generated independently: if one call fails (Gemini
+     * rate-limit, transient network error, etc.) the rest still run and
+     * whatever succeeded is saved, instead of one failure discarding every
+     * caption for the post (which is what made batch-generated posts end up
+     * with an image but no text at all).
+     */
     public Post generateCaptions(String userId, GenerateCaptionsRequest request) {
-        Post post = getOwned(userId, request.getPostId());
         BrandSettings brand = brandSettingsService.getForUser(userId);
+        // Eagerly loads post.product in the same query (JOIN FETCH) instead of
+        // as a lazy proxy — CaptionGenerationService reads product fields
+        // directly, and on batch's background thread there's no open DB
+        // session for a lazy proxy to fall back on. See PostRepository for
+        // the full explanation.
+        Post post = postRepository.findByIdAndProduct_Brand_IdFetchProduct(request.getPostId(), brand.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found."));
 
         for (String lang : request.getLanguages()) {
-            String caption = captionGenerationService.generateCaption(post.getProduct(), brand, lang);
-            switch (lang) {
-                case "en" -> post.setCaptionEn(caption);
-                case "ar" -> post.setCaptionAr(caption);
-                case "darija" -> post.setCaptionDarija(caption);
-                default -> post.setCaptionFr(caption);
+            try {
+                String caption = captionGenerationService.generateCaption(post, brand, lang);
+                switch (lang) {
+                    case "en" -> post.setCaptionEn(caption);
+                    case "ar" -> post.setCaptionAr(caption);
+                    case "darija" -> post.setCaptionDarija(caption);
+                    default -> post.setCaptionFr(caption);
+                }
+            } catch (Exception e) {
+                log.error("Caption generation failed for post {} lang {}: {}", post.getId(), lang, e.getMessage(), e);
             }
         }
 
@@ -108,7 +131,16 @@ public class PostService {
         return postRepository.save(post);
     }
 
-    /** Loads a Post and verifies it belongs to the authenticated user's brand (IDOR guard). */
+    /** Deletes a post outright. Brand-scoped like every other post action. */
+    public void delete(String userId, String postId) {
+        Post post = getOwned(userId, postId);
+        postRepository.delete(post);
+    }
+
+    /**
+     * Loads a Post and verifies it belongs to the authenticated user's brand (IDOR
+     * guard).
+     */
     public Post getOwned(String userId, String postId) {
         BrandSettings brand = brandSettingsService.getForUser(userId);
         return postRepository.findByIdAndProduct_Brand_Id(postId, brand.getId())

@@ -119,7 +119,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     useEffect(() => {
         listTemplates()
             .then(setTemplates)
-            .catch((err) => setErrorMsg(err instanceof Error ? err.message : "Failed to load templates"));
+            .catch((err: unknown) => setErrorMsg(err instanceof Error ? err.message : "Failed to load templates"));
     }, []);
 
     useEffect(() => {
@@ -172,6 +172,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                 badgeText,
                 promoText,
                 accentColor,
+                mood: mood.id,
             });
             setPost(result);
             onPostChange?.();

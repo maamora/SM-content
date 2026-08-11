@@ -9,6 +9,9 @@ import com.maamora.studio.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class BrandSettingsService {
@@ -26,11 +29,30 @@ public class BrandSettingsService {
         return user.getBrand();
     }
 
-    /** Used by AuthService and the startup seeders — there's only ever one row. */
+    /**
+     * Used by AuthService (new user registration) and the startup seeders.
+     * There's supposed to be only one row, but historical data issues have
+     * left duplicate "Maamora" rows in some databases — picking one via an
+     * unordered findFirst() risked silently assigning new users to a "ghost"
+     * brand that no one else's data lives on (their products would never show
+     * up for anyone else, including admin approval counts). Instead, pick the
+     * row that's actually in use — the one with the most users attached —
+     * and break ties by id so every call agrees on the same row.
+     */
     public BrandSettings getSharedBrand() {
-        return brandSettingsRepository.findAll().stream().findFirst()
-                .orElseThrow(() -> new IllegalStateException(
-                        "No brand has been seeded yet. Restart the backend so BrandSeeder can create one."));
+        List<BrandSettings> brands = brandSettingsRepository.findAll();
+        if (brands.isEmpty()) {
+            throw new IllegalStateException(
+                    "No brand has been seeded yet. Restart the backend so BrandSeeder can create one.");
+        }
+        if (brands.size() == 1) {
+            return brands.get(0);
+        }
+        return brands.stream()
+                .max(Comparator
+                        .comparingLong((BrandSettings b) -> userRepository.countByBrand_Id(b.getId()))
+                        .thenComparing(BrandSettings::getId))
+                .orElseThrow();
     }
 
     public BrandSettings update(String userId, BrandSettingsRequest request) {
