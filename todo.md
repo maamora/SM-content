@@ -18,3 +18,7 @@
 - [x] Write a copy-paste production-local runbook from cloning `main` through installing dependencies and provisioning PostgreSQL.
 - [x] Include Spring Boot environment setup, backend startup, Next.js production build/start, and all functional smoke tests.
 - [x] Validate the runbook against the merged repository commands and document unavailable backend feature areas.
+- [x] Inspect the current JPA entities, enums, indexes, constraints, and seed data for Supabase compatibility.
+- [x] Create an idempotent Supabase migration without service credentials or fabricated application data.
+- [x] Validate the migration structure and document how to apply it with Supabase SQL Editor or CLI.
+- [x] Document the required Supabase connection variables and safe handling of `service_role` credentials.
