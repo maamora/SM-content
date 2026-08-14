@@ -35,6 +35,7 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
 
     useEffect(() => {
         if (templatesForFormat.length > 0 && !templatesForFormat.some(t => t.id === selectedTemplateId)) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- Keep the selected template valid when a format changes.
             setSelectedTemplateId(templatesForFormat[0].id);
         }
     }, [templatesForFormat, selectedTemplateId]);
