@@ -1,0 +1,15 @@
+System Requirements:
+- Java 17+
+- Node.js 20+
+- pnpm
+- Git
+- PostgreSQL (database)
+- curl
+
+Backend:
+- Spring Boot (Java)
+- Maven (maven wrapper provided)
+
+Frontend:
+- Next.js (React)
+- Node.js environment with pnpm
