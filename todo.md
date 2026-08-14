@@ -64,3 +64,6 @@
 - [x] Implement LinkedIn OAuth and publishing for supported person or organization targets, with media boundaries explicit.
 - [x] Implement X OAuth and publishing with current API credential and media-upload boundaries.
 - [x] Implement SMTP email delivery and wire delivery status into notifications and settings.
+- [x] Refresh the landing creative workflow with tangible product and model reference assets.
+- [x] Add distinct campaign image variations as the explicit non-video result state for the landing demonstration.
+- [x] Verify the revised creative workflow presentation and commit the GitHub update.
