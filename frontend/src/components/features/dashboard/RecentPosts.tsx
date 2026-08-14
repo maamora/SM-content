@@ -1,5 +1,6 @@
 "use client";
 
+/* STUDIO editorial refresh: recent work is an indexed paper archive with restrained actions. */
 import { useState } from "react";
 import Image from "next/image";
 import { Pencil, Trash2, Loader2, Save, ImageOff, Clock } from "lucide-react";
@@ -12,9 +13,9 @@ interface RecentPostsProps {
 }
 
 const STATUS_STYLES: Record<Post["status"], string> = {
-    DRAFT: "bg-stone-100 text-stone-600 border-2 border-stone-300",
-    APPROVED: "bg-emerald-50 text-emerald-700 border-2 border-emerald-600",
-    EXPORTED: "bg-orange-50 text-[#F47315] border-2 border-[#F47315]",
+    DRAFT: "studio-chip",
+    APPROVED: "studio-chip studio-chip--lime",
+    EXPORTED: "studio-chip studio-chip--warning",
 };
 
 const STATUS_LABELS: Record<Post["status"], string> = {
@@ -54,23 +55,23 @@ function CaptionEditor({ post, onSaved }: { post: Post; onSaved: () => void }) {
     };
 
     return (
-        <div className="mt-4 space-y-3 border-t-2 border-stone-100 pt-4">
-            {error && <p className="text-xs text-red-600 font-bold">{error}</p>}
+        <div className="mt-4 space-y-3 border-t border-[#deddd5] pt-4">
+            {error && <p className="studio-form-error">{error}</p>}
             {LANGUAGES.map(({ key, label }) => (
                 <div key={key} className="space-y-1">
-                    <span className="text-[9px] font-black uppercase tracking-wider text-stone-400">{label}</span>
+                    <span className="text-[9px] font-black uppercase tracking-wider text-[#91918b]">{label}</span>
                     <div className="flex gap-2">
                         <textarea
                             value={values[key]}
                             onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
                             rows={2}
-                            className="flex-1 text-xs rounded-xl border-2 border-stone-900 bg-white px-3 py-2 text-stone-800 outline-none focus-visible:ring-2 focus-visible:ring-[#F47315] resize-none"
+                            className="min-w-0 flex-1 resize-none border border-[#bdbdb4] bg-[#faf9f4] px-3 py-2 text-xs text-[var(--studio-ink)] outline-none focus:border-[var(--studio-lime)]"
                         />
                         <button
                             type="button"
                             onClick={() => handleSave(key)}
                             disabled={savingLang === key}
-                            className="shrink-0 h-9 w-9 rounded-xl bg-stone-900 text-white flex items-center justify-center hover:bg-stone-800 transition-colors disabled:opacity-50"
+                            className="studio-button studio-button--dark h-9 w-9 shrink-0 px-0 disabled:opacity-50"
                             aria-label={`Enregistrer la légende ${label}`}
                         >
                             {savingLang === key ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
@@ -113,40 +114,40 @@ export default function RecentPosts({ posts, onChange }: RecentPostsProps) {
     }
 
     return (
-        <div className="bg-white border-3 border-stone-900 rounded-3xl p-6 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)]">
-            <h3 className="font-extrabold text-stone-800 text-lg mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-[#F47315]" />
+        <div className="studio-workspace-panel">
+            <h3 className="mb-4 flex items-center gap-2 font-serif text-2xl font-normal text-[var(--studio-ink)]">
+                <Clock className="h-5 w-5 text-[#5f762a]" />
                 Posts récents
             </h3>
 
             {deleteError && (
-                <p className="text-xs text-red-600 font-bold mb-3">{deleteError}</p>
+                <p className="studio-form-error mb-3">{deleteError}</p>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
+            <div className="studio-recent-post-grid items-start">
                 {recent.map((post) => (
-                    <div key={post.id} className="rounded-2xl border-2 border-stone-900 overflow-hidden bg-white">
-                        <div className="relative h-32 w-full bg-stone-100">
-                            <span className={`absolute top-2 right-2 z-10 text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${STATUS_STYLES[post.status]}`}>
+                    <div key={post.id} className="studio-recent-post-card">
+                        <div className="studio-recent-post-card__media">
+                            <span className={`absolute right-2 top-2 z-10 ${STATUS_STYLES[post.status]}`}>
                                 {STATUS_LABELS[post.status]}
                             </span>
                             {post.imageUrl ? (
                                 <Image src={post.imageUrl} alt={post.productName} fill sizes="240px" className="object-cover" />
                             ) : (
-                                <div className="flex h-full items-center justify-center text-stone-300">
+                                <div className="flex h-full items-center justify-center text-[#91918b]">
                                     <ImageOff className="h-6 w-6" />
                                 </div>
                             )}
                         </div>
-                        <div className="p-3">
-                            <p className="text-xs font-extrabold text-stone-900 truncate" title={post.productName}>
+                        <div className="studio-recent-post-card__body">
+                            <p className="truncate text-xs font-extrabold text-[var(--studio-ink)]" title={post.productName}>
                                 {post.productName}
                             </p>
                             <div className="mt-2 flex gap-2">
                                 <button
                                     type="button"
                                     onClick={() => setEditingId(editingId === post.id ? null : post.id)}
-                                    className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg text-[10px] font-extrabold h-8 px-2 bg-stone-900 text-white hover:bg-stone-800 transition-colors"
+                                    className="studio-button studio-button--dark h-8 flex-1 px-2 text-[10px]"
                                 >
                                     <Pencil className="h-3 w-3" />
                                     Modifier
@@ -155,7 +156,7 @@ export default function RecentPosts({ posts, onChange }: RecentPostsProps) {
                                     type="button"
                                     onClick={() => setConfirmTarget(post)}
                                     disabled={deletingId === post.id}
-                                    className="shrink-0 inline-flex items-center justify-center rounded-lg h-8 w-8 border-2 border-red-500 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                                    className="studio-button studio-button--danger h-8 w-8 shrink-0 px-0 disabled:opacity-50"
                                     aria-label="Supprimer"
                                 >
                                     {deletingId === post.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}

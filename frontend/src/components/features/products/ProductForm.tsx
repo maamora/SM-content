@@ -1,5 +1,7 @@
 "use client";
 
+/* STUDIO editorial refresh: paper fields, uppercase metadata, sharp image slots, and lime actions. */
+
 import { useForm, FieldError } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
@@ -12,17 +14,18 @@ interface FormGroupProps {
     label: string;
     error?: FieldError;
     children: React.ReactNode;
+    wide?: boolean;
 }
 
-function FormGroup({ id, label, error, children }: FormGroupProps) {
+function FormGroup({ id, label, error, children, wide }: FormGroupProps) {
     return (
-        <div className="space-y-1.5">
-            <label htmlFor={id} className="text-[10px] font-black uppercase tracking-wider text-stone-500">
+        <div className={wide ? "studio-form-grid__wide" : undefined}>
+            <label htmlFor={id}>
                 {label}
             </label>
             {children}
             {error && (
-                <p role="alert" id={`${id}-error`} className="text-xs text-red-600 font-bold">
+                <p role="alert" id={`${id}-error`} className="studio-inline-notice text-[#944949]">
                     {error.message}
                 </p>
             )}
@@ -30,7 +33,7 @@ function FormGroup({ id, label, error, children }: FormGroupProps) {
     );
 }
 
-const inputStyles = "flex w-full rounded-xl border-2 border-stone-900 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus-visible:ring-2 focus-visible:ring-[#F47315] focus-visible:outline-none transition-all disabled:opacity-50 font-medium";
+const inputStyles = "w-full border border-[#bdbdb4] bg-[#faf9f4] px-3 py-2 text-sm text-[var(--studio-ink)] placeholder:text-[#91918b] outline-none transition-colors focus:border-[var(--studio-lime)] disabled:opacity-50";
 
 const IMAGE_FIELDS = ["imageUrl", "imageUrl2", "imageUrl3"] as const;
 
@@ -135,20 +138,20 @@ export function ProductForm({ onCreated, product, onSaved, onCancel }: ProductFo
     };
 
     return (
-        <div className={isEditMode ? "" : "sticky top-24 max-w-xl p-6 bg-white border-3 border-stone-900 rounded-3xl shadow-[6px_6px_0px_0px_rgba(28,25,23,1)]"}>
+        <div className={`studio-product-form ${isEditMode ? "studio-product-form--edit" : ""}`}>
             {!isEditMode && (
                 <div className="mb-6 flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-[#F47315]/10 border-2 border-[#F47315]/30 flex items-center justify-center text-[#F47315]">
+                    <div className="flex h-10 w-10 items-center justify-center border border-[var(--studio-lime)] bg-[rgba(185,255,67,.16)] text-[#5f762a]">
                         <PackagePlus className="h-5 w-5" />
                     </div>
                     <div>
-                        <h2 className="text-base font-black text-stone-900 tracking-tight font-serif">Nouveau Produit</h2>
-                        <p className="text-[11px] text-stone-400 font-medium">Ajouté au catalogue partagé de l&apos;équipe</p>
+                        <h2 className="font-serif text-xl font-normal tracking-tight text-[var(--studio-ink)]">Nouveau Produit</h2>
+                        <p className="text-[11px] text-[#777870]">Ajouté au catalogue partagé de l&apos;équipe</p>
                     </div>
                 </div>
             )}
 
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="studio-form-grid">
                 <FormGroup id="product-name" label="Nom du produit" error={form.formState.errors.name}>
                     <input
                         id="product-name"
@@ -160,7 +163,7 @@ export function ProductForm({ onCreated, product, onSaved, onCancel }: ProductFo
                     />
                 </FormGroup>
 
-                <FormGroup id="product-desc" label="Description" error={form.formState.errors.description}>
+                <FormGroup id="product-desc" label="Description" error={form.formState.errors.description} wide>
                     <textarea
                         id="product-desc"
                         className={`${inputStyles} min-h-[96px] resize-y`}
@@ -191,22 +194,22 @@ export function ProductForm({ onCreated, product, onSaved, onCancel }: ProductFo
                     />
                 </FormGroup>
 
-                <div className="space-y-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-stone-500 block">Photos produit (max. 3)</span>
-                    <div className="grid grid-cols-3 gap-3">
+                <div className="studio-form-grid__wide">
+                    <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Photos produit (max. 3)</span>
+                    <div className="mt-2 grid grid-cols-3 gap-3">
                         {IMAGE_FIELDS.map((field, slot) => {
                             const value = form.watch(field);
                             const isUploading = uploadingSlot === slot;
                             return (
                                 <div key={field} className="relative">
                                     {value ? (
-                                        <div className="relative h-24 w-full rounded-xl border-2 border-stone-900 overflow-hidden bg-stone-100">
+                                        <div className="relative h-24 w-full overflow-hidden border border-[#bdbdb4] bg-[#e8e7df]">
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img src={value} alt={`Photo ${slot + 1}`} className="h-full w-full object-cover" />
                                             <button
                                                 type="button"
                                                 onClick={() => handleRemoveImage(slot)}
-                                                className="absolute top-1 right-1 h-5 w-5 rounded-full bg-stone-900 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                                                className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center border border-[var(--studio-ink)] bg-[var(--studio-ink)] text-white transition-colors hover:bg-[#944949]"
                                                 aria-label={`Retirer la photo ${slot + 1}`}
                                             >
                                                 <X className="h-3 w-3" />
@@ -215,14 +218,14 @@ export function ProductForm({ onCreated, product, onSaved, onCancel }: ProductFo
                                     ) : (
                                         <label
                                             htmlFor={`product-image-${slot}`}
-                                            className={`flex h-24 w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-stone-300 cursor-pointer hover:border-[#F47315] hover:bg-orange-50 transition-colors ${isUploading ? "opacity-60 pointer-events-none" : ""}`}
+                                            className={`flex h-24 w-full cursor-pointer flex-col items-center justify-center gap-1 border border-dashed border-[#bdbdb4] transition-colors hover:border-[var(--studio-lime)] hover:bg-[rgba(185,255,67,.12)] ${isUploading ? "pointer-events-none opacity-60" : ""}`}
                                         >
                                             {isUploading ? (
-                                                <Loader2 className="h-4 w-4 animate-spin text-[#F47315]" />
+                                                <Loader2 className="h-4 w-4 animate-spin text-[#5f762a]" />
                                             ) : (
-                                                <Upload className="h-4 w-4 text-stone-400" />
+                                                <Upload className="h-4 w-4 text-[#91918b]" />
                                             )}
-                                            <span className="text-[9px] text-stone-400 font-bold">{isUploading ? "Envoi..." : `Photo ${slot + 1}`}</span>
+                                            <span className="text-[9px] font-bold text-[#91918b]">{isUploading ? "Envoi..." : `Photo ${slot + 1}`}</span>
                                         </label>
                                     )}
                                     <input
@@ -238,21 +241,21 @@ export function ProductForm({ onCreated, product, onSaved, onCancel }: ProductFo
                             );
                         })}
                     </div>
-                    {uploadError && <p className="text-xs text-red-600 font-bold">{uploadError}</p>}
+                    {uploadError && <p className="studio-inline-notice text-[#944949]">{uploadError}</p>}
                 </div>
 
                 {serverError && (
-                    <p role="alert" className="text-xs text-red-600 font-bold">
+                    <p role="alert" className="studio-form-error">
                         {serverError}
                     </p>
                 )}
 
-                <div className="flex gap-3">
+                <div className="studio-form-grid__wide flex gap-3">
                     {isEditMode && (
                         <button
                             type="button"
                             onClick={onCancel}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl text-xs font-extrabold h-11 px-6 flex-1 bg-white text-stone-700 border-2 border-stone-900 hover:bg-stone-50 transition-all"
+                            className="studio-button studio-button--paper flex-1"
                         >
                             Annuler
                         </button>
@@ -260,7 +263,7 @@ export function ProductForm({ onCreated, product, onSaved, onCancel }: ProductFo
                     <button
                         type="submit"
                         disabled={isPending || uploadingSlot !== null}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl text-xs font-extrabold h-11 px-6 flex-1 bg-[#F47315] hover:bg-[#ff852e] text-white border-b-2 border-stone-900 shadow-[3px_3px_0px_0px_rgba(28,25,23,1)] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        className="studio-button studio-button--lime studio-button--large flex-1 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {isPending ? (
                             <>

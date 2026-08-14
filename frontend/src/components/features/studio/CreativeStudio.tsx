@@ -1,5 +1,6 @@
 "use client";
 
+/* STUDIO editorial refresh: a graphite-and-paper composition desk with lime signal accents. */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
     Sparkles,
@@ -42,11 +43,11 @@ type CaptionLang = "fr" | "ar" | "darija" | "en";
 // server — the actual output is always the Playwright-rendered image from
 // /api/posts/generate-image.
 const MOOD_PRESETS = [
-    { id: "sunset", name: "Maamora Sunset", bg: "from-[#FFFDF9] via-[#FFF3E8] to-[#FFE5D3]", accent: "#F47315" },
-    { id: "moss", name: "Atlas Moss", bg: "from-[#FBFDFB] via-[#EAF2ED] to-[#D4E6DC]", accent: "#2D5A41" },
-    { id: "ochre", name: "Ochre Medina", bg: "from-[#FAF6F0] via-[#F6ECE2] to-[#EBD5C2]", accent: "#9A3412" },
-    { id: "mint", name: "Royal Mint", bg: "from-[#F7FCFA] via-[#ECF7F3] to-[#D1EDE3]", accent: "#1B5E4F" },
-    { id: "eclipse", name: "Majorelle Eclipse", bg: "from-[#0F172A] via-[#1E1B4B] to-[#311042]", accent: "#F47315" },
+    { id: "sunset", name: "Maamora Sunset", bg: "from-[#f7f8ef] via-[#e8f3c8] to-[#d7ff97]", accent: "#5f762a" },
+    { id: "moss", name: "Atlas Moss", bg: "from-[#fbfdfb] via-[#eaf2ed] to-[#d4e6dc]", accent: "#2d5a41" },
+    { id: "ochre", name: "Ochre Medina", bg: "from-[#faf6f0] via-[#f1efe5] to-[#dfded6]", accent: "#6b6d5f" },
+    { id: "mint", name: "Royal Mint", bg: "from-[#f7fcfa] via-[#ecf7f3] to-[#d1ede3]", accent: "#1b5e4f" },
+    { id: "eclipse", name: "Graphite Eclipse", bg: "from-[#0a0a0a] via-[#141414] to-[#25251f]", accent: "#b9ff43" },
 ] as const;
 
 const LANGS: { id: CaptionLang; label: string }[] = [
@@ -62,7 +63,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const [selectedFormat, setSelectedFormat] = useState<"SQUARE_POST" | "STORY">("SQUARE_POST");
     const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
     const [promoText, setPromoText] = useState<string>("OFFRE SPÉCIALE !");
-    const [accentColor, setAccentColor] = useState<string>("#f97316");
+    const [accentColor, setAccentColor] = useState<string>("#b9ff43");
     const [badgeText, setBadgeText] = useState<string>("-20% TODAY");
     const [mood, setMood] = useState<(typeof MOOD_PRESETS)[number]>(MOOD_PRESETS[0]);
 
@@ -253,45 +254,45 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
         setTimeout(() => setCopiedLang(null), 2000);
     };
 
-    const inputCls = "flex w-full rounded-xl border-2 border-stone-900 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus-visible:ring-2 focus-visible:ring-[#F47315] focus-visible:outline-none transition-all font-medium h-10";
+    const inputCls = "w-full border border-[#bdbdb4] bg-[#faf9f4] px-3 py-2 text-sm text-[var(--studio-ink)] placeholder:text-[#91918b] outline-none transition-colors focus:border-[var(--studio-lime)] font-medium h-10";
 
     return (
         <div className="space-y-8 select-none">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-xl font-black tracking-tight text-stone-900 font-serif flex items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-[#F47315]" />
+                        <h2 className="flex items-center gap-2 font-serif text-2xl font-normal tracking-tight text-[var(--studio-ink)]">
+                            <Sparkles className="h-5 w-5 text-[#5f762a]" />
                         Atelier de Composition
                     </h2>
-                    <p className="text-xs text-stone-400 mt-1 font-medium">
+                    <p className="mt-1 text-xs font-medium text-[#777870]">
                         Composez un visuel de marque, générez les légendes, approuvez, puis exportez.
                     </p>
                 </div>
             </div>
 
             {errorMsg && (
-                <div className="rounded-xl border-2 border-red-500 bg-red-50 px-4 py-2.5 text-xs text-red-700 font-bold">
+                <div className="studio-form-error">
                     {errorMsg}
                 </div>
             )}
 
-            <div className="grid grid-cols-1 xl:grid-cols-[400px_1fr] gap-8">
+            <div className="studio-creative-grid">
 
                 {/* left column config panel */}
                 <div className="space-y-6">
-                    <div className="bg-white border-3 border-stone-900 rounded-3xl shadow-[6px_6px_0px_0px_rgba(28,25,23,1)]">
-                        <div className="px-5 pt-5 pb-3">
-                            <h3 className="text-sm font-black tracking-tight text-stone-900 flex items-center gap-2">
-                                <Sliders className="h-4 w-4 text-[#F47315]" />
+                    <div className="studio-creative-card">
+                        <div className="studio-creative-card__head">
+                            <h3 className="flex items-center gap-2 text-sm font-black tracking-tight text-[var(--studio-ink)]">
+                                <Sliders className="h-4 w-4 text-[#5f762a]" />
                                 Paramètres
                             </h3>
-                            <p className="text-[11px] text-stone-400 mt-0.5 font-medium">Configuration du visuel de marque</p>
+                            <p className="mt-0.5 text-[11px] font-medium text-[#777870]">Configuration du visuel de marque</p>
                         </div>
-                        <div className="space-y-5 px-5 pb-5">
+                        <div className="studio-creative-card__body">
                             <div className="space-y-1.5" ref={productSearchRef}>
-                                <label className="text-[10px] font-black uppercase tracking-wider text-stone-500" htmlFor="product-search">Produit ciblé</label>
+                                <label className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]" htmlFor="product-search">Produit ciblé</label>
                                 <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
+                                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#91918b]" />
                                     <input
                                         id="product-search"
                                         type="text"
@@ -303,13 +304,13 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                             setIsProductDropdownOpen(true);
                                         }}
                                         placeholder="Tapez pour rechercher un produit..."
-                                        className="flex w-full h-10 rounded-xl border-2 border-stone-900 bg-white pl-9 pr-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus-visible:ring-2 focus-visible:ring-[#F47315] focus-visible:outline-none transition-all font-medium"
+                                        className="w-full border border-[#bdbdb4] bg-[#faf9f4] py-2 pl-9 pr-3 text-sm font-medium text-[var(--studio-ink)] placeholder:text-[#91918b] outline-none transition-colors focus:border-[var(--studio-lime)]"
                                     />
 
                                     {isProductDropdownOpen && (
-                                        <div className="absolute z-20 mt-1.5 w-full max-h-56 overflow-y-auto rounded-xl border-2 border-stone-900 bg-white shadow-[3px_3px_0px_0px_rgba(28,25,23,1)]">
+                                        <div className="absolute z-20 mt-1.5 max-h-56 w-full overflow-y-auto border border-[var(--studio-ink)] bg-[var(--studio-paper)] shadow-[6px_6px_0px_rgba(17,17,15,.12)]">
                                             {matchingProducts.length === 0 ? (
-                                                <p className="px-3.5 py-2.5 text-xs text-stone-400 font-medium">Aucun produit ne correspond.</p>
+                                                <p className="px-3.5 py-2.5 text-xs font-medium text-[#91918b]">Aucun produit ne correspond.</p>
                                             ) : (
                                                 matchingProducts.map((p) => (
                                                     <button
@@ -321,14 +322,14 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                                             setProductQuery(p.name);
                                                             setIsProductDropdownOpen(false);
                                                         }}
-                                                        className={`flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-left text-xs font-bold border-b border-stone-100 last:border-b-0 transition-colors ${p.id === selectedProductId
-                                                            ? "bg-orange-50 text-[#F47315]"
-                                                            : "text-stone-700 hover:bg-stone-50"
+                                                        className={`flex w-full items-center justify-between gap-2 border-b border-[#deddd5] px-3.5 py-2.5 text-left text-xs font-bold transition-colors last:border-b-0 ${p.id === selectedProductId
+                                                            ? "bg-[rgba(185,255,67,.16)] text-[#5f762a]"
+                                                            : "text-[#4f504a] hover:bg-[#e9e8e0]"
                                                             }`}
                                                     >
                                                         {p.name}
                                                         {p.price != null && (
-                                                            <span className="text-[10px] font-mono text-stone-400">{p.price.toFixed(2)} MAD</span>
+                                                            <span className="text-[10px] font-mono text-[#91918b]">{p.price.toFixed(2)} MAD</span>
                                                         )}
                                                     </button>
                                                 ))
@@ -337,19 +338,19 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                     )}
                                 </div>
                                 {pendingCount > 0 && (
-                                    <p className="text-[10px] text-stone-400 font-medium">
+                                    <p className="text-[10px] font-medium text-[#91918b]">
                                         {pendingCount} produit{pendingCount > 1 ? "s" : ""} en attente d&apos;approbation, masqué{pendingCount > 1 ? "s" : ""} ici.
                                     </p>
                                 )}
                                 {approvedProducts.length === 0 && (
-                                    <p className="text-[11px] text-[#F47315] font-bold">
+                                    <p className="text-[11px] font-bold text-[#5f762a]">
                                         Aucun produit approuvé — un admin doit en approuver un avant de pouvoir générer du contenu.
                                     </p>
                                 )}
                             </div>
 
                             <div className="space-y-1.5">
-                                <span className="text-[10px] font-black uppercase tracking-wider text-stone-500 block">Format d&apos;export</span>
+                                <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Format d&apos;export</span>
                                 <div className="grid grid-cols-2 gap-2">
                                     {[
                                         { id: "SQUARE_POST" as const, name: "Post Instagram", desc: "1:1 Carré" },
@@ -358,15 +359,15 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                         <button
                                             key={f.id}
                                             onClick={() => setSelectedFormat(f.id)}
-                                            className={`flex flex-col text-left p-3 rounded-xl border-2 text-xs transition-all relative ${selectedFormat === f.id
-                                                ? "border-[#F47315] bg-orange-50 text-stone-900"
-                                                : "border-stone-200 bg-white text-stone-500 hover:border-stone-400"
+                                            className={`relative flex flex-col border p-3 text-left text-xs transition-all ${selectedFormat === f.id
+                                                ? "border-[#8aa65a] bg-[rgba(185,255,67,.14)] text-[var(--studio-ink)]"
+                                                : "border-[#c5c4bb] bg-[#faf9f4] text-[#777870] hover:border-[var(--studio-ink)]"
                                                 }`}
                                         >
                                             <span className="font-extrabold block">{f.name}</span>
-                                            <span className="text-[10px] text-stone-400 mt-0.5 font-medium">{f.desc}</span>
+                                            <span className="mt-0.5 text-[10px] font-medium text-[#91918b]">{f.desc}</span>
                                             {selectedFormat === f.id && (
-                                                <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[#F47315]" />
+                                                <span className="studio-status-dot studio-status-dot--lime absolute right-2 top-2" />
                                             )}
                                         </button>
                                     ))}
@@ -374,18 +375,18 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                             </div>
 
                             <div className="space-y-1.5">
-                                <span className="text-[10px] font-black uppercase tracking-wider text-stone-500 block">Modèle de design</span>
+                                <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Modèle de design</span>
                                 {templatesForFormat.length === 0 ? (
-                                    <p className="text-[11px] text-stone-400 font-medium">Aucun modèle disponible pour ce format.</p>
+                                    <p className="text-[11px] font-medium text-[#91918b]">Aucun modèle disponible pour ce format.</p>
                                 ) : (
                                     <div className="grid grid-cols-2 gap-2">
                                         {templatesForFormat.map(t => (
                                             <button
                                                 key={t.id}
                                                 onClick={() => setSelectedTemplateId(t.id)}
-                                                className={`px-3 py-2.5 rounded-xl border-2 text-xs text-left transition-all font-bold ${selectedTemplateId === t.id
-                                                    ? "border-[#F47315] bg-orange-50 text-[#F47315]"
-                                                    : "border-stone-200 bg-white text-stone-500 hover:border-stone-400"
+                                                className={`border px-3 py-2.5 text-left text-xs font-bold transition-all ${selectedTemplateId === t.id
+                                                    ? "border-[#8aa65a] bg-[rgba(185,255,67,.14)] text-[#5f762a]"
+                                                    : "border-[#c5c4bb] bg-[#faf9f4] text-[#777870] hover:border-[var(--studio-ink)]"
                                                     }`}
                                             >
                                                 {t.name}
@@ -396,7 +397,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                             </div>
 
                             <div className="space-y-1.5">
-                                <span className="text-[10px] font-black uppercase tracking-wider text-stone-500 block">Ambiance de l&apos;aperçu</span>
+                                <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Ambiance de l&apos;aperçu</span>
                                 <div className="flex flex-wrap gap-2">
                                     {MOOD_PRESETS.map((m) => (
                                         <button
@@ -404,19 +405,19 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                             type="button"
                                             onClick={() => setMood(m)}
                                             title={m.name}
-                                            className={`h-8 w-8 rounded-full bg-gradient-to-br ${m.bg} border-2 transition-all ${mood.id === m.id ? "border-stone-900 scale-110" : "border-stone-300"
+                                            className={`h-8 w-8 border bg-gradient-to-br ${m.bg} transition-all ${mood.id === m.id ? "scale-110 border-[var(--studio-ink)]" : "border-[#c5c4bb]"
                                                 }`}
                                         />
                                     ))}
                                 </div>
-                                <p className="text-[10px] text-stone-400 font-medium">Purement visuel — n&apos;affecte pas le rendu final.</p>
+                                <p className="text-[10px] font-medium text-[#91918b]">Purement visuel — n&apos;affecte pas le rendu final.</p>
                             </div>
 
-                            <div className="h-px bg-stone-100" />
+                            <div className="h-px bg-[#deddd5]" />
 
                             <div className="space-y-3.5">
                                 <div className="space-y-1.5">
-                                    <label htmlFor="promo-title" className="text-[10px] font-black uppercase tracking-wider text-stone-500">Titre de l&apos;offre</label>
+                                    <label htmlFor="promo-title" className="text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Titre de l&apos;offre</label>
                                     <input
                                         id="promo-title"
                                         value={promoText}
@@ -427,7 +428,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <label htmlFor="badge-text" className="text-[10px] font-black uppercase tracking-wider text-stone-500">Texte du badge</label>
+                                    <label htmlFor="badge-text" className="text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Texte du badge</label>
                                     <input
                                         id="badge-text"
                                         value={badgeText}
@@ -438,15 +439,15 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <span className="text-[10px] font-black uppercase tracking-wider text-stone-500 block">Couleur d&apos;accent</span>
+                                    <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Couleur d&apos;accent</span>
                                     <div className="flex items-center gap-3">
                                         <input
                                             type="color"
                                             value={accentColor}
                                             onChange={e => setAccentColor(e.target.value)}
-                                            className="w-11 h-10 p-1 bg-white border-2 border-stone-900 rounded-xl cursor-pointer"
+                                            className="h-10 w-11 cursor-pointer border border-[var(--studio-ink)] bg-[#faf9f4] p-1"
                                         />
-                                        <span className="text-xs font-mono text-stone-500 uppercase font-bold">{accentColor}</span>
+                                        <span className="text-xs font-mono font-bold uppercase text-[#777870]">{accentColor}</span>
                                     </div>
                                 </div>
                             </div>
@@ -454,7 +455,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                             <button
                                 onClick={handleGenerateImage}
                                 disabled={isGeneratingImage || !selectedProduct || !selectedTemplateId}
-                                className="w-full h-11 text-xs font-extrabold rounded-xl bg-[#F47315] hover:bg-[#ff852e] text-white border-b-2 border-stone-900 shadow-[3px_3px_0px_0px_rgba(28,25,23,1)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                                className="studio-button studio-button--lime studio-button--large w-full disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {isGeneratingImage ? (
                                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -473,10 +474,8 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                     <div className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(320px,360px)] gap-6">
 
                         {/* Preview */}
-                        <div
-                            className={`flex flex-col items-center justify-center p-6 rounded-3xl border-3 border-stone-900 shadow-[6px_6px_0px_0px_rgba(28,25,23,1)] min-h-[460px] overflow-hidden relative bg-gradient-to-br ${mood.bg}`}
-                        >
-                            <p className="absolute top-4 left-4 text-[10px] uppercase font-mono tracking-widest text-stone-500 flex items-center gap-1.5 z-10">
+                        <div className={`studio-creative-preview bg-gradient-to-br ${mood.bg}`}>
+                            <p className="absolute left-4 top-4 z-10 flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-[#777870]">
                                 <Eye className="h-3 w-3" style={{ color: mood.accent }} />
                                 {post?.imageUrl ? "Visuel Rendu" : "Aperçu en direct"}
                             </p>
@@ -486,7 +485,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                 <img
                                     src={post.imageUrl}
                                     alt={selectedProduct ? `${selectedProduct.name} creative` : "Generated creative"}
-                                    className={`border-3 border-stone-900 shadow-[6px_6px_0px_0px_rgba(28,25,23,1)] object-cover rounded-xl ${selectedFormat === "SQUARE_POST" ? "w-[300px] h-[300px]" : "w-[240px] h-[400px]"
+                                    className={`object-cover ${selectedFormat === "SQUARE_POST" ? "h-[300px] w-[300px]" : "h-[400px] w-[240px]"
                                         }`}
                                 />
                             ) : selectedProduct ? (
@@ -499,19 +498,19 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                     <div className="text-center space-y-1 max-w-[240px]">
                                         {badgeText && (
                                             <span
-                                                className="inline-block text-[10px] font-black text-white px-2.5 py-1 rounded-full"
+                                                className="inline-block border border-[var(--studio-ink)] px-2.5 py-1 text-[10px] font-black text-[var(--studio-ink)]"
                                                 style={{ backgroundColor: mood.accent }}
                                             >
                                                 {badgeText}
                                             </span>
                                         )}
-                                        <p className="text-xs font-mono text-stone-500 mt-2">
+                                        <p className="mt-2 text-xs font-mono text-[#777870]">
                                             {isGeneratingImage ? "Rendu du visuel en cours..." : `${promoText || "Aperçu"} — cliquez sur Générer pour le rendu final.`}
                                         </p>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="text-xs text-stone-500 font-mono text-center max-w-[220px]">
+                                <div className="max-w-[220px] text-center text-xs font-mono text-[#777870]">
                                     Sélectionnez un produit approuvé pour commencer.
                                 </div>
                             )}
@@ -519,25 +518,25 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
 
                         {/* Copywriter panel */}
                         <div className="space-y-4">
-                            <div className="bg-white border-3 border-stone-900 rounded-3xl shadow-[6px_6px_0px_0px_rgba(28,25,23,1)]">
-                                <div className="px-4 pt-4 pb-2.5">
-                                    <h3 className="text-xs font-black uppercase tracking-widest text-stone-700 flex items-center gap-1.5">
-                                        <Languages className="h-4 w-4 text-[#F47315]" />
+                            <div className="studio-creative-card">
+                                <div className="studio-creative-card__head">
+                                    <h3 className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-[#4f504a]">
+                                        <Languages className="h-4 w-4 text-[#5f762a]" />
                                         Rédaction Multilingue
                                     </h3>
-                                    <p className="text-[11px] text-stone-400 mt-0.5 font-medium">
+                                    <p className="mt-0.5 text-[11px] font-medium text-[#777870]">
                                         Généré par IA, modifiable avant export
                                     </p>
                                 </div>
-                                <div className="space-y-4 px-4 pb-4">
-                                    <div className="flex rounded-xl border-2 border-stone-900 bg-stone-50 p-1">
+                                <div className="studio-creative-card__body">
+                                    <div className="studio-caption-tabs">
                                         {LANGS.map(lang => (
                                             <button
                                                 key={lang.id}
                                                 onClick={() => setActiveCaptionLang(lang.id)}
-                                                className={`flex-1 text-center py-1.5 rounded-lg text-[10px] font-extrabold transition-all ${activeCaptionLang === lang.id
-                                                    ? "bg-white text-[#F47315] shadow-sm border border-stone-900"
-                                                    : "text-stone-400 hover:text-stone-700"
+                                                className={`studio-caption-tab ${activeCaptionLang === lang.id
+                                                    ? "studio-caption-tab--active"
+                                                    : "hover:text-[var(--studio-ink)]"
                                                     }`}
                                             >
                                                 {lang.label}
@@ -553,23 +552,23 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                             onBlur={handleSaveCaption}
                                             disabled={!post}
                                             placeholder={post ? "Aucune légende générée pour cette langue." : "Générez d'abord un visuel."}
-                                            className="min-h-[190px] w-full text-xs font-sans tracking-wide bg-white border-2 border-stone-900 rounded-xl text-stone-800 outline-none leading-relaxed resize-none p-3.5 focus-visible:ring-2 focus-visible:ring-[#F47315] disabled:opacity-50"
+                                            className="min-h-[190px] w-full resize-none border border-[#bdbdb4] bg-[#faf9f4] p-3.5 text-xs font-sans leading-relaxed tracking-wide text-[var(--studio-ink)] outline-none focus:border-[var(--studio-lime)] disabled:opacity-50"
                                         />
 
                                         <div className="absolute bottom-2.5 right-2.5">
                                             <button
                                                 onClick={handleCopyCaption}
                                                 disabled={!draftCaption}
-                                                className="h-8 text-[11px] rounded-lg bg-stone-900 hover:bg-stone-800 text-white shadow-md px-2.5 py-1 flex items-center font-bold disabled:opacity-40"
+                                                className="studio-button studio-button--dark h-8 px-2.5 py-1 text-[11px] disabled:opacity-40"
                                             >
                                                 {copiedLang === activeCaptionLang ? (
                                                     <>
-                                                        <Check className="h-3 w-3 text-emerald-400 mr-1.5" />
+                                                        <Check className="mr-1.5 h-3 w-3 text-[var(--studio-lime)]" />
                                                         Copié !
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <Copy className="h-3 w-3 text-stone-300 mr-1.5" />
+                                                        <Copy className="mr-1.5 h-3 w-3 text-[#c5c4bb]" />
                                                         Copier
                                                     </>
                                                 )}
@@ -580,7 +579,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                     <button
                                         onClick={handleGenerateCaptions}
                                         disabled={isGeneratingCaptions || !post}
-                                        className="w-full h-9 text-[11px] font-extrabold rounded-xl border-2 border-stone-900 bg-white hover:bg-stone-50 text-stone-700 transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5"
+                                        className="studio-button studio-button--paper h-9 w-full text-[11px] disabled:opacity-40"
                                     >
                                         <RefreshCw className={`h-3.5 w-3.5 ${isGeneratingCaptions ? "animate-spin" : ""}`} />
                                         {isGeneratingCaptions ? "Génération..." : "Générer toutes les légendes"}
@@ -592,16 +591,16 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                     </div>
 
                     {/* Approve / export actions */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between p-5 border-3 border-stone-900 bg-white rounded-3xl shadow-[6px_6px_0px_0px_rgba(28,25,23,1)] gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 bg-orange-50 border-2 border-[#F47315]/30 rounded-xl flex items-center justify-center text-[#F47315]">
+                    <div className="studio-creative-actions flex-col sm:flex-row">
+                        <div className="studio-creative-status">
+                            <div className="studio-creative-status__icon">
                                 <CheckCircle className="h-4 w-4" />
                             </div>
                             <div className="text-left">
-                                <span className="text-xs font-extrabold text-stone-800 block">
+                                <span className="block text-xs font-extrabold text-[var(--studio-ink)]">
                                     {post ? `Statut : ${post.status}` : "Aucun visuel pour l'instant"}
                                 </span>
-                                <span className="text-[10px] text-stone-400 font-medium">Approuvez avant de transmettre pour diffusion</span>
+                                <span className="text-[10px] font-medium text-[#777870]">Approuvez avant de transmettre pour diffusion</span>
                             </div>
                         </div>
 
@@ -609,7 +608,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                             <button
                                 onClick={handleApprove}
                                 disabled={!post || post.status !== "DRAFT" || isApproving}
-                                className="flex-1 sm:flex-none rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-extrabold text-xs h-10 px-5 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
+                                className="studio-button studio-button--dark flex-1 text-xs disabled:opacity-50 sm:flex-none"
                             >
                                 {isApproving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
                                 {post?.status === "APPROVED" || post?.status === "EXPORTED" ? "Approuvé" : "Approuver"}
@@ -618,7 +617,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                             <button
                                 onClick={handleDownload}
                                 disabled={!post || isExporting}
-                                className="flex-1 sm:flex-none rounded-xl bg-[#F47315] hover:bg-[#ff852e] text-white font-extrabold text-xs h-10 px-6 border-b-2 border-stone-900 shadow-[3px_3px_0px_0px_rgba(28,25,23,1)] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                                className="studio-button studio-button--lime flex-1 text-xs disabled:opacity-50 sm:flex-none"
                             >
                                 {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                                 Télécharger (.ZIP)

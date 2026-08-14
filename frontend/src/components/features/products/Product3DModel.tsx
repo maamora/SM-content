@@ -1,5 +1,6 @@
 "use client";
 
+/* STUDIO editorial refresh: product mockups keep material geometry but use the brand's lime signal and paper framing. */
 import React from "react";
 import { motion } from "motion/react";
 
@@ -71,7 +72,7 @@ export const Product3DModel: React.FC<Product3DModelProps> = ({
 
               <div className="z-10 w-[85%] h-1/2 bg-stone-50 border border-stone-200/50 rounded-md p-1 shadow-md flex flex-col items-center justify-between text-center select-none">
                 <div className="w-full border-b border-stone-200 pb-0.5">
-                  <span className="text-[7px] tracking-widest text-[#F47315] font-semibold uppercase block">MAAMORA</span>
+                  <span className="text-[7px] tracking-widest text-[#5f762a] font-semibold uppercase block">MAAMORA</span>
                   <span className="text-[5px] text-stone-400 block tracking-wider">MAROC</span>
                 </div>
                 <div>
@@ -79,8 +80,8 @@ export const Product3DModel: React.FC<Product3DModelProps> = ({
                   <p className="text-[5px] text-stone-500 italic">Elixir Pur</p>
                 </div>
                 <div className="w-full flex items-center justify-center gap-0.5">
-                  <span className="w-1 h-1 bg-[#F47315] rounded-full" />
-                  <span className="text-[4px] text-[#F47315] font-bold">100% BIO</span>
+                  <span className="w-1 h-1 bg-[#b9ff43]" />
+                  <span className="text-[4px] text-[#5f762a] font-bold">100% BIO</span>
                 </div>
               </div>
 
@@ -101,7 +102,7 @@ export const Product3DModel: React.FC<Product3DModelProps> = ({
                 <div className="w-[90%] h-[2px] bg-stone-600 rounded" />
               </div>
 
-              <div className="absolute -top-1 w-2/3 h-1 bg-[#F47315] shadow-sm" />
+              <div className="absolute -top-1 w-2/3 h-1 bg-[#b9ff43] shadow-sm" />
 
               <div className="z-10 w-[80%] h-3/5 bg-amber-50/95 border border-amber-200/50 rounded-lg p-1 shadow flex flex-col items-center justify-between text-center">
                 <div className="w-full border-b border-amber-200/60 pb-0.5">
@@ -154,12 +155,12 @@ export const Product3DModel: React.FC<Product3DModelProps> = ({
               <div className="absolute top-1 left-3 w-2 h-[75%] bg-white/10 rounded-full blur-[1px]" />
 
               <div className="absolute -top-4 w-full h-4 rounded-t-lg bg-gradient-to-r from-stone-800 via-stone-700 to-stone-900 border-b border-stone-950 shadow flex items-center justify-center">
-                <div className="w-[95%] h-[1.5px] bg-[#F47315] opacity-80" />
+                <div className="w-[95%] h-[1.5px] bg-[#b9ff43] opacity-80" />
               </div>
 
               <div className="z-10 w-[85%] h-3/5 bg-stone-100 border border-stone-200 rounded p-1 shadow-md flex flex-col items-center justify-between text-center">
                 <div>
-                  <span className="text-[6px] tracking-widest text-[#F47315] font-bold uppercase block">MAAMORA</span>
+                  <span className="text-[6px] tracking-widest text-[#b9ff43] font-bold uppercase block">MAAMORA</span>
                 </div>
                 <div>
                   <h4 className="text-[9px] font-bold text-stone-900 leading-none">SAVON NOIR</h4>
@@ -212,9 +213,9 @@ export const Product3DModel: React.FC<Product3DModelProps> = ({
     >
       {isCustomImage ? (
         <div className="relative w-full h-full flex flex-col items-center justify-center p-2">
-          <div className="absolute inset-0 bg-white/30 backdrop-blur-sm rounded-2xl border border-white/40 shadow-xl" />
+          <div className="absolute inset-0 border border-white/40 bg-white/30 shadow-xl backdrop-blur-sm" />
 
-          <div className="relative w-[90%] h-[90%] rounded-xl overflow-hidden border border-stone-300 bg-stone-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.1)] flex items-center justify-center">
+          <div className="relative flex h-[90%] w-[90%] items-center justify-center overflow-hidden border border-[#bdbdb4] bg-[#e8e7df] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.1)]">
             {type ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -235,8 +236,8 @@ export const Product3DModel: React.FC<Product3DModelProps> = ({
             </div>
           </div>
 
-          <div className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20 shadow-sm backdrop-blur-md">
-            🍃
+          <div className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center border border-[#8aa65a] bg-[rgba(185,255,67,.14)] text-[10px] shadow-sm backdrop-blur-md">
+            <span aria-hidden="true">+</span>
           </div>
         </div>
       ) : (

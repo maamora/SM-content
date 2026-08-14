@@ -22,3 +22,8 @@
 - [x] Create an idempotent Supabase migration without service credentials or fabricated application data.
 - [x] Validate the migration structure and document how to apply it with Supabase SQL Editor or CLI.
 - [x] Document the required Supabase connection variables and safe handling of `service_role` credentials.
+- [x] Audit legacy frontend components still using the old visual language and map their routes.
+- [x] Define the component-level STUDIO design refresh using the existing tokens and interaction patterns.
+- [x] Implement the visual refresh across legacy product, studio, batch, approval, and shared shell surfaces without changing API contracts.
+- [x] Verify the refreshed routes, production build, TypeScript, lint, and responsive presentation.
+- [x] Commit the design refresh to `main` and document the changed surfaces.
