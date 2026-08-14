@@ -30,3 +30,13 @@ Thumbs.db
 backend/uploads/
 backend/data/
 frontend/tsconfig.tsbuildinfo
+backend-api-inventory.md
+LOCAL_DEVELOPMENT.md
+PRODUCTION_LOCAL_RUNBOOK.md
+Project.md
+todo.md
+verification-notes.md
+backend/PERSISTENCE.md
+.agent/
+.clinerules
+.cursorrules
