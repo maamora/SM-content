@@ -168,7 +168,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 Start Next.js on port 3001, which is already allowed by the backend's local CORS defaults:
 
 ```bash
-pnpm dev -- --hostname 0.0.0.0 --port 3001
+pnpm exec next dev --hostname 0.0.0.0 --port 3001
 ```
 
 Open [http://localhost:3001](http://localhost:3001). The Next.js configuration also allows the development loopback origin `http://127.0.0.1:3001`, so either localhost spelling can be used locally. Keep the frontend and backend terminals running at the same time.
