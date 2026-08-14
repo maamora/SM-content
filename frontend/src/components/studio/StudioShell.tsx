@@ -6,7 +6,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { ArrowRight, ArrowUpRight, Menu, X } from "lucide-react";
-import { CreativeCanvas, type CanvasNode } from "./CreativeCanvas";
 
 export const studioImages = {
   mark: "/studio/logo-mark.png",
@@ -74,14 +73,6 @@ export const marketingData = {
   contact: { eyebrow: "THE CONVERSATION", title: "Bring us the", accent: "interesting problem.", body: "Tell us what your team is trying to make, and we will show you where STUDIO can take some weight off.", items: [["Creative teams", "Build a more expressive operating rhythm.", "01"], ["Brand teams", "Keep every market moving in one direction.", "02"], ["Studios", "Scale the output without flattening the point of view.", "03"]] },
 } as const;
 
-const marketingCanvasNodes: CanvasNode[] = [
-  { id: "marketing-brief", kind: "prompt", label: "BRIEF", title: "The next direction", meta: "Context attached", detail: "Start with the signal already in the room, then make it visible.", x: 17, y: 36, status: "live" },
-  { id: "marketing-image", kind: "image", label: "IMAGE", title: "Source material", meta: "Visual reference", detail: "A source becomes more useful when its reason for being stays attached.", x: 42, y: 24, status: "ready" },
-  { id: "marketing-output", kind: "image", label: "OUTPUT", title: "A considered family", meta: "Multiple branches", detail: "Generate more without flattening the point of view.", x: 68, y: 36, status: "ready" },
-  { id: "marketing-motion", kind: "video", label: "MOTION", title: "The next move", meta: "In progress", detail: "The system keeps the next decision close to the current one.", x: 44, y: 70, status: "draft" },
-  { id: "marketing-palette", kind: "palette", label: "SYSTEM", title: "Brand language", meta: "Always in frame", detail: "Rules become useful when they can move with the work.", x: 83, y: 69, status: "live" },
-];
-
 export function MarketingPage({ slug }: { slug: keyof typeof marketingData }) {
   const data = marketingData[slug];
   const [sent, setSent] = useState(false);
@@ -91,7 +82,6 @@ export function MarketingPage({ slug }: { slug: keyof typeof marketingData }) {
       <section className="studio-page-hero studio-starfield"><div className="studio-shell studio-page-hero__inner"><p className="studio-kicker">{data.eyebrow} / STUDIO</p><h1>{data.title}<br /><em>{data.accent}</em></h1><p>{data.body}</p>
         {slug === "contact" ? <form className="studio-contact-form" onSubmit={submit}><input required type="email" placeholder="you@team.com" aria-label="Email" /><textarea required placeholder="What are you trying to make?" aria-label="Message" rows={4} /><button className="studio-button studio-button--lime" type="submit">{sent ? "Message queued" : "Start the conversation"} <ArrowUpRight size={15} /></button></form> : <Link href="/register" className="studio-button studio-button--lime studio-button--large">Explore STUDIO <ArrowUpRight size={16} /></Link>}
       </div></section>
-      <section className="studio-page-canvas-section studio-starfield"><div className="studio-shell"><div className="studio-page-canvas-intro"><div><p className="studio-kicker">THE SURFACE / {data.eyebrow}</p><h2>See the work<br /><em>between the steps.</em></h2></div><p>STUDIO makes the relationships visible, so a brief can become a direction without losing the reason it mattered.</p></div><CreativeCanvas nodes={marketingCanvasNodes} title={`${data.eyebrow.toLowerCase()} / live thread`} eyebrow="STUDIO / EXPLORATION" compact /></div></section>
       <section className="studio-light-section studio-page-grid-section"><div className="studio-shell studio-page-grid">{data.items.map(([title, text, index]) => <article key={title} className="studio-page-card"><span className="studio-page-card__index">{index}</span><h2>{title}</h2><p>{text}</p><ArrowRight size={17} /></article>)}</div></section>
       <StudioFooter />
     </main>
