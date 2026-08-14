@@ -15,3 +15,6 @@
 - [x] Reproduce the `/_global-error` failure with a focused production-build log.
 - [x] Apply the smallest compatible fix without changing the STUDIO visual system.
 - [x] Re-run TypeScript, lint, and production build, then commit the verified fix to main.
+- [x] Write a copy-paste production-local runbook from cloning `main` through installing dependencies and provisioning PostgreSQL.
+- [x] Include Spring Boot environment setup, backend startup, Next.js production build/start, and all functional smoke tests.
+- [x] Validate the runbook against the merged repository commands and document unavailable backend feature areas.

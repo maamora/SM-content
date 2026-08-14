@@ -247,7 +247,7 @@ Basic authentication, products, brand, posts, and templates do not prove that ex
 
 ### Production build fails at `/_global-error`
 
-The current baseline has a Next.js/React compatibility issue during production prerendering of `/_global-error`. The development server and TypeScript checks can still pass. Resolve the dependency/version issue before publishing a production build.
+Use the committed `pnpm build` script, which forces `NODE_ENV=production` before invoking Next.js. A parent shell exporting `NODE_ENV=development` can cause a misleading null `useContext` failure during error-route prerendering. If needed, run `NODE_ENV=production pnpm exec next build` explicitly. See [`PRODUCTION_LOCAL_RUNBOOK.md`](PRODUCTION_LOCAL_RUNBOOK.md) for the full production-local workflow.
 
 ## 9. Safe shutdown and reset guidance
 
