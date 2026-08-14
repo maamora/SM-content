@@ -73,3 +73,7 @@
 - [x] Evaluate MAI-Image-2.5 availability, pricing, licensing, and suitability for STUDIO image generation.
 - [x] Identify a maintained image-generation option that accepts separate product and model photos as reference inputs.
 - [x] Recommend the safest practical model-integration path for the STUDIO creative workflow.
+- [x] Audit the active local configuration and safely identify which external providers can be exercised in this validation run.
+- [x] Run backend tests, frontend type/lint/production builds, and authenticated database-backed smoke checks.
+- [x] Validate creative generation, caption generation, social publishing, and SMTP flows against real configured providers or explicit unavailable states.
+- [x] Fix verified full-system defects, repeat focused regression tests, and document the production-readiness result.

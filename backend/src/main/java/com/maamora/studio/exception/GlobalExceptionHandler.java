@@ -49,6 +49,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(ApiResponse.error(message));
     }
 
+    @ExceptionHandler({ IllegalArgumentException.class, IllegalStateException.class })
+    public ResponseEntity<ApiResponse<Object>> handleInvalidRequest(RuntimeException ex) {
+        String message = ex.getMessage();
+        return ResponseEntity.badRequest().body(ApiResponse.error(
+                message == null || message.isBlank() ? "The request could not be completed." : message));
+    }
+
     @ExceptionHandler({ CaptionGenerationException.class, ExportProcessingException.class,
             BatchProcessingException.class })
     public ResponseEntity<ApiResponse<Object>> handleDomainProcessingException(RuntimeException ex) {
