@@ -70,3 +70,6 @@
 - [x] Replace external creative-workflow image delivery with portable project-owned assets.
 - [x] Upgrade the landing creative canvas with stronger interactive product, model, prompt, and variation controls.
 - [x] Verify the corrected imagery in a local production build and push the fix.
+- [x] Evaluate MAI-Image-2.5 availability, pricing, licensing, and suitability for STUDIO image generation.
+- [x] Identify a maintained image-generation option that accepts separate product and model photos as reference inputs.
+- [x] Recommend the safest practical model-integration path for the STUDIO creative workflow.
