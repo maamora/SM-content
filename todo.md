@@ -27,3 +27,4 @@
 - [x] Implement the visual refresh across legacy product, studio, batch, approval, and shared shell surfaces without changing API contracts.
 - [x] Verify the refreshed routes, production build, TypeScript, lint, and responsive presentation.
 - [x] Commit the design refresh to `main` and document the changed surfaces.
+- [ ] Diagnose the local frontend message that cannot reach the Spring Boot backend at `http://localhost:8080`.

@@ -117,7 +117,8 @@ GEMINI_API_KEY=local-only-placeholder
 STORAGE_LOCAL_PATH=./uploads
 STORAGE_PUBLIC_BASE_URL=http://localhost:8080/files
 
-CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001
+# Any local Next.js port is allowed; use explicit deployed origins in production.
+CORS_ALLOWED_ORIGINS=http://localhost:*,http://127.0.0.1:*
 
 ADMIN_EMAIL=admin@maamora.com
 ADMIN_PASSWORD=admin123
@@ -165,13 +166,14 @@ The client defaults to `http://localhost:8080`. To make that explicit, create `f
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 ```
 
-Start Next.js on port 3001, which is already allowed by the backend's local CORS defaults:
+Start Next.js on port 3001. The backend's local CORS defaults accept localhost and
+127.0.0.1 on any port, so Next.js may also move to another local port if 3001 is busy:
 
 ```bash
 pnpm exec next dev --hostname 0.0.0.0 --port 3001
 ```
 
-Open [http://localhost:3001](http://localhost:3001). The Next.js configuration also allows the development loopback origin `http://127.0.0.1:3001`, so either localhost spelling can be used locally. Keep the frontend and backend terminals running at the same time.
+Open [http://localhost:3001](http://localhost:3001), or the port shown by the Next.js terminal. The Next.js configuration also allows the loopback origin spelling `127.0.0.1`. Keep the frontend and backend terminals running at the same time.
 
 Frontend checks:
 
@@ -231,11 +233,19 @@ Run `pg_isready -h 127.0.0.1 -p 5432`, confirm the PostgreSQL service is running
 
 ### Frontend reports that the backend cannot be reached
 
-Confirm Spring Boot is listening on port 8080 and that `NEXT_PUBLIC_API_BASE_URL` points to `http://localhost:8080`. Restart Next.js after changing `frontend/.env.local`, because public Next.js environment variables are read when the dev server starts.
+The message is produced by the browser `fetch` layer when the request is blocked before the frontend receives a normal HTTP response. The Spring Boot log showing `Tomcat started on port 8080` confirms that the backend process itself is running. First confirm that `http://localhost:8080/actuator/health` responds, then check the browser's actual frontend URL and the browser console for a CORS or mixed-content message.
+
+The backend now uses Spring's origin-pattern support and accepts local origins such as `http://localhost:3000`, `http://localhost:3001`, `http://localhost:3002`, and their `127.0.0.1` equivalents by default. If `CORS_ALLOWED_ORIGINS` is set explicitly in the PowerShell session or `backend/.env`, use:
+
+```powershell
+$env:CORS_ALLOWED_ORIGINS = "http://localhost:*,http://127.0.0.1:*"
+```
+
+Restart Spring Boot after changing that variable. Also confirm that `frontend/.env.local` contains `NEXT_PUBLIC_API_BASE_URL=http://localhost:8080`, then restart Next.js because public environment variables are read when the dev server starts. If the frontend and backend run on different machines, replace `localhost` with the backend machine's LAN address and add the frontend's exact origin to `CORS_ALLOWED_ORIGINS` instead of using the local wildcard.
 
 ### Browser login returns 403 from one local origin
 
-Use `http://localhost:3001` or `http://127.0.0.1:3001` and keep the matching origin in `CORS_ALLOWED_ORIGINS`. If you change the backend environment file, restart Spring Boot. If you change `next.config.ts`, restart Next.js.
+Use the exact URL printed by Next.js. For local development, `http://localhost:<port>` and `http://127.0.0.1:<port>` are accepted by the default wildcard configuration. If you change the backend environment file, restart Spring Boot. If you change `next.config.ts`, restart Next.js.
 
 ### The dashboard shows 403 after reopening the page
 
