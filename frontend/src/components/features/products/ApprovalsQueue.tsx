@@ -1,5 +1,6 @@
 "use client";
 
+/* STUDIO editorial refresh: moderation reads as a quiet live board with lime decisions. */
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -57,23 +58,23 @@ export default function ApprovalsQueue({ onChange }: ApprovalsQueueProps) {
     };
 
     if (loading) {
-        return <p className="text-xs text-stone-400 font-bold">Chargement des produits en attente...</p>;
+        return <div className="studio-loading"><Loader2 className="studio-spin" size={16} /> Chargement des produits en attente...</div>;
     }
 
     if (errorMsg) {
-        return <p className="text-xs text-red-600 font-bold">{errorMsg}</p>;
+        return <p className="studio-form-error">{errorMsg}</p>;
     }
 
     if (products.length === 0) {
         return (
-            <div className="flex h-48 w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-stone-300 bg-white">
-                <div className="h-10 w-10 rounded-xl bg-emerald-50 border-2 border-emerald-500/30 flex items-center justify-center text-emerald-600">
+            <div className="studio-product-empty">
+                <div>
+                    <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center border border-[#8aa65a] bg-[rgba(185,255,67,.14)] text-[#5f762a]">
                     <ShieldCheck className="h-5 w-5" />
+                    </div>
+                    <p>Rien à examiner</p>
+                    <small>Les nouveaux produits soumis par l&apos;équipe apparaîtront ici avant de pouvoir être utilisés dans l&apos;Atelier.</small>
                 </div>
-                <p className="text-sm font-bold text-stone-800">Rien à examiner</p>
-                <p className="text-xs text-stone-400 max-w-xs text-center font-medium">
-                    Les nouveaux produits soumis par l&apos;équipe apparaîtront ici avant de pouvoir être utilisés dans l&apos;Atelier.
-                </p>
             </div>
         );
     }
@@ -84,38 +85,38 @@ export default function ApprovalsQueue({ onChange }: ApprovalsQueueProps) {
                 <div
                     key={product.id}
                     onClick={() => router.push(`/products/${product.id}`)}
-                    className="flex items-center justify-between gap-4 p-4 rounded-2xl border-3 border-stone-900 bg-white shadow-[4px_4px_0px_0px_rgba(28,25,23,1)] cursor-pointer hover:bg-stone-50 transition-colors"
+                    className="studio-data-row studio-approval-row"
                 >
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="relative h-14 w-14 shrink-0 rounded-xl overflow-hidden border-2 border-stone-900 bg-stone-100">
+                        <div className="studio-approval-thumb shrink-0">
                             {product.imageUrl ? (
                                 <Image src={product.imageUrl} alt={product.name} fill sizes="56px" className="object-cover" />
                             ) : (
-                                <div className="flex h-full items-center justify-center text-[8px] font-black text-stone-400 uppercase">N/A</div>
+                                <div className="flex h-full items-center justify-center text-[8px] font-black uppercase text-[#91918b]">N/A</div>
                             )}
                         </div>
                         <div className="min-w-0">
-                            <p className="text-sm font-extrabold text-stone-900 truncate">{product.name}</p>
-                            <p className="text-xs text-stone-400 mt-0.5 line-clamp-1 font-medium">{product.description}</p>
+                            <p className="truncate text-sm font-extrabold text-[var(--studio-ink)]">{product.name}</p>
+                            <p className="mt-0.5 line-clamp-1 text-xs font-medium text-[#777870]">{product.description}</p>
                             <div className="flex items-center gap-2 mt-1">
                                 {product.price != null && (
-                                    <p className="text-xs font-mono font-black text-[#F47315]">{product.price.toFixed(2)} MAD</p>
+                                    <p className="text-xs font-mono font-black text-[#5f762a]">{product.price.toFixed(2)} MAD</p>
                                 )}
                                 {product.createdByName && (
-                                    <p className="text-[10px] text-stone-400 font-bold">Soumis par {product.createdByName}</p>
+                                    <p className="text-[10px] font-bold text-[#91918b]">Soumis par {product.createdByName}</p>
                                 )}
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex shrink-0 items-center gap-2">
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 handleReject(product.id);
                             }}
                             disabled={busyId === product.id}
-                            className="h-9 px-3 rounded-xl border-2 border-stone-900 bg-white text-stone-500 text-xs font-extrabold hover:bg-red-50 hover:text-red-600 hover:border-red-500 flex items-center gap-1.5 disabled:opacity-50 transition-colors"
+                            className="studio-button studio-button--paper h-9 px-3 text-xs disabled:opacity-50"
                         >
                             {busyId === product.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
                             Rejeter
@@ -126,7 +127,7 @@ export default function ApprovalsQueue({ onChange }: ApprovalsQueueProps) {
                                 handleApprove(product.id);
                             }}
                             disabled={busyId === product.id}
-                            className="h-9 px-4 rounded-xl bg-[#F47315] hover:bg-[#ff852e] text-white text-xs font-extrabold flex items-center gap-1.5 disabled:opacity-50 border-b-2 border-stone-900 shadow-[2px_2px_0px_0px_rgba(28,25,23,1)] transition-all"
+                            className="studio-button studio-button--lime h-9 px-4 text-xs disabled:opacity-50"
                         >
                             {busyId === product.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
                             Approuver

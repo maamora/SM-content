@@ -1,0 +1,14 @@
+{
+    "mcpServers": {
+        "higgsfield": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@higgsfield/mcp@latest",
+                "posts",
+                "ads",
+                "caption"
+            ]
+        }
+    }
+}

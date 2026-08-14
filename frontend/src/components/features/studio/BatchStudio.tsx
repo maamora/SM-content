@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Layers, Loader2, CheckCircle, Download, Check, AlertCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+/* STUDIO editorial refresh: batch work is presented as a quiet production board with lime controls. */
+import { Layers, Loader2, CheckCircle, Download, AlertCircle } from "lucide-react";
 import { type Product } from "@/lib/api/products";
 import { listTemplates, type Template } from "@/lib/api/templates";
 import { createBatch, getBatch, exportBatch, type BatchJob } from "@/lib/api/batches";
@@ -35,6 +36,7 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
 
     useEffect(() => {
         if (templatesForFormat.length > 0 && !templatesForFormat.some(t => t.id === selectedTemplateId)) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- Keep the selected template valid when a format changes.
             setSelectedTemplateId(templatesForFormat[0].id);
         }
     }, [templatesForFormat, selectedTemplateId]);
@@ -107,49 +109,49 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
     return (
         <div className="space-y-8 select-none">
             <div>
-                <h2 className="text-xl font-black tracking-tight text-stone-900 font-serif flex items-center gap-2">
-                    <Layers className="h-5 w-5 text-[#F47315]" />
+                <h2 className="flex items-center gap-2 font-serif text-2xl font-normal tracking-tight text-[var(--studio-ink)]">
+                    <Layers className="h-5 w-5 text-[#5f762a]" />
                     Génération en Lot (Batch)
                 </h2>
-                <p className="text-xs text-stone-400 mt-1 font-medium">
+                <p className="mt-1 text-xs font-medium text-[#777870]">
                     Générez des visuels et légendes multilingues pour plusieurs produits en même temps.
                 </p>
             </div>
 
             {errorMsg && (
-                <div className="rounded-xl border-2 border-red-500 bg-red-50 px-4 py-2.5 text-xs text-red-700 font-bold">
+                <div className="studio-form-error">
                     {errorMsg}
                 </div>
             )}
 
             {!activeBatchId ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="bg-white border-3 border-stone-900 rounded-3xl p-6 shadow-[6px_6px_0px_0px_rgba(28,25,23,1)]">
-                        <h3 className="font-extrabold text-stone-900 mb-4 block text-sm">Produits à inclure</h3>
-                        <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                <div className="studio-live-columns">
+                    <div className="studio-creative-card p-6">
+                        <h3 className="mb-4 block text-sm font-black text-[var(--studio-ink)]">Produits à inclure</h3>
+                        <div className="max-h-64 space-y-2 overflow-y-auto pr-2">
                             {approvedProducts.map(p => (
-                                <label key={p.id} className="flex items-center gap-3 p-3 border-2 border-stone-200 rounded-xl cursor-pointer hover:border-stone-900 transition-colors">
+                                <label key={p.id} className="flex cursor-pointer items-center gap-3 border border-[#deddd5] p-3 transition-colors hover:border-[var(--studio-ink)]">
                                     <input
                                         type="checkbox"
                                         checked={selectedProducts.has(p.id)}
                                         onChange={() => toggleProduct(p.id)}
-                                        className="h-4 w-4 rounded text-[#F47315] focus:ring-[#F47315]"
+                                        className="h-4 w-4 accent-[var(--studio-lime)]"
                                     />
                                     <div>
-                                        <p className="text-sm font-bold text-stone-800">{p.name}</p>
-                                        {p.price && <p className="text-[10px] text-stone-400 font-mono">{p.price} MAD</p>}
+                                        <p className="text-sm font-bold text-[var(--studio-ink)]">{p.name}</p>
+                                        {p.price && <p className="text-[10px] font-mono text-[#91918b]">{p.price} MAD</p>}
                                     </div>
                                 </label>
                             ))}
                             {approvedProducts.length === 0 && (
-                                <p className="text-xs text-stone-500 font-medium py-4 text-center">Aucun produit approuvé disponible.</p>
+                                <p className="py-4 text-center text-xs font-medium text-[#91918b]">Aucun produit approuvé disponible.</p>
                             )}
                         </div>
                     </div>
 
-                    <div className="bg-white border-3 border-stone-900 rounded-3xl p-6 shadow-[6px_6px_0px_0px_rgba(28,25,23,1)] space-y-6">
+                    <div className="studio-creative-card space-y-6 p-6">
                         <div className="space-y-2">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-stone-500 block">Format d&apos;export</span>
+                            <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Format d&apos;export</span>
                             <div className="flex gap-2">
                                 {[
                                     { id: "SQUARE_POST" as const, name: "SQUARE" },
@@ -158,7 +160,7 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                                     <button
                                         key={f.id}
                                         onClick={() => setSelectedFormat(f.id)}
-                                        className={`px-4 py-2 text-xs font-bold rounded-xl border-2 transition-all ${selectedFormat === f.id ? "bg-orange-50 border-[#F47315] text-[#F47315]" : "border-stone-200 text-stone-500 hover:border-stone-400"
+                                        className={`border px-4 py-2 text-xs font-bold transition-all ${selectedFormat === f.id ? "border-[#8aa65a] bg-[rgba(185,255,67,.14)] text-[#5f762a]" : "border-[#c5c4bb] text-[#777870] hover:border-[var(--studio-ink)]"
                                             }`}
                                     >
                                         {f.name}
@@ -168,14 +170,14 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                         </div>
 
                         <div className="space-y-2">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-stone-500 block">Modèle</span>
+                            <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Modèle</span>
                             {/* Each format currently maps to exactly one design template, so this
                                 renders as buttons (like the Atelier Créatif tab) rather than a
                                 dropdown — a dropdown implies there's more than one option to pick
                                 between, which isn't the case yet. Scales automatically if more
                                 templates get added per format later. */}
                             {templatesForFormat.length === 0 ? (
-                                <p className="text-[11px] text-stone-400 font-medium">Aucun modèle disponible pour ce format.</p>
+                                <p className="text-[11px] font-medium text-[#91918b]">Aucun modèle disponible pour ce format.</p>
                             ) : (
                                 <div className="grid grid-cols-2 gap-2">
                                     {templatesForFormat.map(t => (
@@ -183,9 +185,9 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                                             key={t.id}
                                             type="button"
                                             onClick={() => setSelectedTemplateId(t.id)}
-                                            className={`px-3 py-2.5 rounded-xl border-2 text-xs text-left transition-all font-bold ${selectedTemplateId === t.id
-                                                ? "border-[#F47315] bg-orange-50 text-[#F47315]"
-                                                : "border-stone-200 bg-white text-stone-500 hover:border-stone-400"
+                                            className={`border px-3 py-2.5 text-left text-xs font-bold transition-all ${selectedTemplateId === t.id
+                                                ? "border-[#8aa65a] bg-[rgba(185,255,67,.14)] text-[#5f762a]"
+                                                : "border-[#c5c4bb] bg-[#faf9f4] text-[#777870] hover:border-[var(--studio-ink)]"
                                                 }`}
                                         >
                                             {t.name}
@@ -198,7 +200,7 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                         <button
                             onClick={handleStartBatch}
                             disabled={isStartingBatch || selectedProducts.size === 0 || !selectedTemplateId}
-                            className="w-full h-11 text-xs font-extrabold rounded-xl bg-[#F47315] hover:bg-[#ff852e] text-white border-b-2 border-stone-900 shadow-[3px_3px_0px_0px_rgba(28,25,23,1)] disabled:opacity-50 flex items-center justify-center gap-2"
+                            className="studio-button studio-button--lime studio-button--large w-full disabled:opacity-50"
                         >
                             {isStartingBatch && <Loader2 className="h-4 w-4 animate-spin" />}
                             Lancer le traitement ({selectedProducts.size} éléments)
@@ -206,41 +208,41 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                     </div>
                 </div>
             ) : (
-                <div className="bg-white border-3 border-stone-900 rounded-3xl p-8 shadow-[8px_8px_0px_0px_rgba(28,25,23,1)] max-w-2xl mx-auto space-y-6">
+                <div className="studio-creative-card mx-auto max-w-2xl space-y-6 p-8">
                     <div className="flex flex-col items-center justify-center space-y-4">
                         {activeBatch?.status === "DONE" ? (
-                            <div className="h-16 w-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center border-2 border-green-200">
+                            <div className="flex h-16 w-16 items-center justify-center border border-[#8aa65a] bg-[rgba(185,255,67,.14)] text-[#5f762a]">
                                 <CheckCircle className="h-8 w-8" />
                             </div>
                         ) : activeBatch?.status === "FAILED" ? (
-                            <div className="h-16 w-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center border-2 border-red-200">
+                            <div className="flex h-16 w-16 items-center justify-center border border-[#c99b9b] bg-[#fff2f2] text-[#944949]">
                                 <AlertCircle className="h-8 w-8" />
                             </div>
                         ) : (
-                            <div className="h-16 w-16 bg-orange-50 text-[#F47315] rounded-full flex items-center justify-center border-2 border-orange-200">
+                            <div className="flex h-16 w-16 items-center justify-center border border-[#8aa65a] bg-[rgba(185,255,67,.14)] text-[#5f762a]">
                                 <Loader2 className="h-8 w-8 animate-spin" />
                             </div>
                         )}
 
-                        <h3 className="font-extrabold text-stone-900 text-lg">
+                        <h3 className="font-serif text-2xl font-normal text-[var(--studio-ink)]">
                             {activeBatch?.status === "DONE" ? "Traitement terminé" :
                                 activeBatch?.status === "FAILED" ? "Traitement échoué" :
                                     "Génération en cours..."}
                         </h3>
 
                         {activeBatch && activeBatch.posts && (
-                            <p className="text-sm font-medium text-stone-500">
+                            <p className="text-sm font-medium text-[#777870]">
                                 {activeBatch.posts.length} visuels générés jusqu&apos;à présent.
                             </p>
                         )}
                     </div>
 
                     {activeBatch?.status === "DONE" && (
-                        <div className="flex justify-center pt-4 border-t-2 border-stone-100">
+                        <div className="flex justify-center border-t border-[#deddd5] pt-4">
                             <button
                                 onClick={handleExport}
                                 disabled={isExporting}
-                                className="h-11 px-8 text-xs font-extrabold rounded-xl bg-[#F47315] hover:bg-[#ff852e] text-white border-b-2 border-stone-900 shadow-[3px_3px_0px_0px_rgba(28,25,23,1)] disabled:opacity-50 flex items-center gap-2"
+                                className="studio-button studio-button--lime studio-button--large disabled:opacity-50"
                             >
                                 {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                                 Exporter le lot (.ZIP)
@@ -251,7 +253,7 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                     <div className="flex justify-center pt-4">
                         <button
                             onClick={() => { setActiveBatchId(null); setActiveBatch(null); }}
-                            className="text-[11px] font-bold text-stone-400 hover:text-stone-900 underline underline-offset-4"
+                            className="studio-text-button"
                         >
                             Retourner et créer un nouveau lot
                         </button>
