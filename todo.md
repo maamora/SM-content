@@ -28,3 +28,8 @@
 - [x] Verify the refreshed routes, production build, TypeScript, lint, and responsive presentation.
 - [x] Commit the design refresh to `main` and document the changed surfaces.
 - [ ] Diagnose the local frontend message that cannot reach the Spring Boot backend at `http://localhost:8080`.
+- [x] Translate the supplied node-based creative workspace reference into a STUDIO-wide product direction.
+- [x] Audit all current routes and identify where the existing pages are constrained by legacy content or layout.
+- [x] Build a new expressive AI canvas, node, media-card, prompt, inspector, and motion system for the application.
+- [x] Expand marketing, authentication, dashboard, studio, and admin pages with original STUDIO content beyond the legacy page shells.
+- [x] Verify responsive behavior, TypeScript, lint, backend wiring, and production build after the product redesign.
