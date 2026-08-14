@@ -109,10 +109,10 @@ DB_SSL_MODE=disable
 JWT_SECRET=replace-this-with-a-long-random-secret-at-least-32-characters
 JWT_EXPIRATION_MS=86400000
 
-# Required by the current configuration at startup; placeholders are enough
-# for local UI/API smoke tests that do not call the providers.
-ANTHROPIC_API_KEY=local-only-placeholder
-GEMINI_API_KEY=local-only-placeholder
+# Optional provider credentials. Leave them blank for local UI/API smoke tests
+# that do not call external providers. Caption generation uses Gemini.
+ANTHROPIC_API_KEY=
+GEMINI_API_KEY=
 
 STORAGE_LOCAL_PATH=./uploads
 STORAGE_PUBLIC_BASE_URL=http://localhost:8080/files
