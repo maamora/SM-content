@@ -67,3 +67,6 @@
 - [x] Refresh the landing creative workflow with tangible product and model reference assets.
 - [x] Add distinct campaign image variations as the explicit non-video result state for the landing demonstration.
 - [x] Verify the revised creative workflow presentation and commit the GitHub update.
+- [x] Replace external creative-workflow image delivery with portable project-owned assets.
+- [x] Upgrade the landing creative canvas with stronger interactive product, model, prompt, and variation controls.
+- [x] Verify the corrected imagery in a local production build and push the fix.
