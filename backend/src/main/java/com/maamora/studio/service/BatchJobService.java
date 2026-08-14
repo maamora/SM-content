@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -57,24 +58,29 @@ public class BatchJobService {
 
     private void runAsync(String userId, BatchJob job, BatchCreateRequest request) {
         Semaphore semaphore = new Semaphore(MAX_CONCURRENT);
+        AtomicBoolean failed = new AtomicBoolean(false);
 
         List<CompletableFuture<Void>> futures = request.getProductIds().stream()
                 .map(productId -> CompletableFuture.runAsync(() -> {
+                    boolean acquired = false;
                     try {
                         semaphore.acquire();
+                        acquired = true;
                         processOneProduct(userId, job, productId, request.getTemplateId());
                     } catch (Exception e) {
-                        // Logged and skipped: one failing product must not sink the whole batch.
+                        failed.set(true);
                         log.error("Batch item failed for product {}: {}", productId, e.getMessage(), e);
                     } finally {
-                        semaphore.release();
+                        if (acquired) {
+                            semaphore.release();
+                        }
                     }
                 }, executor))
                 .toList();
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                 .thenRun(() -> {
-                    job.setStatus(BatchStatus.DONE);
+                    job.setStatus(failed.get() ? BatchStatus.FAILED : BatchStatus.DONE);
                     batchJobRepository.save(job);
                 });
     }

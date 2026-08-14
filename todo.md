@@ -27,4 +27,11 @@
 - [x] Implement the visual refresh across legacy product, studio, batch, approval, and shared shell surfaces without changing API contracts.
 - [x] Verify the refreshed routes, production build, TypeScript, lint, and responsive presentation.
 - [x] Commit the design refresh to `main` and document the changed surfaces.
-- [ ] Diagnose the local frontend message that cannot reach the Spring Boot backend at `http://localhost:8080`.
+- [x] Diagnose the local frontend message that cannot reach the Spring Boot backend at `http://localhost:8080`.
+- [x] Diagnose why the local preview landing page does not match the restored GitHub STUDIO version.
+- [x] Synchronize the separate `flora-marketing-site` preview landing with the restored GitHub STUDIO landing direction.
+- [x] Audit the supplied production product brief against the current frontend, backend, database, and route inventory.
+- [x] Define which missing capabilities can be implemented with the existing stack and which require external providers or user configuration.
+- [x] Implement missing production-critical behavior with server-side validation, authorization, persistence, and honest failure states.
+- [x] Complete frontend behavior for the supported product, approval, studio, batch, asset, post, and admin workflows.
+- [x] Verify end-to-end functionality, production build, security boundaries, and local configuration guidance.

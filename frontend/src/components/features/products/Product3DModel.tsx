@@ -1,11 +1,9 @@
-"use client";
-
-/* STUDIO editorial refresh: product mockups keep material geometry but use the brand's lime signal and paper framing. */
+/* STUDIO Editorial Creative OS: product mockups are tactile specimens with paper labels and a lime signal. */
 import React from "react";
 import { motion } from "motion/react";
 
 interface Product3DModelProps {
-  /** One of the 5 preset keys ("argan-bottle", "honey-jar", "rose-serum", "savon-jar", "figue-dropper"), or a real image URL/base64 string. */
+  /** One of the preset keys or a real image URL/base64 string. */
   type: string;
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
@@ -13,236 +11,32 @@ interface Product3DModelProps {
 }
 
 const PRESET_KEYS = ["argan-bottle", "honey-jar", "rose-serum", "savon-jar", "figue-dropper"];
+const PRESET_DETAILS = {
+  "argan-bottle": { title: "Argan", subtitle: "Elixir Pur", note: "50ml", shape: "bottle", tone: "#697d42" },
+  "honey-jar": { title: "Miel Pur", subtitle: "Daghmous Rare", note: "100% bio", shape: "jar", tone: "#b9ff43" },
+  "rose-serum": { title: "Rose", subtitle: "Sérum Suprême", note: "30ml", shape: "serum", tone: "#d6b8b1" },
+  "savon-jar": { title: "Savon Noir", subtitle: "Eucalyptus & Argan", note: "Soin purifiant", shape: "dark-jar", tone: "#b9ff43" },
+  "figue-dropper": { title: "Figue de Barbarie", subtitle: "Huile de Pépins", note: "L'élixir", shape: "dropper", tone: "#80936a" },
+} as const;
 
-export const Product3DModel: React.FC<Product3DModelProps> = ({
-  type,
-  size = "md",
-  className = "",
-  isFloating = true
-}) => {
-  const sizeClasses = {
-    sm: "w-24 h-32",
-    md: "w-36 h-48",
-    lg: "w-48 h-64",
-    xl: "w-64 h-80"
-  };
-
+export const Product3DModel: React.FC<Product3DModelProps> = ({ type, size = "md", className = "", isFloating = true }) => {
+  const sizeClasses = { sm: "w-24 h-32", md: "w-36 h-48", lg: "w-48 h-64", xl: "w-64 h-80" };
   const isCustomImage = !PRESET_KEYS.includes(type);
+  const preset = PRESET_DETAILS[type as keyof typeof PRESET_DETAILS] ?? PRESET_DETAILS["argan-bottle"];
+  const floatTransition = isFloating ? { y: { duration: 3, repeat: Infinity, repeatType: "reverse" as const, ease: "easeInOut" as const }, rotate: { duration: 5, repeat: Infinity, repeatType: "reverse" as const, ease: "easeInOut" as const } } : undefined;
+  const floatAnimate = isFloating ? { y: [0, -8, 0], rotate: [-1, 1, -1] } : undefined;
 
-  const floatTransition = isFloating
-    ? {
-        y: {
-          duration: 3,
-          repeat: Infinity,
-          repeatType: "reverse" as const,
-          ease: "easeInOut" as const
-        },
-        rotate: {
-          duration: 5,
-          repeat: Infinity,
-          repeatType: "reverse" as const,
-          ease: "easeInOut" as const
-        }
-      }
-    : undefined;
+  const renderPreset = () => <div className="studio-product-model" style={{ "--product-tone": preset.tone } as React.CSSProperties}>
+    <div className="studio-product-model__shadow" />
+    <div className={`studio-product-model__object studio-product-model__object--${preset.shape}`}>
+      <div className="studio-product-model__highlight" />
+      <div className="studio-product-model__cap"><span /></div>
+      <div className="studio-product-model__label"><div className="studio-product-model__brand">STUDIO / MAAMORA</div><strong>{preset.title}</strong><small>{preset.subtitle}</small><i /><em>{preset.note}</em></div>
+      <span className="studio-product-model__axis">SPECIMEN / 01</span>
+    </div>
+  </div>;
 
-  const floatAnimate = isFloating
-    ? {
-        y: [0, -8, 0],
-        rotate: [-1, 1, -1]
-      }
-    : undefined;
-
-  const renderPresetBottle = () => {
-    switch (type) {
-      case "argan-bottle":
-        return (
-          <div className="relative w-full h-full flex flex-col items-center justify-center">
-            <div className="absolute -bottom-2 w-3/4 h-3 bg-stone-900/10 rounded-full blur-sm filter" />
-
-            <div className="relative w-2/3 h-4/5 rounded-t-3xl rounded-b-2xl bg-gradient-to-r from-amber-700 via-amber-600 to-amber-800 border border-amber-900/30 shadow-[inset_-8px_0_12px_rgba(0,0,0,0.5),inset_8px_0_12px_rgba(255,255,255,0.2)] flex flex-col items-center justify-between py-4">
-              <div className="absolute top-2 left-3 w-2 h-[85%] bg-white/20 rounded-full blur-[1px]" />
-
-              <div className="absolute -top-4 w-1/3 h-5 bg-gradient-to-r from-amber-800 to-amber-700 border-b border-amber-950/40" />
-
-              <div className="absolute -top-10 w-2/5 h-6 rounded-t bg-gradient-to-r from-amber-100 via-amber-200 to-amber-300 border border-amber-400/50 shadow-md">
-                <div className="w-full h-1 bg-amber-500/10" />
-                <div className="w-full h-2 bg-amber-600/20" />
-              </div>
-
-              <div className="z-10 w-[85%] h-1/2 bg-stone-50 border border-stone-200/50 rounded-md p-1 shadow-md flex flex-col items-center justify-between text-center select-none">
-                <div className="w-full border-b border-stone-200 pb-0.5">
-                  <span className="text-[7px] tracking-widest text-[#5f762a] font-semibold uppercase block">MAAMORA</span>
-                  <span className="text-[5px] text-stone-400 block tracking-wider">MAROC</span>
-                </div>
-                <div>
-                  <h4 className="text-[9px] font-bold text-stone-800 leading-tight">Argan</h4>
-                  <p className="text-[5px] text-stone-500 italic">Elixir Pur</p>
-                </div>
-                <div className="w-full flex items-center justify-center gap-0.5">
-                  <span className="w-1 h-1 bg-[#b9ff43]" />
-                  <span className="text-[4px] text-[#5f762a] font-bold">100% BIO</span>
-                </div>
-              </div>
-
-              <div className="absolute bottom-1 right-2 text-[6px] text-white/40 font-mono">50ml</div>
-            </div>
-          </div>
-        );
-
-      case "honey-jar":
-        return (
-          <div className="relative w-full h-full flex flex-col items-center justify-center">
-            <div className="absolute -bottom-2 w-4/5 h-3 bg-stone-900/12 rounded-full blur-md filter" />
-
-            <div className="relative w-4/5 h-3/4 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 border border-white/20 shadow-[inset_-10px_0_15px_rgba(0,0,0,0.3),inset_10px_0_15px_rgba(255,255,255,0.3),0_8px_16px_rgba(0,0,0,0.15)] flex flex-col items-center justify-center p-3">
-              <div className="absolute top-2 left-4 w-3 h-[80%] bg-white/25 rounded-full blur-[1px]" />
-
-              <div className="absolute -top-5 w-4/5 h-5 rounded bg-gradient-to-r from-stone-800 via-stone-700 to-stone-900 border-b border-stone-950 flex items-center justify-center shadow-md">
-                <div className="w-[90%] h-[2px] bg-stone-600 rounded" />
-              </div>
-
-              <div className="absolute -top-1 w-2/3 h-1 bg-[#b9ff43] shadow-sm" />
-
-              <div className="z-10 w-[80%] h-3/5 bg-amber-50/95 border border-amber-200/50 rounded-lg p-1 shadow flex flex-col items-center justify-between text-center">
-                <div className="w-full border-b border-amber-200/60 pb-0.5">
-                  <span className="text-[6px] tracking-widest text-amber-700 font-bold uppercase block">MAAMORA</span>
-                </div>
-                <div>
-                  <h4 className="text-[9px] font-bold text-amber-950 leading-none">MIEL PUR</h4>
-                  <p className="text-[5px] text-stone-500 font-medium">Daghmous Rare</p>
-                </div>
-                <div className="text-[4px] text-amber-800 bg-amber-200/50 px-1 rounded-full font-semibold">SOUSS-MASSA</div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case "rose-serum":
-        return (
-          <div className="relative w-full h-full flex flex-col items-center justify-center">
-            <div className="absolute -bottom-2 w-3/4 h-3 bg-stone-900/10 rounded-full blur-sm filter" />
-
-            <div className="relative w-3/5 h-4/5 rounded-t-3xl rounded-b-2xl bg-gradient-to-r from-rose-200 via-rose-300 to-rose-400 border border-rose-400/40 shadow-[inset_-8px_0_12px_rgba(225,120,150,0.4),inset_8px_0_12px_rgba(255,255,255,0.5),0_6px_12px_rgba(225,120,150,0.25)] flex flex-col items-center justify-between py-4">
-              <div className="absolute top-2 left-2.5 w-1.5 h-[80%] bg-white/40 rounded-full blur-[0.5px]" />
-
-              <div className="absolute -top-4 w-1/2 h-4 bg-gradient-to-r from-stone-100 to-stone-300 border-b border-stone-400" />
-
-              <div className="absolute -top-8 w-1/3 h-5 rounded-t-full bg-gradient-to-r from-stone-700 to-stone-800" />
-
-              <div className="z-10 w-[85%] h-1/2 bg-stone-50/90 backdrop-blur-[1px] border border-stone-200/50 rounded-md p-1 shadow-sm flex flex-col items-center justify-between text-center">
-                <div className="w-full border-b border-stone-100 pb-0.5">
-                  <span className="text-[6px] tracking-widest text-rose-600 font-bold uppercase block">MAAMORA</span>
-                </div>
-                <div>
-                  <h4 className="text-[9px] font-extrabold text-stone-800 leading-none">ROSE</h4>
-                  <p className="text-[4px] text-stone-500 italic mt-0.5">Sérum Suprême</p>
-                </div>
-                <div className="text-[4.5px] text-rose-600 font-medium tracking-wide">KELAAT M&apos;GOUNA</div>
-              </div>
-
-              <div className="absolute bottom-1 left-2 text-[5px] text-rose-800 font-mono font-bold">30ml</div>
-            </div>
-          </div>
-        );
-
-      case "savon-jar":
-        return (
-          <div className="relative w-full h-full flex flex-col items-center justify-center">
-            <div className="absolute -bottom-2 w-[90%] h-3 bg-stone-900/15 rounded-full blur-md filter" />
-
-            <div className="relative w-5/6 h-2/3 rounded-xl bg-gradient-to-br from-stone-900 via-stone-800 to-zinc-950 border border-stone-800 shadow-[inset_-8px_0_12px_rgba(255,255,255,0.05),inset_8px_0_12px_rgba(255,255,255,0.1),0_8px_16px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center p-3">
-              <div className="absolute top-1 left-3 w-2 h-[75%] bg-white/10 rounded-full blur-[1px]" />
-
-              <div className="absolute -top-4 w-full h-4 rounded-t-lg bg-gradient-to-r from-stone-800 via-stone-700 to-stone-900 border-b border-stone-950 shadow flex items-center justify-center">
-                <div className="w-[95%] h-[1.5px] bg-[#b9ff43] opacity-80" />
-              </div>
-
-              <div className="z-10 w-[85%] h-3/5 bg-stone-100 border border-stone-200 rounded p-1 shadow-md flex flex-col items-center justify-between text-center">
-                <div>
-                  <span className="text-[6px] tracking-widest text-[#b9ff43] font-bold uppercase block">MAAMORA</span>
-                </div>
-                <div>
-                  <h4 className="text-[9px] font-bold text-stone-900 leading-none">SAVON NOIR</h4>
-                  <p className="text-[4px] text-stone-500 font-semibold mt-0.5">Eucalyptus & Argan</p>
-                </div>
-                <div className="text-[4.5px] text-emerald-800 font-bold bg-emerald-50 px-1 rounded-full uppercase">Soin Purifiant</div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case "figue-dropper":
-        return (
-          <div className="relative w-full h-full flex flex-col items-center justify-center">
-            <div className="absolute -bottom-2 w-3/4 h-3 bg-stone-900/12 rounded-full blur-sm filter" />
-
-            <div className="relative w-3/5 h-4/5 rounded-t-3xl rounded-b-2xl bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-900 border border-emerald-950 shadow-[inset_-10px_0_15px_rgba(0,0,0,0.6),inset_10px_0_15px_rgba(255,255,255,0.15),0_6px_12px_rgba(0,0,0,0.2)] flex flex-col items-center justify-between py-4">
-              <div className="absolute top-1.5 left-2 w-1.5 h-[85%] bg-white/15 rounded-full blur-[0.5px]" />
-
-              <div className="absolute -top-4 w-1/2 h-4 bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 border-b border-amber-600 shadow-sm" />
-
-              <div className="absolute -top-8 w-1/3 h-5 rounded-t-full bg-gradient-to-r from-stone-800 to-stone-900" />
-
-              <div className="z-10 w-[80%] h-1/2 bg-[#FCFAF5] border border-amber-200/40 rounded p-1 shadow-md flex flex-col items-center justify-between text-center">
-                <div className="w-full border-b border-stone-200/50 pb-0.5">
-                  <span className="text-[5px] tracking-widest text-emerald-900 font-bold uppercase block">MAAMORA</span>
-                </div>
-                <div>
-                  <h4 className="text-[8px] font-extrabold text-stone-900 leading-none">FIGUE DE BARBARIE</h4>
-                  <p className="text-[4px] text-amber-700 italic mt-0.5">Huile de Pépins</p>
-                </div>
-                <div className="text-[4px] text-emerald-900 font-bold tracking-widest bg-amber-100/50 px-1 rounded">L&apos;ÉLIXIR</div>
-              </div>
-
-              <div className="absolute bottom-1 right-2 text-[5px] text-amber-400/70 font-mono">15ml</div>
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <motion.div
-      animate={floatAnimate}
-      transition={floatTransition}
-      className={`relative select-none flex items-center justify-center ${sizeClasses[size]} ${className}`}
-    >
-      {isCustomImage ? (
-        <div className="relative w-full h-full flex flex-col items-center justify-center p-2">
-          <div className="absolute inset-0 border border-white/40 bg-white/30 shadow-xl backdrop-blur-sm" />
-
-          <div className="relative flex h-[90%] w-[90%] items-center justify-center overflow-hidden border border-[#bdbdb4] bg-[#e8e7df] shadow-[inset_0_2px_4px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.1)]">
-            {type ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={type}
-                alt="Product"
-                className="w-full h-full object-cover select-none pointer-events-none"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = "none";
-                }}
-                referrerPolicy="no-referrer"
-              />
-            ) : null}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-stone-400 text-center p-2 -z-10">
-              <svg className="w-8 h-8 opacity-40 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-              </svg>
-              <span className="text-[8px] uppercase tracking-wider font-bold">Maamora Natural</span>
-            </div>
-          </div>
-
-          <div className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center border border-[#8aa65a] bg-[rgba(185,255,67,.14)] text-[10px] shadow-sm backdrop-blur-md">
-            <span aria-hidden="true">+</span>
-          </div>
-        </div>
-      ) : (
-        renderPresetBottle()
-      )}
-    </motion.div>
-  );
+  return <motion.div animate={floatAnimate} transition={floatTransition} className={`relative select-none flex items-center justify-center ${sizeClasses[size]} ${className}`}>
+    {isCustomImage ? <div className="studio-product-model__custom"><div className="studio-product-model__custom-frame">{type ? <img src={type} alt="Product" className="studio-product-model__custom-image" onError={(event) => { (event.currentTarget as HTMLImageElement).style.display = "none"; }} referrerPolicy="no-referrer" /> : null}<div className="studio-product-model__custom-placeholder"><span aria-hidden="true">✦</span><small>STUDIO / SOURCE</small></div></div><div className="studio-product-model__custom-badge">+</div></div> : renderPreset()}
+  </motion.div>;
 };

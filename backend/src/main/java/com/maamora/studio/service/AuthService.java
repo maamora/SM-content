@@ -3,6 +3,7 @@ package com.maamora.studio.service;
 import com.maamora.studio.dto.request.LoginRequest;
 import com.maamora.studio.dto.request.RegisterRequest;
 import com.maamora.studio.dto.response.AuthResponse;
+import com.maamora.studio.dto.response.UserProfileResponse;
 import com.maamora.studio.exception.UnauthorizedException;
 import com.maamora.studio.model.BrandSettings;
 import com.maamora.studio.model.User;
@@ -13,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +29,8 @@ public class AuthService {
     /** Every new account joins the single shared Maamora workspace — nobody creates their own brand anymore. */
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String email = normalizeEmail(request.getEmail());
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new UnauthorizedException("An account with this email already exists.");
         }
 
@@ -34,7 +38,7 @@ public class AuthService {
 
         User user = User.builder()
                 .name(request.getName())
-                .email(request.getEmail())
+                .email(email)
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
                 .brand(brand)
@@ -46,7 +50,7 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmailIgnoreCase(normalizeEmail(request.getEmail()))
                 .orElseThrow(() -> new UnauthorizedException("Invalid email or password."));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
@@ -59,5 +63,23 @@ public class AuthService {
 
         String token = jwtService.generateToken(user.getId(), user.getEmail());
         return new AuthResponse(token, user.getEmail(), user.getBrand().getId(), user.getRole().name());
+    }
+
+    @Transactional(readOnly = true)
+    public UserProfileResponse currentUser(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("Authenticated account was not found."));
+        return new UserProfileResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getBrand() == null ? null : user.getBrand().getId(),
+                user.getRole().name(),
+                user.getCreatedAt()
+        );
+    }
+
+    private String normalizeEmail(String email) {
+        return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
     }
 }

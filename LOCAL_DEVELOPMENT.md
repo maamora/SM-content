@@ -2,7 +2,7 @@
 
 This guide explains how to run the merged STUDIO application locally. The repository contains a **Next.js 16 frontend**, a **Spring Boot 3.3 backend**, and a **PostgreSQL database**. The browser talks to Spring Boot over HTTP; Spring Boot owns authentication, authorization, persistence, product workflows, brand settings, posts, templates, uploads, and the integration boundary for future AI and publishing providers.
 
-> **Important scope note:** The current branch has been verified for the implemented backend surface and the live frontend integration. The larger product brief also describes future workspace membership, Higgsfield generation, social OAuth/publishing, notifications, background jobs, analytics, and audit-log features. Those route families are not all present in the current Spring Boot API, so the corresponding screens show explicit unavailable states rather than fabricating persisted data.
+> **Important scope note:** The current branch has been hardened for the implemented backend surface and the live frontend integration. Some provider-dependent capabilities still require operator credentials, and audit-log persistence plus destructive user/workspace administration are intentionally not exposed until their dedicated schema and authorization workflows exist.
 
 ## 1. Prerequisites
 
@@ -218,10 +218,13 @@ The following backend-backed areas were rechecked after the merge preparation:
 | Posts | Live list/create/update/delete/export API surface |
 | Templates | Live list API surface |
 | Upload endpoint | Present; requires valid multipart files and storage configuration |
-| `/api/auth/me` | Not implemented in the current Spring Boot controller; the frontend does not depend on it |
-| Calendar, social connections, notifications | Frontend states exist, but backend controllers are not currently available |
-| Publishing integrations, analytics, audit logs | Not currently backed by implemented backend route families |
-| Admin users/workspaces and advanced generation monitoring | Not currently backed by implemented backend route families |
+| `/api/auth/me` | Live; returns the authenticated profile from the JWT identity |
+| Calendar and notifications | Live derived views from persisted post/product status; no fabricated records are created |
+| Capability readiness | Live at `/api/system/capabilities`; reports configured image, caption, storage, social, and email boundaries without exposing secrets |
+| Admin summary | Live at `/api/admin/summary`; admin-only persisted counts for users, workspaces, products, posts, templates, and pending review |
+| Publishing integrations | Provider-dependent; export remains available, while social publishing reports `SETUP` until real credentials are configured |
+| Audit logs | Explicitly not enabled; the UI does not invent audit entries or expose compliance controls without append-only persistence |
+| Admin users/workspaces | Read-only live counts are available; mutation and role-management routes are intentionally absent until audited workflows are added |
 
 The complete endpoint inventory and availability boundary is documented in `backend-api-inventory.md`. The screens for unavailable areas are intentionally explicit; they do not pretend that missing backend records are persisted.
 
@@ -265,4 +268,18 @@ Stop the frontend and backend with `Ctrl+C` in their respective terminals. Postg
 
 ## 10. Production checklist
 
-Before production use, replace local credentials and placeholders, use managed PostgreSQL with TLS, configure a long random JWT secret, set the deployed frontend origin in `CORS_ALLOWED_ORIGINS`, configure real AI/storage/social provider integrations, add database backups, resolve the Next.js production build blocker, and complete the unimplemented workspace, generation, publishing, notification, analytics, and audit-log route families described in the product brief.
+Before production use, replace local credentials and placeholders, use managed PostgreSQL with TLS, configure a long random JWT secret, set the deployed frontend origin in `CORS_ALLOWED_ORIGINS`, configure real AI/storage/social provider integrations, add database backups, and verify the capability endpoint reports the expected readiness. The remaining product work is explicit: add append-only audit persistence before enabling audit controls, and add audited user/workspace mutation workflows before exposing destructive admin actions.
+
+### Provider environment variables
+
+The application does not include an MCP or paid connector by default. There is no honest way to guarantee a third-party AI, social, email, or storage service as both unlimited and production-grade for free. Configure only the providers you own and accept their quotas and terms:
+
+| Environment variable | Required when | Notes |
+| --- | --- | --- |
+| `GEMINI_API_KEY` | Caption generation is enabled | Keep server-side; never use a `NEXT_PUBLIC_` name. |
+| `STABILITY_API_KEY` | Provider-backed image generation is enabled | Deterministic rendering remains available when this is absent. |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Cloudinary storage is enabled | Local disk storage remains the development fallback. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | Email verification or password reset is enabled | No email is silently simulated when these are missing. |
+| Social-network OAuth/API variables | Social publishing is enabled | Configure each network separately and complete its app review; export remains the fallback. |
+
+After changing backend variables, restart Spring Boot. After changing `NEXT_PUBLIC_API_BASE_URL`, restart Next.js because public variables are read at startup.
