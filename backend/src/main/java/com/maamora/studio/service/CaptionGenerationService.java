@@ -45,6 +45,17 @@ public class CaptionGenerationService {
     @Value("${app.gemini.base-url}")
     private String baseUrl;
 
+    @Value("${app.ollama.enabled:false}")
+    private boolean ollamaEnabled;
+
+    @Value("${app.ollama.model:qwen2.5:7b}")
+    private String ollamaModel;
+
+    @Value("${app.ollama.base-url:http://localhost:11434/api}")
+    private String ollamaBaseUrl;
+
+    private final Semaphore ollamaThrottle = new Semaphore(1);
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private RestClient client() {
@@ -64,6 +75,17 @@ public class CaptionGenerationService {
      * exhausts its retries doesn't cost the other languages their captions.
      */
     public String generateCaption(Post post, BrandSettings brand, String language) {
+        if (!configured(apiKey)) {
+            if (!ollamaEnabled) {
+                throw new IllegalStateException(
+                        "Caption generation is unavailable: configure GEMINI_API_KEY or enable Ollama locally.");
+            }
+            return generateWithOllama(post, brand, language);
+        }
+        return generateWithGemini(post, brand, language);
+    }
+
+    private String generateWithGemini(Post post, BrandSettings brand, String language) {
         String prompt = buildPrompt(post, brand, language);
 
         Map<String, Object> body = Map.of(
@@ -109,6 +131,40 @@ public class CaptionGenerationService {
             throw lastError;
         } finally {
             geminiThrottle.release();
+        }
+    }
+
+    private String generateWithOllama(Post post, BrandSettings brand, String language) {
+        String prompt = buildPrompt(post, brand, language);
+        Map<String, Object> body = Map.of(
+                "model", ollamaModel,
+                "messages", List.of(Map.of("role", "user", "content", prompt)),
+                "stream", false,
+                "options", Map.of("temperature", 0.8));
+
+        try {
+            ollamaThrottle.acquire();
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for local Ollama caption generation.", ie);
+        }
+
+        try {
+            String rawResponse = RestClient.builder()
+                    .baseUrl(ollamaBaseUrl)
+                    .defaultHeader("content-type", "application/json")
+                    .build()
+                    .post()
+                    .uri("chat")
+                    .body(body)
+                    .retrieve()
+                    .body(String.class);
+            return extractOllamaText(rawResponse);
+        } catch (HttpStatusCodeException e) {
+            throw new IllegalStateException("Ollama caption request failed with HTTP "
+                    + e.getStatusCode().value() + ". Is Ollama running and is the model installed?", e);
+        } finally {
+            ollamaThrottle.release();
         }
     }
 
@@ -212,7 +268,28 @@ public class CaptionGenerationService {
         return textNode.asText().trim();
     }
 
-    /** Thrown when Gemini responds successfully (2xx) but with no usable caption text. */
+    private String extractOllamaText(String rawJson) {
+        try {
+            JsonNode root = objectMapper.readTree(rawJson);
+            JsonNode textNode = root.path("message").path("content");
+            if (!textNode.isTextual() || textNode.asText().isBlank()) {
+                throw new EmptyCaptionException("Ollama returned no caption text.");
+            }
+            return textNode.asText().trim();
+        } catch (EmptyCaptionException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not parse Ollama response.", e);
+        }
+    }
+
+    private boolean configured(String value) {
+        return value != null && !value.isBlank()
+                && !value.equalsIgnoreCase("placeholder")
+                && !value.equalsIgnoreCase("changeme");
+    }
+
+    /** Thrown when Gemini or Ollama responds successfully but with no usable caption text. */
     private static class EmptyCaptionException extends RuntimeException {
         EmptyCaptionException(String message) {
             super(message);

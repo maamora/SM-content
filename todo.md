@@ -35,3 +35,8 @@
 - [x] Implement missing production-critical behavior with server-side validation, authorization, persistence, and honest failure states.
 - [x] Complete frontend behavior for the supported product, approval, studio, batch, asset, post, and admin workflows.
 - [x] Verify end-to-end functionality, production build, security boundaries, and local configuration guidance.
+- [x] Audit the user-provided Higgsfield API configuration against the official asynchronous API contract.
+- [x] Implement Higgsfield image generation behind the existing Spring Boot image-provider boundary with bounded polling, existing post/batch persistence, and storage handoff.
+- [x] Research caption-generation alternatives using official pricing, quota, and API documentation; reject any provider that cannot honestly meet the free/unlimited requirement.
+- [x] Implement the selected caption provider fallback with server-side configuration, retry behavior, and explicit unavailable states.
+- [x] Verify Higgsfield image generation, caption generation, batch jobs, capability reporting, frontend build, backend tests, and documentation before pushing.

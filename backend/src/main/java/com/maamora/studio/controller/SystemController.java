@@ -17,6 +17,15 @@ public class SystemController {
     @Value("${STABILITY_API_KEY:}")
     private String stabilityApiKey;
 
+    @Value("${app.higgsfield.api-key-id:}")
+    private String higgsfieldApiKeyId;
+
+    @Value("${app.higgsfield.api-key-secret:}")
+    private String higgsfieldApiKeySecret;
+
+    @Value("${app.ollama.enabled:false}")
+    private boolean ollamaEnabled;
+
     @Value("${app.cloudinary.cloud-name:}")
     private String cloudinaryCloudName;
 
@@ -25,8 +34,9 @@ public class SystemController {
 
     @GetMapping("/capabilities")
     public ApiResponse<SystemCapabilitiesResponse> capabilities() {
-        boolean captionGeneration = configured(geminiApiKey);
-        boolean imageGeneration = configured(stabilityApiKey);
+        boolean captionGeneration = configured(geminiApiKey) || ollamaEnabled;
+        boolean imageGeneration = configured(stabilityApiKey)
+                || configured(higgsfieldApiKeyId) && configured(higgsfieldApiKeySecret);
         boolean cloudStorage = configured(cloudinaryCloudName)
                 && configured(cloudinaryApiKey);
 

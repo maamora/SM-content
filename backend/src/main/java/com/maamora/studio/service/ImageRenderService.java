@@ -2,6 +2,7 @@ package com.maamora.studio.service;
 
 import com.maamora.studio.model.Product;
 import com.maamora.studio.model.Template;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -33,17 +34,24 @@ import java.util.Map;
  * 2. Overlay the Maamoura logo (bottom-right corner).
  * 3. Overlay the promo banner and badge text using Java Graphics2D.
  */
+@Slf4j
 @Service
 public class ImageRenderService {
 
     @Value("${STABILITY_API_KEY:}")
     private String apiKey;
 
+    private final HiggsfieldImageService higgsfieldImageService;
+
     // Logo loaded from the classpath (placed in
     // src/main/resources/static/maamora-logo.png)
     private static final String LOGO_RESOURCE = "/static/maamora-logo.png";
 
     private final RestTemplate restTemplate = new RestTemplate();
+
+    public ImageRenderService(HiggsfieldImageService higgsfieldImageService) {
+        this.higgsfieldImageService = higgsfieldImageService;
+    }
 
     // -----------------------------------------------------------------------
     // Public API
@@ -65,6 +73,26 @@ public class ImageRenderService {
         // posts, 768x1344 (closest allowed pair to a 9:16 story ratio) otherwise.
         int width = isSquare ? 1024 : 768;
         int height = isSquare ? 1024 : 1344;
+
+        // Higgsfield provides the higher-end editorial generation path. For
+        // products with a supplied photo, keep Stability img2img first when it
+        // is available because the currently implemented Higgsfield payload is
+        // text-only and must not silently replace a real product with an
+        // invented look. Its API is asynchronous, but the adapter polls to
+        // preserve STUDIO's existing synchronous endpoint.
+        boolean hasProductImage = product.getImageUrl() != null && !product.getImageUrl().isBlank();
+        boolean stabilityConfigured = apiKey != null && !apiKey.isBlank();
+        if (higgsfieldImageService.isConfigured() && (!hasProductImage || !stabilityConfigured)) {
+            try {
+                String prompt = buildPrompt(product.getName(), product.getDescription(), product.getSellingPoint(),
+                        badgeText, promoText, accentColor, mood);
+                byte[] aiPng = higgsfieldImageService.generateImage(prompt, isSquare ? "1:1" : "9:16");
+                return compositeOverlays(aiPng, badgeText, promoText, accentColor, mood);
+            } catch (Exception e) {
+                log.warn("Higgsfield image generation failed; falling back to Stability/local rendering: {}",
+                        e.getMessage());
+            }
+        }
 
         // No Stability AI key configured: skip the paid AI generation step
         // entirely and composite the same logo/text overlays directly onto

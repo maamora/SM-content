@@ -110,9 +110,22 @@ JWT_SECRET=replace-this-with-a-long-random-secret-at-least-32-characters
 JWT_EXPIRATION_MS=86400000
 
 # Optional provider credentials. Leave them blank for local UI/API smoke tests
-# that do not call external providers. Caption generation uses Gemini.
+# that do not call external providers. Gemini is preferred when configured;
+# Ollama is the local fallback for captions.
 ANTHROPIC_API_KEY=
 GEMINI_API_KEY=
+
+# Local caption fallback. Install Ollama and pull the model before enabling it.
+OLLAMA_ENABLED=false
+OLLAMA_MODEL=qwen2.5:7b
+OLLAMA_BASE_URL=http://localhost:11434/api
+
+# Higgsfield image generation. Keep both credentials server-side.
+# HIGGSFIELD_API_KEY_ID=
+# HIGGSFIELD_API_KEY_SECRET=
+# HIGGSFIELD_MODEL=flux-pro/kontext/max/text-to-image
+# HIGGSFIELD_TIMEOUT_MS=180000
+# HIGGSFIELD_POLL_INTERVAL_MS=3000
 
 STORAGE_LOCAL_PATH=./uploads
 STORAGE_PUBLIC_BASE_URL=http://localhost:8080/files
@@ -258,6 +271,53 @@ The current client session is intentionally stored in `sessionStorage`. A new br
 
 Basic authentication, products, brand, posts, and templates do not prove that external AI providers or Cloudinary are configured. Supply real provider credentials, verify network access, and check the Spring Boot logs. Never put provider secrets in `NEXT_PUBLIC_*` variables.
 
+### Configure local Ollama captions
+
+Ollama is the selected free and unlimited caption alternative because inference runs on your own machine. It has no hosted request quota, but its practical speed and capacity are limited by your local CPU, memory, and GPU. Hosted free tiers such as Groq and OpenRouter have explicit request or token limits and are therefore not unlimited.
+
+Install Ollama from [ollama.com](https://ollama.com/download), then pull the caption model:
+
+```powershell
+ollama pull qwen2.5:7b
+ollama run qwen2.5:7b
+```
+
+In a second terminal, verify the local API and enable it in `backend/.env`:
+
+```powershell
+Invoke-RestMethod http://localhost:11434/api/tags
+```
+
+```dotenv
+OLLAMA_ENABLED=true
+OLLAMA_MODEL=qwen2.5:7b
+OLLAMA_BASE_URL=http://localhost:11434/api
+```
+
+Restart Spring Boot after changing these values. When `GEMINI_API_KEY` is present, Gemini remains the primary caption provider. When it is absent and `OLLAMA_ENABLED=true`, STUDIO sends a non-streaming chat request to Ollama. If neither provider is available, the caption request fails explicitly rather than fabricating copy.
+
+### Configure Higgsfield image generation
+
+Higgsfield uses two server-side credentials, an API key ID and an API key secret. Add them to `backend/.env` without quotes or the `Key` prefix:
+
+```dotenv
+HIGGSFIELD_API_KEY_ID=your-higgsfield-key-id
+HIGGSFIELD_API_KEY_SECRET=your-higgsfield-key-secret
+HIGGSFIELD_MODEL=flux-pro/kontext/max/text-to-image
+HIGGSFIELD_TIMEOUT_MS=180000
+HIGGSFIELD_POLL_INTERVAL_MS=3000
+```
+
+The STUDIO backend keeps these credentials off the browser, submits the asynchronous Higgsfield request, polls its returned status URL, downloads the completed image, and then passes the bytes through STUDIO’s normal storage and branded overlay pipeline. The existing Stability path and deterministic local renderer remain fallback paths when Higgsfield is unavailable. Higgsfield requests consume account credits, so test with a low resolution and confirm the estimated cost in your account before batch generation.
+
+Verify configured capability state with:
+
+```powershell
+Invoke-RestMethod http://localhost:8080/api/system/capabilities
+```
+
+`imageGeneration` is `true` when either Higgsfield credentials or `STABILITY_API_KEY` are configured. `captionGeneration` is `true` when Gemini is configured or local Ollama is enabled. These flags indicate configured integration paths; they do not guarantee that a remote provider account has remaining credits or that a local model is currently running.
+
 ### Production build fails at `/_global-error`
 
 Use the committed `pnpm build` script, which forces `NODE_ENV=production` before invoking Next.js. A parent shell exporting `NODE_ENV=development` can cause a misleading null `useContext` failure during error-route prerendering. If needed, run `NODE_ENV=production pnpm exec next build` explicitly. See [`PRODUCTION_LOCAL_RUNBOOK.md`](PRODUCTION_LOCAL_RUNBOOK.md) for the full production-local workflow.
@@ -276,8 +336,11 @@ The application does not include an MCP or paid connector by default. There is n
 
 | Environment variable | Required when | Notes |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | Caption generation is enabled | Keep server-side; never use a `NEXT_PUBLIC_` name. |
-| `STABILITY_API_KEY` | Provider-backed image generation is enabled | Deterministic rendering remains available when this is absent. |
+| `GEMINI_API_KEY` | Hosted caption generation is enabled | Keep server-side; never use a `NEXT_PUBLIC_` name. Preferred over Ollama when configured. |
+| `OLLAMA_ENABLED`, `OLLAMA_MODEL`, `OLLAMA_BASE_URL` | Local free caption generation is enabled | Requires Ollama installed locally and the selected model pulled. No hosted quota, but local hardware limits throughput. |
+| `HIGGSFIELD_API_KEY_ID`, `HIGGSFIELD_API_KEY_SECRET` | Higgsfield image generation is enabled | Keep both server-side; requests consume Higgsfield credits and complete asynchronously. |
+| `HIGGSFIELD_MODEL`, `HIGGSFIELD_TIMEOUT_MS`, `HIGGSFIELD_POLL_INTERVAL_MS` | Higgsfield behavior is customized | Defaults target the official v2 `flux-pro/kontext/max/text-to-image` endpoint. |
+| `STABILITY_API_KEY` | Stability-backed image generation is enabled | Used as fallback when Higgsfield is unavailable; deterministic rendering remains available when this is absent. |
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Cloudinary storage is enabled | Local disk storage remains the development fallback. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | Email verification or password reset is enabled | No email is silently simulated when these are missing. |
 | Social-network OAuth/API variables | Social publishing is enabled | Configure each network separately and complete its app review; export remains the fallback. |

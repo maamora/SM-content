@@ -43,6 +43,19 @@ app:
     api-key: ${GEMINI_API_KEY:}
     model: ${GEMINI_MODEL:gemini-1.5-pro}
     base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+
+  higgsfield:
+    api-key-id: ${HIGGSFIELD_API_KEY_ID:}
+    api-key-secret: ${HIGGSFIELD_API_KEY_SECRET:}
+    model: ${HIGGSFIELD_MODEL:flux-pro/kontext/max/text-to-image}
+    base-url: ${HIGGSFIELD_BASE_URL:https://platform.higgsfield.ai}
+    timeout-ms: ${HIGGSFIELD_TIMEOUT_MS:180000}
+    poll-interval-ms: ${HIGGSFIELD_POLL_INTERVAL_MS:3000}
+
+  ollama:
+    enabled: ${OLLAMA_ENABLED:false}
+    model: ${OLLAMA_MODEL:qwen2.5:7b}
+    base-url: ${OLLAMA_BASE_URL:http://localhost:11434/api}
     
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}
