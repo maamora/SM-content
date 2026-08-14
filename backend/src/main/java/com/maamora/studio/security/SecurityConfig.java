@@ -44,6 +44,7 @@ public class SecurityConfig {
                                 "/api/auth/register",
                                 "/api/auth/login",
                                 "/api/system/capabilities",
+                                "/api/social/callback/**",
                                 "/files/**",
                                 "/actuator/health"
                         ).permitAll()

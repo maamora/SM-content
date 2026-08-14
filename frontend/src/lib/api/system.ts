@@ -10,6 +10,11 @@ export interface SystemCapabilities {
     creativeEditing: boolean;
     photoShootGeneration: boolean;
     videoGeneration: boolean;
+    smtpEmail: boolean;
+    metaOAuth: boolean;
+    tiktokOAuth: boolean;
+    linkedinOAuth: boolean;
+    xOAuth: boolean;
 }
 
 export const getSystemCapabilities = () => apiFetch<SystemCapabilities>('/api/system/capabilities');

@@ -15,4 +15,9 @@ public class SystemCapabilitiesResponse {
     private boolean creativeEditing;
     private boolean photoShootGeneration;
     private boolean videoGeneration;
+    private boolean smtpEmail;
+    private boolean metaOAuth;
+    private boolean tiktokOAuth;
+    private boolean linkedinOAuth;
+    private boolean xOAuth;
 }

@@ -20,6 +20,18 @@ spring:
       max-file-size: 15MB
       max-request-size: 15MB
 
+  mail:
+    host: ${SPRING_MAIL_HOST:${SMTP_HOST:}}
+    port: ${SPRING_MAIL_PORT:${SMTP_PORT:587}}
+    username: ${SPRING_MAIL_USERNAME:${SMTP_USERNAME:}}
+    password: ${SPRING_MAIL_PASSWORD:${SMTP_PASSWORD:}}
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:${SMTP_AUTH:true}}
+          starttls:
+            enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:${SMTP_STARTTLS:true}}
+
 app:
   anthropic:
     api-key: ${ANTHROPIC_API_KEY:}
@@ -61,6 +73,29 @@ app:
     
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}
+
+  social:
+    frontend-url: ${FRONTEND_URL:http://localhost:3000}
+    meta:
+      app-id: ${META_APP_ID:}
+      app-secret: ${META_APP_SECRET:}
+      redirect-uri: ${META_REDIRECT_URI:http://localhost:8080/api/social/callback/meta}
+      graph-version: ${META_GRAPH_VERSION:v20.0}
+    tiktok:
+      client-key: ${TIKTOK_CLIENT_KEY:}
+      client-secret: ${TIKTOK_CLIENT_SECRET:}
+      redirect-uri: ${TIKTOK_REDIRECT_URI:http://localhost:8080/api/social/callback/tiktok}
+    linkedin:
+      client-id: ${LINKEDIN_CLIENT_ID:}
+      client-secret: ${LINKEDIN_CLIENT_SECRET:}
+      redirect-uri: ${LINKEDIN_REDIRECT_URI:http://localhost:8080/api/social/callback/linkedin}
+    x:
+      client-id: ${X_CLIENT_ID:}
+      client-secret: ${X_CLIENT_SECRET:}
+      redirect-uri: ${X_REDIRECT_URI:http://localhost:8080/api/social/callback/x}
+
+  mail:
+    from: ${APP_MAIL_FROM:${SMTP_FROM:}}
 
   admin:
     email: ${ADMIN_EMAIL:admin@maamora.com}

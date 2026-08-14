@@ -42,3 +42,23 @@ The selected caption fallback is therefore Ollama local inference, with Gemini r
   - The current catalog includes image models, image-to-video/video models, and a `marketing_studio_video` model; the CLI documentation recommends checking the live model schema before submitting a job.
 
 These findings support implementing a provider-aware creative job contract: prompt plus optional uploaded product/model references for image generation, followed by an optional image-to-video job using the generated image. The frontend must show an explicit provider-unavailable state when video credentials or a supported video model are not configured.
+
+## Social publishing and email
+
+- Meta Instagram Content Publishing: https://developers.facebook.com/documentation/instagram-platform/content-publishing.md
+  - Supports single images, videos, reels, and carousels for Instagram professional accounts; media must be hosted on a public server at publish time.
+  - Instagram publishing uses a media-container then `media_publish` flow, with permissions depending on Instagram Login or Facebook Login for Business.
+  - Instagram professional accounts have API-published post limits and may require Page Publishing Authorization and Meta App Review/Business Verification.
+- Meta Pages API: https://developers.facebook.com/documentation/pages-api/posts
+  - Facebook Page publishing uses a Page access token and endpoints such as `/{page_id}/feed`, `/{page_id}/photos`, and video publishing APIs.
+  - Required permissions include `pages_manage_posts`, `pages_read_engagement`, and `publish_video` for video; Page task roles are required.
+- TikTok Content Posting API: https://developers.tiktok.com/doc/content-posting-api-reference-direct-post
+  - Direct posting requires TikTok Login/OAuth, an approved Content Posting API product, creator authorization, and provider-specific video/photo upload flows.
+  - TikTok app review and content-sharing compliance must be treated as configuration gates, not bypassed by the application.
+- LinkedIn Posts API: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api
+  - Organic post creation uses the LinkedIn Posts API and OAuth 2.0; member and organization targets require the corresponding approved access and permissions.
+- X API: https://developer.x.com/
+  - X publishing uses OAuth 2.0 user authorization and the current Posts/media upload APIs; access level, project/app credentials, and account permissions determine whether publishing is available.
+- SMTP: SMTP is a transport boundary rather than a single provider. STUDIO should use Spring Mail with server-side host, port, username, password, TLS, sender, and connection timeout settings, and persist delivery status without logging message credentials or full message bodies.
+
+These sources support a common provider adapter contract with OAuth/token storage, capability checks, public-media validation, idempotency keys, provider request IDs, retry classification, persisted publish states, and explicit unavailable or review-required states. They do not support claiming that social publishing is universally available without app approval and account eligibility.

@@ -132,6 +132,7 @@ STORAGE_PUBLIC_BASE_URL=http://localhost:8080/files
 
 # Any local Next.js port is allowed; use explicit deployed origins in production.
 CORS_ALLOWED_ORIGINS=http://localhost:*,http://127.0.0.1:*
+FRONTEND_URL=http://localhost:3001
 
 ADMIN_EMAIL=admin@maamora.com
 ADMIN_PASSWORD=admin123
@@ -144,6 +145,15 @@ Start the backend in a terminal that remains open:
 ```bash
 cd backend
 bash mvnw spring-boot:run
+```
+
+In Windows PowerShell, run the wrapper from the current directory using the
+explicit command below; PowerShell does not execute files from the current
+directory when they are invoked by name alone:
+
+```powershell
+cd backend
+.\mvnw.cmd spring-boot:run
 ```
 
 The API should become available at `http://localhost:8080`. The backend applies missing JPA schema objects with `ddl-auto: update`; this preserves existing rows while adding schema changes. Never use `create` or `create-drop` against a database containing real data.
@@ -324,6 +334,67 @@ Invoke-RestMethod http://localhost:8080/api/system/capabilities
 
 `imageGeneration` is `true` when either Higgsfield credentials or `STABILITY_API_KEY` are configured. `creativeEditing` and `photoShootGeneration` require Higgsfield credentials. `videoGeneration` additionally requires `HIGGSFIELD_VIDEO_MODEL`. `captionGeneration` is `true` when Gemini is configured or local Ollama is enabled. These flags indicate configured integration paths; they do not guarantee that a remote provider account has remaining credits, that Cloudinary is reachable, or that a local model is currently running.
 
+### Configure social publishing and SMTP email
+
+Social publishing is server-side and persisted. The browser never receives provider client secrets or OAuth access tokens. A connected account is stored as an encrypted `SocialConnection`, and each publish request creates a persisted `PublishJob` that moves through `QUEUED`, `PROCESSING`, `SENT`, or `FAILED`. The UI only presents a successful provider receipt when the backend receives one; it never fabricates a published result.
+
+Set a separate random cipher key before using OAuth in any shared or production environment. `TOKEN_CIPHER_KEY` must be exactly 32 characters because STUDIO uses AES-256 for stored provider credentials. A PowerShell example is:
+
+```powershell
+$bytes = [byte[]]::new(32)
+[Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+$env:TOKEN_CIPHER_KEY = [Convert]::ToBase64String($bytes).Substring(0, 32)
+```
+
+For Linux or macOS, use a local secret generator and copy exactly 32 characters into `backend/.env`:
+
+```bash
+openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | cut -c1-32
+```
+
+The callback URLs below must be registered exactly as shown for local development. Replace `localhost` with the deployed backend origin in a deployed environment, and use HTTPS there:
+
+| Provider | Callback URL | Main requested scopes or API boundary |
+| --- | --- | --- |
+| Meta | `http://localhost:8080/api/social/callback/meta` | Pages plus Instagram Business scopes: `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`, `instagram_basic`, `instagram_content_publish` |
+| TikTok | `http://localhost:8080/api/social/callback/tiktok` | `user.info.basic`, `video.upload`, `video.publish`; Direct Post access and app review remain provider-controlled |
+| LinkedIn | `http://localhost:8080/api/social/callback/linkedin` | `openid`, `profile`, `w_member_social`; image publishing may require additional asset-upload permissions or registration |
+| X | `http://localhost:8080/api/social/callback/x` | `tweet.read`, `tweet.write`, `users.read`, `offline.access`; media upload is a separate adapter boundary and text publishing is the supported path |
+
+#### Meta Developer App
+
+Create an application in the [Meta for Developers](https://developers.facebook.com/) dashboard, add the Facebook Login product, and configure the valid OAuth redirect URI above. Add the Instagram Graph API and the required Facebook Page permissions to the app. During development, add the Facebook account, Page, and Instagram Business account as test assets. Production publishing requires the permissions and app-review approvals that Meta assigns to the application; an environment with only client credentials is not treated as ready until the OAuth flow returns a usable connection.
+
+#### TikTok Developer App
+
+Create an application in the [TikTok for Developers](https://developers.tiktok.com/) portal, enable the Content Posting API and Login Kit products available to the app, and register the callback URL. Request the scopes shown in the table. TikTok Direct Post access is approval-controlled, so a successful client registration does not guarantee that video publishing is enabled. STUDIO will retain the explicit provider error in the publish job when TikTok rejects an operation.
+
+#### LinkedIn App
+
+Create an application in the [LinkedIn Developer Portal](https://www.linkedin.com/developers/) and add the callback URL under Auth. Request the `w_member_social` product or permission required by LinkedIn for posting. Text publishing can be available before image asset-upload registration; the backend preserves the provider response instead of presenting unsupported media as published.
+
+#### X Developer App
+
+Create an application and OAuth 2.0 client in the [X Developer Portal](https://developer.x.com/) and register the callback URL. Enable the write permission required for `tweet.write`. STUDIO uses the OAuth 2.0 state flow and includes the provider's PKCE challenge parameters. Text posts are the supported baseline; image publishing needs a separate media-upload integration and is not claimed as available by the current UI.
+
+#### SMTP provider
+
+Configure the standard Spring mail variables in `backend/.env`:
+
+```dotenv
+SPRING_MAIL_HOST=smtp.example.com
+SPRING_MAIL_PORT=587
+SPRING_MAIL_USERNAME=your-smtp-user
+SPRING_MAIL_PASSWORD=your-smtp-password
+SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+APP_MAIL_FROM=studio@example.com
+```
+
+For Gmail, enable two-step verification and create an app password; do not use the normal account password. For a no-cost testing option, a provider such as [Brevo](https://www.brevo.com/) can supply SMTP credentials subject to its current account limits, sender verification, anti-abuse controls, and terms. Free plans are not unlimited, so the production checklist must account for the provider's actual quota. STUDIO queues `POST /api/email/send`, stores the delivery record, sends asynchronously, and persists `SENT` or `FAILED`; missing SMTP configuration is shown as an explicit failure rather than a simulated email.
+
+After changing any backend variable, restart Spring Boot. Use the authenticated frontend at `/dashboard/social` to connect providers and queue approved posts, and `/dashboard/notifications` to inspect persisted email delivery history. The public capability endpoint exposes `socialPublishing`, `smtpEmail`, and the per-provider OAuth readiness flags without exposing secrets.
+
 ### Production build fails at `/_global-error`
 
 Use the committed `pnpm build` script, which forces `NODE_ENV=production` before invoking Next.js. A parent shell exporting `NODE_ENV=development` can cause a misleading null `useContext` failure during error-route prerendering. If needed, run `NODE_ENV=production pnpm exec next build` explicitly. See [`PRODUCTION_LOCAL_RUNBOOK.md`](PRODUCTION_LOCAL_RUNBOOK.md) for the full production-local workflow.
@@ -348,7 +419,7 @@ The application does not include an MCP or paid connector by default. There is n
 | `HIGGSFIELD_MODEL`, `HIGGSFIELD_TIMEOUT_MS`, `HIGGSFIELD_POLL_INTERVAL_MS` | Higgsfield behavior is customized | Defaults target the official v2 `flux-pro/kontext/max/text-to-image` endpoint. |
 | `STABILITY_API_KEY` | Stability-backed image generation is enabled | Used as fallback when Higgsfield is unavailable; deterministic rendering remains available when this is absent. |
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Cloudinary storage is enabled | Local disk storage remains the development fallback. |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | Email verification or password reset is enabled | No email is silently simulated when these are missing. |
-| Social-network OAuth/API variables | Social publishing is enabled | Configure each network separately and complete its app review; export remains the fallback. |
+| `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`, `APP_MAIL_FROM` | SMTP email delivery is enabled | `SMTP_*` aliases remain accepted; no email is silently simulated when these are missing. |
+| `META_*`, `TIKTOK_*`, `LINKEDIN_*`, `X_*`, `TOKEN_CIPHER_KEY` | Social publishing is enabled | Configure each network separately, register the exact callback URL, and complete the provider's app review; export remains the fallback. |
 
 After changing backend variables, restart Spring Boot. After changing `NEXT_PUBLIC_API_BASE_URL`, restart Next.js because public variables are read at startup.

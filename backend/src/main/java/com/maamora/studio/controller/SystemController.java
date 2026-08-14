@@ -35,6 +35,33 @@ public class SystemController {
     @Value("${app.cloudinary.api-key:}")
     private String cloudinaryApiKey;
 
+    @Value("${spring.mail.host:}")
+    private String smtpHost;
+
+    @Value("${app.social.meta.app-id:}")
+    private String metaAppId;
+
+    @Value("${META_APP_SECRET:}")
+    private String metaAppSecret;
+
+    @Value("${app.social.tiktok.client-key:}")
+    private String tiktokClientKey;
+
+    @Value("${TIKTOK_CLIENT_SECRET:}")
+    private String tiktokClientSecret;
+
+    @Value("${app.social.linkedin.client-id:}")
+    private String linkedinClientId;
+
+    @Value("${LINKEDIN_CLIENT_SECRET:}")
+    private String linkedinClientSecret;
+
+    @Value("${app.social.x.client-id:}")
+    private String xClientId;
+
+    @Value("${X_CLIENT_SECRET:}")
+    private String xClientSecret;
+
     @GetMapping("/capabilities")
     public ApiResponse<SystemCapabilitiesResponse> capabilities() {
         boolean captionGeneration = configured(geminiApiKey) || ollamaEnabled;
@@ -46,17 +73,28 @@ public class SystemController {
         boolean videoGeneration = creativeEditing && configured(higgsfieldVideoModel);
         boolean cloudStorage = configured(cloudinaryCloudName)
                 && configured(cloudinaryApiKey);
+        boolean smtpEmail = configured(smtpHost);
+        boolean metaOAuth = configured(metaAppId) && configured(metaAppSecret);
+        boolean tiktokOAuth = configured(tiktokClientKey) && configured(tiktokClientSecret);
+        boolean linkedinOAuth = configured(linkedinClientId) && configured(linkedinClientSecret);
+        boolean xOAuth = configured(xClientId) && configured(xClientSecret);
+        boolean socialPublishing = metaOAuth || tiktokOAuth || linkedinOAuth || xOAuth;
 
         return ApiResponse.ok(new SystemCapabilitiesResponse(
                 captionGeneration,
                 imageGeneration,
                 cloudStorage,
                 true,
-                false,
-                false,
+                socialPublishing,
+                smtpEmail,
                 creativeEditing,
                 photoShootGeneration,
-                videoGeneration
+                videoGeneration,
+                smtpEmail,
+                metaOAuth,
+                tiktokOAuth,
+                linkedinOAuth,
+                xOAuth
         ));
     }
 

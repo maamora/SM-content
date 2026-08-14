@@ -49,3 +49,18 @@
 - [x] Add provider-aware video generation and output handling for the photo-shoot result.
 - [x] Add the interactive Flora-inspired creative workflow section to the STUDIO landing page.
 - [x] Verify the new creative flow across backend, frontend, uploads, provider capabilities, and production builds.
+- [ ] Audit automation routes, schedules, batch jobs, notifications, and page-level placeholders against the current backend API.
+- [ ] Implement supported automation flows with persisted state, ownership checks, retry/failure handling, and honest provider boundaries.
+- [ ] Wire dashboard, workspace, and admin pages to real backend data and actions where APIs exist.
+- [ ] Replace unsupported page actions with explicit unavailable or configuration-required states.
+- [ ] Verify automation and page flows across backend tests, frontend checks, route builds, and documented local setup.
+- [x] Audit the requested social networks and email provider requirements against the current STUDIO API and configuration.
+- [x] Implement provider-backed email delivery with persisted queue state, retries, and explicit configuration errors.
+- [x] Implement provider-backed social publishing with OAuth authorization, publish status persistence, retries, and ownership checks.
+- [x] Wire social, email, notifications, and settings pages to live provider states and actions.
+- [x] Verify social/email flows and document the required provider credentials and setup steps.
+- [x] Implement Meta OAuth and publishing for Instagram Business and Facebook Pages, subject to Meta permissions and app review.
+- [x] Implement TikTok OAuth and publishing with provider-required media and approval states.
+- [x] Implement LinkedIn OAuth and publishing for supported person or organization targets, with media boundaries explicit.
+- [x] Implement X OAuth and publishing with current API credential and media-upload boundaries.
+- [x] Implement SMTP email delivery and wire delivery status into notifications and settings.
