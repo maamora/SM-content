@@ -11,3 +11,7 @@
 - [x] Compare `manus/studio-frontend` with `main` and merge without discarding the completed STUDIO implementation.
 - [x] Verify the merged `main` branch and push it to GitHub.
 - [x] Write and commit a complete local launch guide covering PostgreSQL, Spring Boot, Next.js, environment variables, and troubleshooting.
+- [x] Inspect the custom error boundary and Next.js/React versions causing the production build failure.
+- [x] Reproduce the `/_global-error` failure with a focused production-build log.
+- [x] Apply the smallest compatible fix without changing the STUDIO visual system.
+- [x] Re-run TypeScript, lint, and production build, then commit the verified fix to main.

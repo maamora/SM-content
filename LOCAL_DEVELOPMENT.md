@@ -179,9 +179,10 @@ Frontend checks:
 npx tsc --noEmit
 pnpm lint
 pnpm test
+pnpm build
 ```
 
-The current production build has a pre-existing Next.js/React `/_global-error` prerender compatibility failure in the baseline dependency setup. It is separate from the backend wiring and must be resolved before treating `pnpm build` as a production gate.
+The build script explicitly sets `NODE_ENV=production` before invoking Next.js. This matters in development environments that export `NODE_ENV=development`; leaving that non-standard value in place can make Next.js prerender the error routes with the wrong runtime mode and produce `Cannot read properties of null (reading 'useContext')` for `/_global-error` or `/_not-found`. The custom error pages are also intentionally self-contained: `global-error.tsx` is a client component and both utility pages use plain anchors rather than relying on App Router context.
 
 ## 6. First-use flow
 
