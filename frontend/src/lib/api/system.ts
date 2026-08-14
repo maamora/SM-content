@@ -7,6 +7,9 @@ export interface SystemCapabilities {
     localStorage: boolean;
     socialPublishing: boolean;
     emailDelivery: boolean;
+    creativeEditing: boolean;
+    photoShootGeneration: boolean;
+    videoGeneration: boolean;
 }
 
 export const getSystemCapabilities = () => apiFetch<SystemCapabilities>('/api/system/capabilities');

@@ -23,24 +23,12 @@ public class UploadController {
 
     @PostMapping("/image")
     public ApiResponse<UploadResponse> uploadImage(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) {
-            return ApiResponse.error("No file provided.");
-        }
+        return upload(file, "products");
+    }
 
-        try {
-            String extension = extensionOf(file.getOriginalFilename());
-            String path = "products/" + UUID.randomUUID() + extension;
-            String url = storageService.upload(file.getBytes(), path, file.getContentType());
-            return ApiResponse.ok(new UploadResponse(url));
-        } catch (IOException e) {
-            return ApiResponse.error("Failed to read uploaded file.");
-        } catch (Exception e) {
-            // Catches Cloudinary/storage failures (bad credentials, network
-            // issues, etc.) so the client always gets a JSON error instead of
-            // an unhandled exception that GlobalExceptionHandler would still
-            // wrap, but with a less specific message than we can give here.
-            return ApiResponse.error("Image upload failed: " + e.getMessage());
-        }
+    @PostMapping("/creative-reference")
+    public ApiResponse<UploadResponse> uploadCreativeReference(@RequestParam("file") MultipartFile file) {
+        return upload(file, "creative/references");
     }
 
     @DeleteMapping("/image")
@@ -53,5 +41,29 @@ public class UploadController {
         if (filename == null) return ".jpg";
         int dot = filename.lastIndexOf('.');
         return dot == -1 ? ".jpg" : filename.substring(dot);
+    }
+
+    private ApiResponse<UploadResponse> upload(MultipartFile file, String folder) {
+        if (file.isEmpty()) {
+            return ApiResponse.error("No file provided.");
+        }
+        if (file.getSize() > 15L * 1024L * 1024L) {
+            return ApiResponse.error("Image exceeds the 15 MB upload limit.");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.toLowerCase().startsWith("image/")) {
+            return ApiResponse.error("Only image files are supported.");
+        }
+
+        try {
+            String extension = extensionOf(file.getOriginalFilename());
+            String path = folder + "/" + UUID.randomUUID() + extension;
+            String url = storageService.upload(file.getBytes(), path, contentType);
+            return ApiResponse.ok(new UploadResponse(url));
+        } catch (IOException e) {
+            return ApiResponse.error("Failed to read uploaded file.");
+        } catch (Exception e) {
+            return ApiResponse.error("Image upload failed.");
+        }
     }
 }

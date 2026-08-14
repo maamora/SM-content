@@ -23,6 +23,9 @@ public class SystemController {
     @Value("${app.higgsfield.api-key-secret:}")
     private String higgsfieldApiKeySecret;
 
+    @Value("${app.higgsfield.video-model:}")
+    private String higgsfieldVideoModel;
+
     @Value("${app.ollama.enabled:false}")
     private boolean ollamaEnabled;
 
@@ -37,6 +40,10 @@ public class SystemController {
         boolean captionGeneration = configured(geminiApiKey) || ollamaEnabled;
         boolean imageGeneration = configured(stabilityApiKey)
                 || configured(higgsfieldApiKeyId) && configured(higgsfieldApiKeySecret);
+        boolean creativeEditing = configured(higgsfieldApiKeyId)
+                && configured(higgsfieldApiKeySecret);
+        boolean photoShootGeneration = creativeEditing;
+        boolean videoGeneration = creativeEditing && configured(higgsfieldVideoModel);
         boolean cloudStorage = configured(cloudinaryCloudName)
                 && configured(cloudinaryApiKey);
 
@@ -46,7 +53,10 @@ public class SystemController {
                 cloudStorage,
                 true,
                 false,
-                false
+                false,
+                creativeEditing,
+                photoShootGeneration,
+                videoGeneration
         ));
     }
 

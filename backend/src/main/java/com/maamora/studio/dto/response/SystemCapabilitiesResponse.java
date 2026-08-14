@@ -12,4 +12,7 @@ public class SystemCapabilitiesResponse {
     private boolean localStorage;
     private boolean socialPublishing;
     private boolean emailDelivery;
+    private boolean creativeEditing;
+    private boolean photoShootGeneration;
+    private boolean videoGeneration;
 }

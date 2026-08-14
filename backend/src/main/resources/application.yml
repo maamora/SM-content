@@ -48,6 +48,8 @@ app:
     api-key-id: ${HIGGSFIELD_API_KEY_ID:}
     api-key-secret: ${HIGGSFIELD_API_KEY_SECRET:}
     model: ${HIGGSFIELD_MODEL:flux-pro/kontext/max/text-to-image}
+    reference-model: ${HIGGSFIELD_REFERENCE_MODEL:flux-pro/kontext/max/image-to-image}
+    video-model: ${HIGGSFIELD_VIDEO_MODEL:}
     base-url: ${HIGGSFIELD_BASE_URL:https://platform.higgsfield.ai}
     timeout-ms: ${HIGGSFIELD_TIMEOUT_MS:180000}
     poll-interval-ms: ${HIGGSFIELD_POLL_INTERVAL_MS:3000}

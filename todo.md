@@ -40,3 +40,12 @@
 - [x] Research caption-generation alternatives using official pricing, quota, and API documentation; reject any provider that cannot honestly meet the free/unlimited requirement.
 - [x] Implement the selected caption provider fallback with server-side configuration, retry behavior, and explicit unavailable states.
 - [x] Verify Higgsfield image generation, caption generation, batch jobs, capability reporting, frontend build, backend tests, and documentation before pushing.
+- [ ] Install Ollama on Windows, verify its PATH and local service, pull the caption model, and connect it to STUDIO.
+- [ ] Complete the Ollama Windows installer or Winget installation after confirming the executable is currently absent.
+- [x] Evaluate and document a hosted free-tier caption API alternative, including quotas, secret configuration, and STUDIO adapter requirements.
+- [ ] Add a Groq hosted caption adapter behind the existing caption-provider boundary if the user chooses to replace Ollama.
+- [x] Audit Higgsfield image/video support and the current STUDIO upload and generation contracts.
+- [x] Add prompt-based image editing and product-plus-model photo-shoot generation with explicit provider and unavailable states.
+- [x] Add provider-aware video generation and output handling for the photo-shoot result.
+- [x] Add the interactive Flora-inspired creative workflow section to the STUDIO landing page.
+- [x] Verify the new creative flow across backend, frontend, uploads, provider capabilities, and production builds.

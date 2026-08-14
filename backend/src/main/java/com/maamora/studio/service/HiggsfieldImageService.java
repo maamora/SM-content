@@ -15,6 +15,7 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,6 +44,12 @@ public class HiggsfieldImageService {
     @Value("${app.higgsfield.model:flux-pro/kontext/max/text-to-image}")
     private String model;
 
+    @Value("${app.higgsfield.reference-model:flux-pro/kontext/max/image-to-image}")
+    private String referenceModel;
+
+    @Value("${app.higgsfield.video-model:}")
+    private String videoModel;
+
     @Value("${app.higgsfield.base-url:https://platform.higgsfield.ai}")
     private String baseUrl;
 
@@ -64,18 +71,32 @@ public class HiggsfieldImageService {
         return configured(apiKeyId) && configured(apiKeySecret);
     }
 
+    public boolean isVideoConfigured() {
+        return isConfigured() && configured(videoModel);
+    }
+
     public byte[] generateImage(String prompt, String aspectRatio) {
+        return generateImage(prompt, aspectRatio, List.of());
+    }
+
+    public byte[] generateImage(String prompt, String aspectRatio, List<String> referenceImages) {
         if (!isConfigured()) {
             throw new IllegalStateException("Higgsfield image generation is not configured.");
         }
 
-        Map<String, Object> body = Map.of(
-                "input", Map.of(
-                        "prompt", prompt,
-                        "aspect_ratio", aspectRatio,
-                        "safety_tolerance", 2));
+        Map<String, Object> input = new HashMap<>();
+        input.put("prompt", prompt);
+        input.put("aspect_ratio", aspectRatio);
+        input.put("safety_tolerance", 2);
+        if (referenceImages != null && !referenceImages.isEmpty()) {
+            input.put("input_images", referenceImages);
+        }
+        Map<String, Object> body = Map.of("input", input);
 
-        JsonNode initialResponse = submit(body);
+        String targetModel = referenceImages != null && !referenceImages.isEmpty() && configured(referenceModel)
+                ? referenceModel
+                : model;
+        JsonNode initialResponse = submit("/" + targetModel, body);
         String statusUrl = text(initialResponse, "status_url");
         String requestId = text(initialResponse, "request_id");
         if (statusUrl == null || requestId == null) {
@@ -88,15 +109,44 @@ public class HiggsfieldImageService {
             throw new IllegalStateException("Higgsfield completed without an image URL.");
         }
 
-        return downloadImage(imageUrl);
+        return downloadMedia(imageUrl, "image");
     }
 
-    private JsonNode submit(Map<String, Object> body) {
+    public byte[] generateVideo(String imageUrl, String prompt, String aspectRatio) {
+        if (!isVideoConfigured()) {
+            throw new IllegalStateException("Higgsfield video generation is not configured.");
+        }
+        if (imageUrl == null || imageUrl.isBlank()) {
+            throw new IllegalArgumentException("A public generated image URL is required for video generation.");
+        }
+
+        Map<String, Object> input = new HashMap<>();
+        input.put("prompt", prompt);
+        input.put("input_images", List.of(imageUrl));
+        input.put("aspect_ratio", aspectRatio);
+        input.put("duration", 5);
+
+        JsonNode initialResponse = submit("/" + videoModel, Map.of("input", input));
+        String statusUrl = text(initialResponse, "status_url");
+        String requestId = text(initialResponse, "request_id");
+        if (statusUrl == null || requestId == null) {
+            throw new IllegalStateException("Higgsfield returned no video request status URL.");
+        }
+
+        JsonNode completed = poll(statusUrl, requestId);
+        String videoUrl = findVideoUrl(completed);
+        if (videoUrl == null) {
+            throw new IllegalStateException("Higgsfield completed without a video URL.");
+        }
+        return downloadMedia(videoUrl, "video");
+    }
+
+    private JsonNode submit(String targetModel, Map<String, Object> body) {
         RuntimeException lastError = null;
         for (int attempt = 1; attempt <= MAX_SUBMIT_ATTEMPTS; attempt++) {
             try {
                 ResponseEntity<String> response = restTemplate.exchange(
-                        endpoint("/" + model),
+                        endpoint(targetModel),
                         HttpMethod.POST,
                         new HttpEntity<>(body, headers()),
                         String.class);
@@ -122,7 +172,7 @@ public class HiggsfieldImageService {
             ResponseEntity<String> response;
             try {
                 response = restTemplate.exchange(
-                        statusUrl,
+                        absoluteOrRelative(statusUrl),
                         HttpMethod.GET,
                         new HttpEntity<>(headers()),
                         String.class);
@@ -151,18 +201,18 @@ public class HiggsfieldImageService {
                 + " did not complete within " + timeoutMs + " ms.");
     }
 
-    private byte[] downloadImage(String imageUrl) {
+    private byte[] downloadMedia(String mediaUrl, String mediaType) {
         ResponseEntity<byte[]> response = restTemplate.exchange(
-                imageUrl,
+                absoluteOrRelative(mediaUrl),
                 HttpMethod.GET,
                 new HttpEntity<>(new HttpHeaders()),
                 byte[].class);
         byte[] bytes = response.getBody();
         if (bytes == null || bytes.length == 0) {
-            throw new IllegalStateException("Higgsfield returned an empty image.");
+            throw new IllegalStateException("Higgsfield returned an empty " + mediaType + ".");
         }
         if (bytes.length > MAX_OUTPUT_BYTES) {
-            throw new IllegalStateException("Higgsfield image exceeds the configured output limit.");
+            throw new IllegalStateException("Higgsfield " + mediaType + " exceeds the configured output limit.");
         }
         return bytes;
     }
@@ -188,6 +238,19 @@ public class HiggsfieldImageService {
         return null;
     }
 
+    private String findVideoUrl(JsonNode response) {
+        JsonNode videos = response.path("videos");
+        if (videos.isArray()) {
+            for (JsonNode video : videos) {
+                String url = text(video, "url");
+                if (url != null && (url.startsWith("https://") || url.startsWith("http://"))) {
+                    return url;
+                }
+            }
+        }
+        return text(response, "video_url");
+    }
+
     private String text(JsonNode node, String field) {
         String value = node.path(field).asText(null);
         return value == null || value.isBlank() ? null : value;
@@ -202,8 +265,15 @@ public class HiggsfieldImageService {
     }
 
     private String endpoint(String path) {
+        if (path.startsWith("http://") || path.startsWith("https://")) {
+            return path;
+        }
         String normalizedBase = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
-        return normalizedBase + path;
+        return normalizedBase + (path.startsWith("/") ? path : "/" + path);
+    }
+
+    private String absoluteOrRelative(String path) {
+        return endpoint(path);
     }
 
     private boolean configured(String value) {

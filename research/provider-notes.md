@@ -26,5 +26,19 @@ These findings support using the Higgsfield API as the deployed STUDIO adapter a
   - Groq's free plan has explicit per-model RPM, RPD, TPM, and TPD limits, so it is not unlimited.
 - OpenRouter limits: https://openrouter.ai/docs/api_reference/limits
   - Free models have explicit request-per-minute and request-per-day caps, so they are not unlimited.
+- Cloudflare Workers AI pricing: https://developers.cloudflare.com/workers-ai/platform/pricing/
+  - The free allocation is 10,000 Neurons per day; usage beyond that requires a paid Workers plan, so it is not unlimited.
 
 The selected caption fallback is therefore Ollama local inference, with Gemini retained as an optional hosted provider. The application must report Ollama as unavailable when the local service or configured model is missing rather than silently pretending caption generation is enabled.
+
+## Creative workflow support
+
+- Official Higgsfield SDK: https://github.com/higgsfield-ai/higgsfield-js
+  - The V2 SDK supports server-side `subscribe(endpoint, { input, withPolling })` calls and polls `/requests/{request_id}/status`.
+  - Image-to-video is documented through `/v1/image2video/dop` with `input_images`, a prompt, and a model such as `dop-turbo`.
+  - Completed responses may expose `images[0].url` and/or `video.url`; terminal states include `completed`, `failed`, and `nsfw`.
+  - The SDK also documents reference-image and image-upload flows, but endpoint schemas vary by model; STUDIO must keep the selected model and input schema configurable.
+- Official Higgsfield CLI catalog: https://github.com/higgsfield-ai/cli
+  - The current catalog includes image models, image-to-video/video models, and a `marketing_studio_video` model; the CLI documentation recommends checking the live model schema before submitting a job.
+
+These findings support implementing a provider-aware creative job contract: prompt plus optional uploaded product/model references for image generation, followed by an optional image-to-video job using the generated image. The frontend must show an explicit provider-unavailable state when video credentials or a supported video model are not configured.

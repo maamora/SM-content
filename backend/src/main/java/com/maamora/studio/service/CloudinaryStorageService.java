@@ -60,7 +60,7 @@ public class CloudinaryStorageService implements StorageService {
             @SuppressWarnings("unchecked")
             Map<String, Object> result = client().uploader().upload(content, ObjectUtils.asMap(
                     "public_id", publicId,
-                    "resource_type", "image",
+                    "resource_type", resourceTypeOf(contentType, relativePath),
                     "overwrite", true
             ));
 
@@ -78,7 +78,7 @@ public class CloudinaryStorageService implements StorageService {
 
         String publicId = matcher.group(1);
         try {
-            client().uploader().destroy(publicId, ObjectUtils.asMap("resource_type", "image"));
+            client().uploader().destroy(publicId, ObjectUtils.asMap("resource_type", resourceTypeOfUrl(url)));
         } catch (Exception e) {
             // Best-effort cleanup: a failed delete shouldn't block the user's
             // actual request (saving/removing the image client-side already
@@ -102,5 +102,18 @@ public class CloudinaryStorageService implements StorageService {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 not available", e);
         }
+    }
+
+    private String resourceTypeOf(String contentType, String relativePath) {
+        if (contentType != null && contentType.toLowerCase().startsWith("video/")) {
+            return "video";
+        }
+        return relativePath != null && relativePath.toLowerCase().matches(".*\\.(mp4|webm|mov|m4v)$")
+                ? "video"
+                : "image";
+    }
+
+    private String resourceTypeOfUrl(String url) {
+        return url.contains("/video/upload/") ? "video" : "image";
     }
 }

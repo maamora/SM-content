@@ -104,6 +104,25 @@ create table if not exists public.post (
         foreign key (batch_job_id) references public.batch_job(id)
 );
 
+create table if not exists public.creative_job (
+    id text primary key default gen_random_uuid()::text,
+    user_id text not null,
+    type varchar(32) not null,
+    status varchar(32) not null default 'QUEUED',
+    prompt varchar(4000) not null,
+    aspect_ratio varchar(32),
+    product_image_url varchar(2048),
+    model_image_url varchar(2048),
+    result_image_url varchar(2048),
+    result_video_url varchar(2048),
+    error_message varchar(1200),
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    constraint creative_job_type_check check (type in ('EDIT_IMAGE', 'PHOTO_SHOOT', 'PHOTO_SHOOT_VIDEO')),
+    constraint creative_job_status_check check (status in ('QUEUED', 'PROCESSING', 'COMPLETED', 'FAILED')),
+    constraint creative_job_user_id_fkey foreign key (user_id) references public.app_user(id)
+);
+
 create index if not exists idx_app_user_brand_id
     on public.app_user (brand_id);
 
@@ -139,6 +158,9 @@ create index if not exists idx_post_batch_job_id
 
 create index if not exists idx_post_created_at
     on public.post (created_at desc);
+
+create index if not exists idx_creative_job_user_created
+    on public.creative_job (user_id, created_at desc);
 
 comment on table public.brand_settings is
     'STUDIO brand kit settings; the current application treats one row as the shared brand.';

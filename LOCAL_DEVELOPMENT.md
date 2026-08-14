@@ -304,11 +304,17 @@ Higgsfield uses two server-side credentials, an API key ID and an API key secret
 HIGGSFIELD_API_KEY_ID=your-higgsfield-key-id
 HIGGSFIELD_API_KEY_SECRET=your-higgsfield-key-secret
 HIGGSFIELD_MODEL=flux-pro/kontext/max/text-to-image
+HIGGSFIELD_REFERENCE_MODEL=flux-pro/kontext/max/image-to-image
+HIGGSFIELD_VIDEO_MODEL=your-enabled-higgsfield-video-model
 HIGGSFIELD_TIMEOUT_MS=180000
 HIGGSFIELD_POLL_INTERVAL_MS=3000
 ```
 
 The STUDIO backend keeps these credentials off the browser, submits the asynchronous Higgsfield request, polls its returned status URL, downloads the completed image, and then passes the bytes through STUDIO’s normal storage and branded overlay pipeline. The existing Stability path and deterministic local renderer remain fallback paths when Higgsfield is unavailable. Higgsfield requests consume account credits, so test with a low resolution and confirm the estimated cost in your account before batch generation.
+
+The authenticated Studio workspace now exposes two creative modes. **Edit an image** accepts one product or model reference plus a natural-language instruction such as “replace the background with a warm daylight studio while preserving the product shape, label, and materials.” **Photo shoot** accepts both a product image and a model image plus a scenario prompt such as “create a running campaign frame with directional daylight and believable contact shadows.” The UI uploads references through `POST /api/uploads/creative-reference`, creates a job through `POST /api/creative/jobs`, and polls `GET /api/creative/jobs/{id}` until the image or video is ready.
+
+For a real MP4 result, configure an enabled Higgsfield video model and Cloudinary storage. The generated still image must first be stored at a public HTTPS URL so Higgsfield can use it as the video input; a local-only storage URL cannot be used for this provider-backed video stage. If `HIGGSFIELD_VIDEO_MODEL` is absent, the job returns an explicit unavailable state instead of pretending to have produced a video. The landing-page showcase accepts an optional `NEXT_PUBLIC_STUDIO_DEMO_VIDEO_URL` for a real demo MP4; without it, the showcase remains interactive but labels the output as provider-ready rather than displaying fabricated media.
 
 Verify configured capability state with:
 
@@ -316,7 +322,7 @@ Verify configured capability state with:
 Invoke-RestMethod http://localhost:8080/api/system/capabilities
 ```
 
-`imageGeneration` is `true` when either Higgsfield credentials or `STABILITY_API_KEY` are configured. `captionGeneration` is `true` when Gemini is configured or local Ollama is enabled. These flags indicate configured integration paths; they do not guarantee that a remote provider account has remaining credits or that a local model is currently running.
+`imageGeneration` is `true` when either Higgsfield credentials or `STABILITY_API_KEY` are configured. `creativeEditing` and `photoShootGeneration` require Higgsfield credentials. `videoGeneration` additionally requires `HIGGSFIELD_VIDEO_MODEL`. `captionGeneration` is `true` when Gemini is configured or local Ollama is enabled. These flags indicate configured integration paths; they do not guarantee that a remote provider account has remaining credits, that Cloudinary is reachable, or that a local model is currently running.
 
 ### Production build fails at `/_global-error`
 
