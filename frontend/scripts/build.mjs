@@ -1,8 +1,10 @@
 import { spawnSync } from "node:child_process";
 
-const nextCommand = process.platform === "win32" ? "next.cmd" : "next";
+const isWindows = process.platform === "win32";
+const nextCommand = isWindows ? "next.cmd" : "next";
 const result = spawnSync(nextCommand, ["build"], {
   stdio: "inherit",
+  shell: isWindows,
   env: {
     ...process.env,
     NODE_ENV: "production",
