@@ -30,6 +30,11 @@ foreach ($required in @("DB_HOST", "DB_PORT", "DB_NAME", "DB_USERNAME", "DB_PASS
     }
 }
 
+$jwtSecretLength = [System.Text.Encoding]::UTF8.GetByteCount($settings["JWT_SECRET"])
+if ($jwtSecretLength -lt 32) {
+    throw "JWT_SECRET must contain at least 32 UTF-8 bytes for secure HS256 token signing. Replace it locally with a longer random server-only value."
+}
+
 foreach ($override in @("SPRING_DATASOURCE_URL", "SPRING_DATASOURCE_USERNAME", "SPRING_DATASOURCE_PASSWORD")) {
     if ($settings.ContainsKey($override) -or -not [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($override))) {
         throw "Remove '$override' from backend/.env and the current PowerShell environment. STUDIO uses DB_* variables only."

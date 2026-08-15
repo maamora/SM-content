@@ -85,4 +85,6 @@
 - [ ] Reconfirm the local capability response after backend startup.
 - [ ] Run the Windows live smoke script and assess the real upload, caption, Higgsfield image, and photo-shoot job outcomes.
 - [ ] Repair the Windows live smoke-test image fixture and .NET HTTP client prerequisites, then repeat the test.
+- [ ] Diagnose and repair the HTTP 500 returned by live disposable-account registration during the smoke test.
+- [x] Add non-sensitive JWT signing-key validation and generic API-error logging for live registration diagnostics.
 - [x] Strengthen the committed backend environment template and Windows startup guidance without adding real credentials.

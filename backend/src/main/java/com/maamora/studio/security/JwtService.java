@@ -3,6 +3,7 @@ package com.maamora.studio.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,16 @@ public class JwtService {
 
     @Value("${app.jwt.expiration-ms}")
     private long expirationMs;
+
+    @PostConstruct
+    void validateSigningSecret() {
+        int byteLength = secret == null ? 0 : secret.getBytes(StandardCharsets.UTF_8).length;
+        if (byteLength < 32) {
+            throw new IllegalStateException(
+                    "JWT_SECRET must contain at least 32 UTF-8 bytes for secure HS256 token signing."
+            );
+        }
+    }
 
     private SecretKey key() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
