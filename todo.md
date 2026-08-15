@@ -84,4 +84,5 @@
 - [ ] Correct the local Supabase pooler password for the configured PostgreSQL user and confirm Spring Boot can initialize JPA.
 - [ ] Reconfirm the local capability response after backend startup.
 - [ ] Run the Windows live smoke script and assess the real upload, caption, Higgsfield image, and photo-shoot job outcomes.
+- [ ] Repair the Windows live smoke-test image fixture and .NET HTTP client prerequisites, then repeat the test.
 - [x] Strengthen the committed backend environment template and Windows startup guidance without adding real credentials.
