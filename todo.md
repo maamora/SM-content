@@ -77,3 +77,11 @@
 - [x] Run backend tests, frontend type/lint/production builds, and authenticated database-backed smoke checks.
 - [x] Validate creative generation, caption generation, social publishing, and SMTP flows against real configured providers or explicit unavailable states.
 - [x] Fix verified full-system defects, repeat focused regression tests, and document the production-readiness result.
+- [ ] Securely inspect the supplied local environment configuration and identify safely testable live providers.
+- [ ] Start STUDIO against the supplied database and validate real authenticated API health.
+- [ ] Run non-destructive live checks for configured image and caption generation providers.
+- [ ] Report real provider outcomes and obtain confirmation before social publishing or external email delivery.
+- [ ] Correct the local Supabase pooler password for the configured PostgreSQL user and confirm Spring Boot can initialize JPA.
+- [ ] Reconfirm the local capability response after backend startup.
+- [ ] Run the Windows live smoke script and assess the real upload, caption, Higgsfield image, and photo-shoot job outcomes.
+- [x] Strengthen the committed backend environment template and Windows startup guidance without adding real credentials.

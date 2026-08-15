@@ -88,7 +88,8 @@ The PostgreSQL data directory is managed by the PostgreSQL service, not by the N
 
 ## 4. Configure and launch Spring Boot
 
-Create the backend environment file from the checked-in template:
+Create the backend environment file from the checked-in template. The real `.env`
+is ignored by Git and stays on your computer:
 
 ```bash
 cd backend
@@ -155,6 +156,39 @@ directory when they are invoked by name alone:
 cd backend
 .\mvnw.cmd spring-boot:run
 ```
+
+Alternatively, use the committed Windows helper. It performs a local preflight
+without printing secret values, detects duplicate keys such as
+`HIGGSFIELD_MODEL`, rejects accidental `SPRING_DATASOURCE_*` overrides, and
+checks the Supabase pooler username format before starting Spring Boot:
+
+```powershell
+cd backend
+Set-ExecutionPolicy -Scope Process Bypass
+.\Start-StudioBackend.ps1
+```
+
+### Supabase Session pooler configuration
+
+For an IPv4 local Windows development machine, use the **Session pooler**
+connection string from Supabase Dashboard → **Connect**. Its host ends in
+`.pooler.supabase.com`, its port is `5432`, and its username includes the
+project reference in the form `postgres.[project-ref]`. The password is the
+current database password, not a Supabase publishable, secret, anon, or service
+API key. Use this shape, substituting your provider’s actual values locally:
+
+```dotenv
+DB_HOST=aws-[region].pooler.supabase.com
+DB_PORT=5432
+DB_NAME=postgres
+DB_USERNAME=postgres.[project-ref]
+DB_PASSWORD=your-current-supabase-database-password
+DB_SSL_MODE=require
+```
+
+Do not add `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, or
+`SPRING_DATASOURCE_PASSWORD`; STUDIO already derives its datasource from the
+six `DB_*` variables. Keep exactly one `HIGGSFIELD_MODEL` entry.
 
 The API should become available at `http://localhost:8080`. The backend applies missing JPA schema objects with `ddl-auto: update`; this preserves existing rows while adding schema changes. Never use `create` or `create-drop` against a database containing real data.
 
