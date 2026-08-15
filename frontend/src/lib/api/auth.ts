@@ -1,5 +1,7 @@
 import { apiFetch, setToken, setRole, clearToken } from "./client";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+
 export interface AuthResponse {
     token: string;
     email: string;
@@ -34,6 +36,10 @@ export async function login(input: { email: string; password: string }) {
     setToken(res.token);
     setRole(res.role);
     return res;
+}
+
+export function startGoogleAuth() {
+    window.location.assign(`${API_BASE_URL}/api/auth/google/start`);
 }
 
 export function logout() {

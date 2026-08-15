@@ -107,3 +107,12 @@
 - [x] Exercise route navigation and explicit unavailable states locally.
 - [ ] Compare frontend API contracts against the locally validated backend capabilities.
 - [x] Record sandbox-local results separately from Windows live-provider results.
+
+
+## Google OAuth authentication
+- [ ] Inspect the existing STUDIO auth controller, service, user model, JWT session flow, and auth UI.
+- [ ] Add server-side Google OAuth configuration, state/nonce protection, callback handling, identity mapping, and JWT session issuance.
+- [ ] Add Google login and sign-up actions to the login and registration pages.
+- [ ] Add Google OAuth environment documentation and redirect-URI setup guidance without committing credentials.
+- [ ] Validate configured and unavailable OAuth states, backend tests, frontend checks, and production build.
+- [ ] Deliver the Google OAuth setup guide and test results.

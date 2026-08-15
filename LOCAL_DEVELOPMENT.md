@@ -457,3 +457,27 @@ The application does not include an MCP or paid connector by default. There is n
 | `META_*`, `TIKTOK_*`, `LINKEDIN_*`, `X_*`, `TOKEN_CIPHER_KEY` | Social publishing is enabled | Configure each network separately, register the exact callback URL, and complete the provider's app review; export remains the fallback. |
 
 After changing backend variables, restart Spring Boot. After changing `NEXT_PUBLIC_API_BASE_URL`, restart Next.js because public variables are read at startup.
+
+
+## Google login and sign-up
+
+STUDIO supports Google login and account creation through the same backend-issued JWT session used by email/password authentication. The Google OAuth client secret remains server-side; it must never be placed in the frontend environment or committed to Git.
+
+In Google Cloud Console, create or select a project, configure the OAuth consent screen, and create an OAuth client with application type **Web application**. For local development, add this exact authorized redirect URI:
+
+```text
+http://localhost:8080/api/auth/google/callback
+```
+
+Add the resulting values to `backend/.env`:
+
+```dotenv
+GOOGLE_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-web-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:8080/api/auth/google/callback
+FRONTEND_URL=http://localhost:3001
+```
+
+`FRONTEND_URL` must match the browser origin serving the frontend. If the frontend runs on port 3000, use `http://localhost:3000`; if it runs on port 3001, use `http://localhost:3001`. Restart the backend after changing these values. When Google OAuth variables are absent, the **Continue with Google** action redirects back to the login page with an explicit unavailable message rather than pretending that authentication succeeded.
+
+The callback validates a signed, expiring state value, exchanges the authorization code with Google, requires a verified Google email, links an existing STUDIO account by email when present, and creates a new account otherwise. The resulting STUDIO JWT is returned in the OAuth callback URL fragment so it is not sent in the callback request or server access logs; the frontend stores it and redirects to `/dashboard`.

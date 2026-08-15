@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +48,26 @@ public class AuthService {
 
         String token = jwtService.generateToken(user.getId(), user.getEmail());
         return new AuthResponse(token, user.getEmail(), brand.getId(), user.getRole().name());
+    }
+
+    @Transactional
+    public AuthResponse loginOrCreateGoogle(String email, String name) {
+        String normalizedEmail = normalizeEmail(email);
+        User user = userRepository.findByEmailIgnoreCase(normalizedEmail).orElseGet(() -> {
+            BrandSettings brand = brandSettingsService.getSharedBrand();
+            User created = User.builder()
+                    .name(name == null || name.isBlank() ? normalizedEmail : name)
+                    .email(normalizedEmail)
+                    .passwordHash(passwordEncoder.encode(UUID.randomUUID().toString()))
+                    .role(Role.USER)
+                    .brand(brand)
+                    .build();
+            return userRepository.save(created);
+        });
+
+        if (user.getBrand() == null) user.setBrand(brandSettingsService.getSharedBrand());
+        String token = jwtService.generateToken(user.getId(), user.getEmail());
+        return new AuthResponse(token, user.getEmail(), user.getBrand().getId(), user.getRole().name());
     }
 
     public AuthResponse login(LoginRequest request) {
