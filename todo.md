@@ -88,3 +88,22 @@
 - [ ] Diagnose and repair the HTTP 500 returned by live disposable-account registration during the smoke test.
 - [x] Add non-sensitive JWT signing-key validation and generic API-error logging for live registration diagnostics.
 - [x] Strengthen the committed backend environment template and Windows startup guidance without adding real credentials.
+
+
+## Website functionality validation
+- [ ] Confirm local frontend and backend service health.
+- [ ] Test public marketing, authentication, onboarding, dashboard, workspace, and admin navigation.
+- [ ] Test authenticated uploads, captions, image generation, and photo-shoot actions.
+- [ ] Verify social, email, and video unavailable states without external side effects.
+- [ ] Fix verified website defects and rerun affected checks.
+- [ ] Deliver the final website functionality test report and remaining configuration actions.
+- [ ] Re-run disposable registration after the JWT_SECRET update and preserve only non-sensitive output.
+
+
+## Sandbox-local website verification
+- [x] Run frontend typecheck, lint, and production build from the GitHub checkout.
+- [x] Start the local frontend and inspect representative marketing and app routes.
+- [x] Capture desktop and mobile route screenshots for visual verification.
+- [x] Exercise route navigation and explicit unavailable states locally.
+- [ ] Compare frontend API contracts against the locally validated backend capabilities.
+- [x] Record sandbox-local results separately from Windows live-provider results.
