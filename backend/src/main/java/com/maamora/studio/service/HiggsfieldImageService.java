@@ -91,7 +91,9 @@ public class HiggsfieldImageService {
         if (referenceImages != null && !referenceImages.isEmpty()) {
             input.put("input_images", referenceImages);
         }
-        Map<String, Object> body = Map.of("input", input);
+        // Higgsfield v2 expects the input fields at the top level of the JSON body.
+        // The official SDK sends the input object directly rather than wrapping it in {"input": ...}.
+        Map<String, Object> body = input;
 
         String targetModel = referenceImages != null && !referenceImages.isEmpty() && configured(referenceModel)
                 ? referenceModel
@@ -126,7 +128,7 @@ public class HiggsfieldImageService {
         input.put("aspect_ratio", aspectRatio);
         input.put("duration", 5);
 
-        JsonNode initialResponse = submit("/" + videoModel, Map.of("input", input));
+        JsonNode initialResponse = submit("/" + videoModel, input);
         String statusUrl = text(initialResponse, "status_url");
         String requestId = text(initialResponse, "request_id");
         if (statusUrl == null || requestId == null) {

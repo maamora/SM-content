@@ -144,3 +144,15 @@
 - [ ] Make the non-secret Higgsfield diagnostics reachable through the intended safe system access path.
 - [ ] Verify the effective credential metadata and model configuration after access is corrected.
 - [ ] Rerun image generation and caption generation after the 401 diagnosis.
+
+
+## Higgsfield authorization contract
+- [ ] Inspect the effective Higgsfield header, endpoint, model payload, and provider error handling after runtime configuration passed diagnostics.
+- [ ] Compare STUDIO’s request against the current official Higgsfield API contract.
+- [ ] Correct the request or document an external credential/account restriction, then rerun image and caption validation.
+
+
+## Higgsfield endpoint-path diagnosis
+- [ ] Verify the SDK’s exact base-path construction after the direct request returned HTTP 404.
+- [ ] Correct STUDIO’s endpoint path or document the provider route requirement.
+- [ ] Rerun image generation, then caption generation, after the endpoint correction.
