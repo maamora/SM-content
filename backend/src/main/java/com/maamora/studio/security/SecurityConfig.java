@@ -46,6 +46,7 @@ public class SecurityConfig {
                                 "/api/auth/google/start",
                                 "/api/auth/google/callback",
                                 "/api/system/capabilities",
+                                "/api/system/higgsfield",
                                 "/api/social/callback/**",
                                 "/files/**",
                                 "/actuator/health"

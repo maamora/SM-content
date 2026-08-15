@@ -138,3 +138,9 @@
 - [ ] Confirm the effective backend configuration is the regenerated local key pair and not an overridden environment value.
 - [ ] Compare the live request against the current official Higgsfield contract and correct STUDIO if evidence requires it.
 - [ ] Rerun image generation and then caption generation after the 401 diagnosis.
+
+
+## Higgsfield diagnostics access
+- [ ] Make the non-secret Higgsfield diagnostics reachable through the intended safe system access path.
+- [ ] Verify the effective credential metadata and model configuration after access is corrected.
+- [ ] Rerun image generation and caption generation after the 401 diagnosis.
