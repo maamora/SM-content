@@ -1,6 +1,7 @@
 package com.maamora.studio.controller;
 
 import com.maamora.studio.dto.response.ApiResponse;
+import com.maamora.studio.dto.response.HiggsfieldDiagnosticsResponse;
 import com.maamora.studio.dto.response.SystemCapabilitiesResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +26,15 @@ public class SystemController {
 
     @Value("${app.higgsfield.video-model:}")
     private String higgsfieldVideoModel;
+
+    @Value("${app.higgsfield.base-url:https://platform.higgsfield.ai}")
+    private String higgsfieldBaseUrl;
+
+    @Value("${app.higgsfield.model:flux-pro/kontext/max/text-to-image}")
+    private String higgsfieldModel;
+
+    @Value("${app.higgsfield.reference-model:flux-pro/kontext/max/image-to-image}")
+    private String higgsfieldReferenceModel;
 
     @Value("${app.ollama.enabled:false}")
     private boolean ollamaEnabled;
@@ -62,6 +72,24 @@ public class SystemController {
     @Value("${X_CLIENT_SECRET:}")
     private String xClientSecret;
 
+    @GetMapping("/higgsfield")
+    public ApiResponse<HiggsfieldDiagnosticsResponse> higgsfieldDiagnostics() {
+        return ApiResponse.ok(new HiggsfieldDiagnosticsResponse(
+                configured(higgsfieldApiKeyId),
+                configured(higgsfieldApiKeySecret),
+                length(higgsfieldApiKeyId),
+                length(higgsfieldApiKeySecret),
+                containsWhitespace(higgsfieldApiKeyId),
+                containsWhitespace(higgsfieldApiKeySecret),
+                contains(higgsfieldApiKeyId, ':'),
+                contains(higgsfieldApiKeySecret, ':'),
+                higgsfieldBaseUrl,
+                higgsfieldModel,
+                higgsfieldReferenceModel,
+                "Key"
+        ));
+    }
+
     @GetMapping("/capabilities")
     public ApiResponse<SystemCapabilitiesResponse> capabilities() {
         boolean captionGeneration = configured(geminiApiKey) || ollamaEnabled;
@@ -96,6 +124,18 @@ public class SystemController {
                 linkedinOAuth,
                 xOAuth
         ));
+    }
+
+    private int length(String value) {
+        return value == null ? 0 : value.length();
+    }
+
+    private boolean containsWhitespace(String value) {
+        return value != null && value.chars().anyMatch(Character::isWhitespace);
+    }
+
+    private boolean contains(String value, char character) {
+        return value != null && value.indexOf(character) >= 0;
     }
 
     private boolean configured(String value) {

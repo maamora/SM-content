@@ -116,3 +116,25 @@
 - [ ] Add Google OAuth environment documentation and redirect-URI setup guidance without committing credentials.
 - [ ] Validate configured and unavailable OAuth states, backend tests, frontend checks, and production build.
 - [ ] Deliver the Google OAuth setup guide and test results.
+
+
+## Live caption and image generation validation
+- [ ] Confirm the updated backend is running with the corrected JWT_SECRET and provider capabilities.
+- [ ] Execute a disposable authenticated caption-generation request using Gemini.
+- [ ] Execute a disposable authenticated image-generation request using Higgsfield.
+- [ ] Verify generated output URLs, storage persistence, job polling, and safe provider failures.
+- [ ] Fix any verified generation defect and rerun the affected request.
+- [ ] Deliver the live caption and image-generation test report.
+
+
+## Higgsfield authorization diagnosis
+- [ ] Inspect the Higgsfield request configuration and backend logs for the HTTP 401 response without exposing credentials.
+- [ ] Correct the Higgsfield authentication or model configuration if the defect is in STUDIO.
+- [ ] Rerun the live image-generation request, then continue with caption-generation validation.
+
+
+## Higgsfield repeated-401 diagnostics
+- [ ] Add a non-secret runtime diagnostics response for Higgsfield configuration presence, base URL, and selected model.
+- [ ] Confirm the effective backend configuration is the regenerated local key pair and not an overridden environment value.
+- [ ] Compare the live request against the current official Higgsfield contract and correct STUDIO if evidence requires it.
+- [ ] Rerun image generation and then caption generation after the 401 diagnosis.
