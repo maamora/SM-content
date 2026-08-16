@@ -35,9 +35,6 @@ public class SystemController {
     @Value("${app.openrouter.models:}")
     private String openRouterModels;
 
-    @Value("${STABILITY_API_KEY:}")
-    private String stabilityApiKey;
-
     @Value("${app.higgsfield.api-key-id:}")
     private String higgsfieldApiKeyId;
 
@@ -116,7 +113,7 @@ public class SystemController {
                 && configured(openRouterApiKey)
                 && configured(openRouterModels);
         boolean captionGeneration = openRouterCaption || configured(geminiCaptionApiKey) || ollamaEnabled;
-        boolean imageGeneration = configured(stabilityApiKey) || imageGenerationProvider.isConfigured();
+        boolean imageGeneration = imageGenerationProvider.isConfigured();
         boolean creativeEditing = imageGenerationProvider.isConfigured();
         boolean photoShootGeneration = imageGenerationProvider.supportsPhotoShoot();
         boolean videoGeneration = videoGenerationService.isConfigured();

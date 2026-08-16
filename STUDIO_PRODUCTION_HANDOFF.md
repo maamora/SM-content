@@ -5,7 +5,7 @@
 
 ## Executive status
 
-The current `main` checkout is a verified baseline for the implemented STUDIO application surface. The Spring Boot backend uses PostgreSQL, JWT authentication, managed image-generation providers, local or Cloudinary-backed storage, and SMTP delivery. The Next.js frontend has a production build that completes successfully, and the backend test suite now includes deterministic fal.ai and Gemini/Veo adapter coverage without making external provider calls.
+The current `main` checkout is a verified baseline for the implemented STUDIO application surface. The backend also supports an explicit OpenRouter-only test mode that disables image and video providers without removing their adapters. The Spring Boot backend uses PostgreSQL, JWT authentication, managed image-generation providers, local or Cloudinary-backed storage, and SMTP delivery. The Next.js frontend has a production build that completes successfully, and the backend test suite now includes deterministic fal.ai and Gemini/Veo adapter coverage without making external provider calls.
 
 The application deliberately reports provider-dependent features as unavailable when credentials or provider access are missing. This is preferable to presenting fabricated output or silently falling back to an unreliable provider. Social OAuth and publishing remain configuration- and route-boundary work rather than features that should be treated as complete merely because client credentials exist.
 
@@ -20,6 +20,10 @@ Use `backend/.env.example` as the variable-name source of truth. Copy it to `bac
 | Video | `GEMINI_VIDEO_API_KEY`, `GEMINI_VIDEO_MODEL=veo-3.1-generate-preview` | Video generation reports unavailable. Veo access and billing/model enablement are controlled by Google. `GEMINI_API_KEY` remains a compatibility fallback. |
 | SMTP | `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`, `APP_MAIL_FROM` | Email delivery records fail explicitly instead of claiming delivery. |
 | Cloud storage | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Local storage remains available; cloud-storage capability reports false. |
+
+### OpenRouter-only test mode
+
+To test caption generation and model fallback without invoking Stability, fal.ai, or Gemini/Veo, configure the local backend with `CAPTION_PROVIDER=openrouter`, `IMAGE_PROVIDER=disabled`, and `VIDEO_PROVIDER=disabled`. The adapters remain in the codebase, but capability reporting correctly shows image and video as unavailable. OpenRouter captions remain active when `OPENROUTER_API_KEY` and `OPENROUTER_MODELS` are configured.
 
 The Stability AI adapter uses the current v2beta Stable Image generation endpoint and accepts at most one starting image per request. It sends multipart form data with a prompt, photographic style, aspect ratio, optional product reference, and image strength. It maps invalid keys, exhausted credits, moderation rejection, oversized payloads, validation errors, and rate limits into explicit STUDIO messages without retrying non-transient failures. Single-image edits and the main branded-post flow pass one direct product reference. Product-plus-model photo shoots use the configured product-only or composite strategy; the product-only mode sends the product as the sole reference and asks Stability AI to create a suitable generic fashion model, while composite mode sends the generated labeled board as the single reference. The optional fal.ai adapter retains its own `FAL_REFERENCE_MODE` and `TOP_UP` account-lock handling.
 

@@ -15,15 +15,15 @@ public class ImageGenerationProvider {
     private final FalImageService falImageService;
     private final StabilityImageService stabilityImageService;
 
-    @Value("${app.image.provider:stability}")
+    @Value("${app.image.provider:disabled}")
     private String provider;
 
     public String activeProvider() {
-        return provider == null || provider.isBlank() ? "stability" : provider.trim().toLowerCase();
+        return provider == null || provider.isBlank() ? "disabled" : provider.trim().toLowerCase();
     }
 
     public boolean isConfigured() {
-        return service().isConfigured();
+        return !isDisabled() && service().isConfigured();
     }
 
     public boolean supportsPhotoShoot() {
@@ -34,7 +34,14 @@ public class ImageGenerationProvider {
     }
 
     public byte[] generateImage(String prompt, String aspectRatio, List<String> references) {
+        if (isDisabled()) {
+            throw new IllegalStateException("Image generation is disabled in OpenRouter-only test mode.");
+        }
         return service().generateImage(prompt, aspectRatio, references);
+    }
+
+    private boolean isDisabled() {
+        return "disabled".equals(activeProvider()) || "none".equals(activeProvider());
     }
 
     private ManagedImageService service() {
@@ -42,8 +49,10 @@ public class ImageGenerationProvider {
             case "fal", "fal.ai" -> falImageService;
             case "higgsfield" -> higgsfieldImageService;
             case "stability", "stability.ai" -> stabilityImageService;
+            case "disabled", "none" -> throw new IllegalStateException(
+                    "Image generation is disabled in OpenRouter-only test mode.");
             default -> throw new IllegalStateException(
-                    "Unsupported image provider: " + activeProvider() + ". Use stability, fal, or higgsfield.");
+                    "Unsupported image provider: " + activeProvider() + ". Use stability, fal, higgsfield, or disabled.");
         };
     }
 }

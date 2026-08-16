@@ -34,7 +34,8 @@ spring:
 
 app:
   image:
-    provider: ${IMAGE_PROVIDER:stability}
+    # OpenRouter-only test mode disables image generation while retaining all adapters.
+    provider: ${IMAGE_PROVIDER:disabled}
     fal-reference-mode: ${FAL_REFERENCE_MODE:product-only}
 
   stability:
@@ -68,13 +69,16 @@ app:
     api-secret: ${CLOUDINARY_API_SECRET:placeholder}
 
   caption:
-    provider: ${CAPTION_PROVIDER:gemini}
+    provider: ${CAPTION_PROVIDER:openrouter}
 
   openrouter:
     api-key: ${OPENROUTER_API_KEY:}
     models: ${OPENROUTER_MODELS:openai/gpt-4o-mini,google/gemini-2.0-flash-001}
     base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1}
     max-attempts: ${OPENROUTER_MAX_ATTEMPTS:2}
+
+  video:
+    provider: ${VIDEO_PROVIDER:disabled}
 
   gemini:
     # Use separate credentials when caption and Veo access are provisioned independently.

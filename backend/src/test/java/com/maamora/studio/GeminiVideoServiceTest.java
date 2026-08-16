@@ -22,6 +22,7 @@ class GeminiVideoServiceTest {
     @Test
     void submitsPollsAndDownloadsVideoWithoutCallingGemini() {
         GeminiVideoService service = new GeminiVideoService(new RestTemplateBuilder(), new ObjectMapper());
+        ReflectionTestUtils.setField(service, "provider", "gemini");
         ReflectionTestUtils.setField(service, "apiKey", "test-gemini-key");
         ReflectionTestUtils.setField(service, "model", "veo-3.1-generate-preview");
         ReflectionTestUtils.setField(service, "baseUrl", "https://gemini.test/v1beta");
@@ -57,6 +58,7 @@ class GeminiVideoServiceTest {
     @Test
     void rejectsUnavailableConfigurationBeforeAnyNetworkRequest() {
         GeminiVideoService service = new GeminiVideoService(new RestTemplateBuilder(), new ObjectMapper());
+        ReflectionTestUtils.setField(service, "provider", "gemini");
         ReflectionTestUtils.setField(service, "apiKey", "");
         ReflectionTestUtils.setField(service, "model", "veo-3.1-generate-preview");
 

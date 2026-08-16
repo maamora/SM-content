@@ -274,3 +274,9 @@
 - [x] Implement ordered OpenRouter model fallback with bounded retries for token, rate, and provider failures.
 - [x] Add environment configuration, capability reporting, and safe observability without logging secrets.
 - [x] Validate fallback routing with deterministic tests and deliver the implementation.
+
+## OpenRouter-only test mode
+- [x] Inspect current provider-selection and capability defaults.
+- [x] Configure OpenRouter as the only active test provider without deleting other adapters.
+- [x] Validate provider isolation and capability reporting.
+- [ ] Commit and deliver the OpenRouter-only test setup.

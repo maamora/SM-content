@@ -30,6 +30,9 @@ public class GeminiVideoService implements VideoGenerationService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
+    @Value("${app.video.provider:disabled}")
+    private String provider;
+
     @Value("${app.gemini.video-api-key:}")
     private String apiKey;
 
@@ -55,11 +58,21 @@ public class GeminiVideoService implements VideoGenerationService {
 
     @Override
     public boolean isConfigured() {
-        return configured(apiKey) && configured(model) && model.toLowerCase().startsWith("veo-");
+        return !isDisabled(provider) && configured(apiKey) && configured(model)
+                && model.toLowerCase().startsWith("veo-");
+    }
+
+    private boolean isDisabled(String value) {
+        return value == null || value.isBlank()
+                || "disabled".equalsIgnoreCase(value.trim())
+                || "none".equalsIgnoreCase(value.trim());
     }
 
     @Override
     public byte[] generateVideo(String imageUrl, String prompt, String aspectRatio) {
+        if (isDisabled(provider)) {
+            throw new IllegalStateException("Video generation is disabled in OpenRouter-only test mode.");
+        }
         if (!isConfigured()) {
             throw new IllegalStateException("Gemini video generation is not configured or billing/model access is unavailable.");
         }
