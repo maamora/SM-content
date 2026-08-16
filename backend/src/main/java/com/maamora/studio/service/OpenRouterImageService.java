@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** OpenRouter image-output adapter for models that support modalities=[text,image]. */
+/** OpenRouter adapter for the dedicated Images API and image-to-image references. */
 @Slf4j
 @Service
 public class OpenRouterImageService implements ManagedImageService {
@@ -26,7 +26,7 @@ public class OpenRouterImageService implements ManagedImageService {
     @Value("${app.openrouter.api-key:}")
     private String apiKey;
 
-    @Value("${app.openrouter.image-model:google/gemini-2.5-flash-image-preview}")
+    @Value("${app.openrouter.image-model:bytedance-seed/seedream-4.5}")
     private String model;
 
     @Value("${app.openrouter.base-url:https://openrouter.ai/api/v1}")
@@ -34,6 +34,9 @@ public class OpenRouterImageService implements ManagedImageService {
 
     @Value("${app.openrouter.image-timeout-ms:180000}")
     private int timeoutMs;
+
+    @Value("${app.openrouter.image-api-path:/images}")
+    private String imageApiPath;
 
     @Override
     public boolean isConfigured() {
@@ -46,21 +49,24 @@ public class OpenRouterImageService implements ManagedImageService {
             throw new IllegalStateException("OpenRouter image generation is unavailable: configure OPENROUTER_API_KEY and OPENROUTER_IMAGE_MODEL.");
         }
 
-        List<Map<String, Object>> content = new ArrayList<>();
-        content.add(Map.of("type", "text", "text", buildPrompt(prompt, aspectRatio)));
+        Map<String, Object> body = new HashMap<>();
+        body.put("model", model);
+        body.put("prompt", buildPrompt(prompt, aspectRatio));
+        body.put("aspect_ratio", configured(aspectRatio) ? aspectRatio : "1:1");
+        body.put("output_format", "png");
+
+        List<Map<String, Object>> inputReferences = new ArrayList<>();
         if (references != null) {
             references.stream()
                     .filter(this::configured)
                     .limit(2)
-                    .forEach(reference -> content.add(Map.of(
+                    .forEach(reference -> inputReferences.add(Map.of(
                             "type", "image_url",
                             "image_url", Map.of("url", reference))));
         }
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("model", model);
-        body.put("messages", List.of(Map.of("role", "user", "content", content)));
-        body.put("modalities", List.of("text", "image"));
+        if (!inputReferences.isEmpty()) {
+            body.put("input_references", inputReferences);
+        }
 
         try {
             String raw = RestClient.builder()
@@ -71,7 +77,7 @@ public class OpenRouterImageService implements ManagedImageService {
                     .defaultHeader("content-type", MediaType.APPLICATION_JSON_VALUE)
                     .build()
                     .post()
-                    .uri("/chat/completions")
+                    .uri(imageApiPath)
                     .body(body)
                     .retrieve()
                     .body(String.class);
@@ -87,27 +93,23 @@ public class OpenRouterImageService implements ManagedImageService {
     private byte[] extractImage(String raw) {
         try {
             JsonNode root = objectMapper.readTree(raw);
-            JsonNode choices = root.path("choices");
-            if (!choices.isArray() || choices.isEmpty()) {
-                throw new IllegalStateException("OpenRouter returned no image choices.");
+            JsonNode data = root.path("data");
+            if (!data.isArray() || data.isEmpty()) {
+                throw new IllegalStateException("OpenRouter returned no generated images.");
             }
-            JsonNode message = choices.get(0).path("message");
-            JsonNode images = message.path("images");
-            if (images.isArray() && !images.isEmpty()) {
-                JsonNode image = images.get(0);
-                String data = image.path("image_url").path("url").asText("");
-                if (data.isBlank()) {
-                    data = image.path("url").asText("");
-                }
-                if (!data.isBlank()) {
-                    return decodeOrDownload(data);
-                }
+
+            JsonNode image = data.get(0);
+            String base64 = image.path("b64_json").asText("");
+            if (!base64.isBlank()) {
+                return Base64.getDecoder().decode(base64);
             }
-            String content = message.path("content").asText("");
-            if (content.startsWith("data:image/")) {
-                return decodeOrDownload(content);
+
+            String url = image.path("url").asText("");
+            if (!url.isBlank()) {
+                return decodeOrDownload(url);
             }
-            throw new IllegalStateException("OpenRouter returned text but no image output. Verify that OPENROUTER_IMAGE_MODEL supports image output.");
+
+            throw new IllegalStateException("OpenRouter returned no image bytes. Verify that OPENROUTER_IMAGE_MODEL supports the dedicated Images API.");
         } catch (IllegalStateException e) {
             throw e;
         } catch (Exception e) {

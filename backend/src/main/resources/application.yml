@@ -73,10 +73,11 @@ app:
   openrouter:
     api-key: ${OPENROUTER_API_KEY:}
     models: ${OPENROUTER_MODELS:openai/gpt-4o-mini,google/gemini-2.0-flash-001}
-    image-model: ${OPENROUTER_IMAGE_MODEL:google/gemini-2.5-flash-image-preview}
+    image-model: ${OPENROUTER_IMAGE_MODEL:bytedance-seed/seedream-4.5}
     base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1}
     max-attempts: ${OPENROUTER_MAX_ATTEMPTS:2}
     image-timeout-ms: ${OPENROUTER_IMAGE_TIMEOUT_MS:180000}
+    image-api-path: ${OPENROUTER_IMAGE_API_PATH:/images}
 
   groq:
     api-key: ${GROQ_API_KEY:}

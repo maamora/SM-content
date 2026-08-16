@@ -162,6 +162,8 @@ If startup stops with `Duplicate key IMAGE_PROVIDER`, the backend `.env` contain
 ```dotenv
 IMAGE_PROVIDER=openrouter
 CAPTION_PROVIDER=groq
+OPENROUTER_IMAGE_MODEL=bytedance-seed/seedream-4.5
+OPENROUTER_IMAGE_API_PATH=/images
 ```
 
 You can locate all provider entries without displaying secret values with:
@@ -204,7 +206,9 @@ six `DB_*` variables. Keep exactly one entry for every key, including
 `IMAGE_PROVIDER`, `CAPTION_PROVIDER`, and the Gemini/OpenRouter/Groq provider
 variables. Duplicate keys are rejected before Spring Boot initializes.
 
-The API should become available at `http://localhost:8080`. The backend applies missing JPA schema objects with `ddl-auto: update`; this preserves existing rows while adding schema changes. Never use `create` or `create-drop` against a database containing real data.
+The API should become available at `http://localhost:8080`. OpenRouter image generation uses the dedicated `/api/v1/images` endpoint and returns base64 image bytes. The default model is `bytedance-seed/seedream-4.5`; reference images are sent through `input_references`. If you override the model, verify it appears in OpenRouter’s image-model discovery endpoint and supports the parameters used by the workflow.
+
+The backend applies missing JPA schema objects with `ddl-auto: update`; this preserves existing rows while adding schema changes. Never use `create` or `create-drop` against a database containing real data.
 
 Useful backend checks:
 

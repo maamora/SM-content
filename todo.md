@@ -298,3 +298,17 @@
 - [ ] Remove duplicate environment entries and align IMAGE_PROVIDER/CAPTION_PROVIDER with the verified provider configuration.
 - [ ] Add or verify a startup-safe environment validation path that reports duplicate keys clearly without exposing secrets.
 - [ ] Re-run Spring Boot startup and backend tests on the Linux checkout, then document Windows recovery commands.
+
+
+## Windows database connection failure after environment cleanup
+- [ ] Inspect the full JDBC connection exception and effective DB_HOST, DB_PORT, DB_NAME, DB_USERNAME, and DB_SSL_MODE shape without exposing DB_PASSWORD.
+- [ ] Verify Windows network reachability to the configured PostgreSQL/Supabase host and port.
+- [ ] Confirm the Supabase pooler username, current database password, TLS mode, and JDBC URL construction.
+- [ ] Re-run Spring Boot startup and confirm JPA initialization without changing or deleting database data.
+
+
+## OpenRouter image model endpoint failure
+- [ ] Verify the current OpenRouter image-output model identifier and endpoint support from official model documentation.
+- [ ] Replace the unavailable default image model and update the OpenRouter image adapter if its response contract differs.
+- [ ] Update application configuration, environment templates, and setup documentation with the supported model.
+- [ ] Run backend tests and a non-secret provider-contract validation before pushing the correction.
