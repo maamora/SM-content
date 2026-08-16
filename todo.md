@@ -238,4 +238,4 @@
 - [x] Trace fal.ai 403 account-lock propagation and any retry behavior.
 - [x] Add an actionable provider-specific error state without fabricating output.
 - [x] Verify backend and frontend display the account-lock guidance clearly.
-- [ ] Commit and deliver the handling update.
+- [x] Commit and deliver the handling update.
