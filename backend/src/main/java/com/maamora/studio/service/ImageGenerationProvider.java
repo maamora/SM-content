@@ -26,7 +26,9 @@ public class ImageGenerationProvider {
     }
 
     public boolean supportsPhotoShoot() {
-        return "higgsfield".equals(activeProvider()) && isConfigured();
+        String active = activeProvider();
+        return ("higgsfield".equals(active) || "fal".equals(active) || "fal.ai".equals(active))
+                && isConfigured();
     }
 
     public byte[] generateImage(String prompt, String aspectRatio, List<String> references) {

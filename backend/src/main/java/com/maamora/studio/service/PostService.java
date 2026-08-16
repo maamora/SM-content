@@ -89,9 +89,12 @@ public class PostService {
         Post post = postRepository.findByIdAndProduct_Brand_IdFetchProduct(request.getPostId(), brand.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found."));
 
+        int generatedCount = 0;
+        String lastError = null;
         for (String lang : request.getLanguages()) {
             try {
                 String caption = captionGenerationService.generateCaption(post, brand, lang);
+                generatedCount++;
                 switch (lang) {
                     case "en" -> post.setCaptionEn(caption);
                     case "ar" -> post.setCaptionAr(caption);
@@ -99,10 +102,15 @@ public class PostService {
                     default -> post.setCaptionFr(caption);
                 }
             } catch (Exception e) {
+                lastError = e.getMessage();
                 log.error("Caption generation failed for post {} lang {}: {}", post.getId(), lang, e.getMessage(), e);
             }
         }
 
+        if (generatedCount == 0) {
+            throw new IllegalStateException("Caption generation failed for every requested language. "
+                    + (lastError == null || lastError.isBlank() ? "Check the configured caption provider." : lastError));
+        }
         return postRepository.save(post);
     }
 

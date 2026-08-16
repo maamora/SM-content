@@ -86,11 +86,12 @@ public class ImageRenderService {
             try {
                 String prompt = buildPrompt(product.getName(), product.getDescription(), product.getSellingPoint(),
                         badgeText, promoText, accentColor, mood);
-                byte[] aiPng = imageGenerationProvider.generateImage(prompt, isSquare ? "1:1" : "9:16", List.of());
+                List<String> references = hasProductImage ? List.of(product.getImageUrl()) : List.of();
+                byte[] aiPng = imageGenerationProvider.generateImage(prompt, isSquare ? "1:1" : "9:16", references);
                 return compositeOverlays(aiPng, badgeText, promoText, accentColor, mood);
             } catch (Exception e) {
-                log.warn("Managed image generation failed; falling back to Stability/local rendering: {}",
-                        e.getMessage());
+                log.error("Managed image generation failed: {}", e.getMessage(), e);
+                throw new IllegalStateException("Visual generation failed: " + e.getMessage(), e);
             }
         }
 

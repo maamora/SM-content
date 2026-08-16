@@ -21,6 +21,7 @@ public class CreativeJobProcessor {
     private final ImageGenerationProvider imageGenerationProvider;
     private final VideoGenerationService videoGenerationService;
     private final StorageService storageService;
+    private final ReferenceCompositeService referenceCompositeService;
 
     @Async("creativeTaskExecutor")
     public void processAsync(String jobId) {
@@ -36,6 +37,18 @@ public class CreativeJobProcessor {
             if (job.getModelImageUrl() != null) references.add(job.getModelImageUrl());
 
             String prompt = buildPrompt(job);
+            if ("fal".equals(imageGenerationProvider.activeProvider())
+                    || "fal.ai".equals(imageGenerationProvider.activeProvider())) {
+                if (references.size() > 1) {
+                    byte[] referenceBoard = referenceCompositeService.compose(
+                            job.getModelImageUrl(), job.getProductImageUrl());
+                    String referenceBoardUrl = storageService.upload(
+                            referenceBoard, "creative/" + job.getId() + "-reference-board.png", "image/png");
+                    references = List.of(referenceBoardUrl);
+                    prompt += " The supplied reference board contains two labeled panels: use the model panel for identity and anatomy, and the product panel for exact product shape, color, material, and branding.";
+                }
+            }
+
             byte[] image = imageGenerationProvider.generateImage(prompt, job.getAspectRatio(), references);
             String imageUrl = storageService.upload(image, "creative/" + job.getId() + ".png", "image/png");
             job.setResultImageUrl(imageUrl);

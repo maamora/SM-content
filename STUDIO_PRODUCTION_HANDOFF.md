@@ -21,7 +21,7 @@ Use `backend/.env.example` as the variable-name source of truth. Copy it to `bac
 | SMTP | `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`, `APP_MAIL_FROM` | Email delivery records fail explicitly instead of claiming delivery. |
 | Cloud storage | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Local storage remains available; cloud-storage capability reports false. |
 
-The fal.ai adapter uses the FLUX.1 Kontext endpoint and accepts at most one reference image per request. A product image and a model image cannot be passed as two independent references to the current adapter; use a composite reference or treat the two-stage product-plus-model workflow as a future provider enhancement. The backend intentionally returns an explicit error for more than one reference rather than dropping one of the inputs.
+The fal.ai adapter uses the FLUX.1 Kontext endpoint and accepts at most one reference image per request. Single-image edits and the main branded-post flow pass one direct product reference. For product-plus-model photo shoots, the backend downloads both references, creates a labeled composite reference board, uploads that board, and sends the single composite URL to fal.ai. This preserves both inputs without silently dropping either one; if a reference cannot be downloaded, the creative job fails with an actionable error.
 
 The Gemini/Veo adapter submits a long-running operation, polls until completion or timeout, then downloads the returned video. The automated test suite mocks each of these phases. A passing test proves the adapter contract and lifecycle; it does not prove that a particular Google account has Veo access. Caption generation uses `GEMINI_CAPTION_API_KEY`, while Veo uses `GEMINI_VIDEO_API_KEY`; if either is absent, that service falls back to `GEMINI_API_KEY`.
 
@@ -112,7 +112,7 @@ Set `TOKEN_CIPHER_KEY` to a strong random value with the length required by the 
 
 ## Implemented boundary
 
-The verified backend surface includes registration and login, product persistence, brand settings, posts, templates, uploads, JWT authorization, managed-provider adapters, SMTP delivery state tracking, and the corresponding frontend workspace surfaces. The broader product brief still includes areas that require additional backend work or provider approval, including complete social connection/publishing flows, calendar persistence, notifications, analytics, audit logs, advanced generation monitoring, and administrative user/workspace management. Those surfaces must remain visibly unavailable until their API contracts and authorization behavior are implemented.
+The verified backend surface includes registration and login, product persistence, brand settings, posts, templates, uploads, JWT authorization, managed-provider adapters, composite-reference photo shoots, SMTP delivery state tracking, and the corresponding frontend workspace surfaces. The broader product brief still includes areas that require additional backend work or provider approval, including complete social connection/publishing flows, calendar persistence, notifications, analytics, audit logs, advanced generation monitoring, and administrative user/workspace management. Those surfaces must remain visibly unavailable until their API contracts and authorization behavior are implemented.
 
 Do not use fabricated reviews, ratings, testimonials, or engagement metrics as placeholders. Use empty states that explain what is unavailable and why.
 

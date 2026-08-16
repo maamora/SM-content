@@ -226,3 +226,10 @@
 - [x] Update environment templates, handoff documentation, and capability reporting.
 - [x] Run backend/frontend validation and deterministic provider tests.
 - [x] Commit and push the fix, then provide Windows pull and configuration steps.
+
+## Fix fal.ai visual and caption workflow
+- [x] Trace product-plus-model image generation and caption requests end to end.
+- [x] Define a supported two-stage or composite-reference workflow for fal.ai.
+- [x] Fix backend generation/caption errors and preserve explicit unavailable states.
+- [x] Verify frontend progress, success, and failure states with backend validation.
+- [ ] Commit and deliver the workflow fix.
