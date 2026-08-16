@@ -239,3 +239,9 @@
 - [x] Add an actionable provider-specific error state without fabricating output.
 - [x] Verify backend and frontend display the account-lock guidance clearly.
 - [x] Commit and deliver the handling update.
+
+## Provider-aware product-only photo-shoot fallback
+- [x] Inspect provider capabilities and creative-job fallback paths.
+- [x] Implement product-only generation with explicit model-description prompting when multi-reference input is unavailable.
+- [x] Expose fallback mode clearly and validate creative workflow states.
+- [ ] Commit and deliver the provider-aware fallback.
