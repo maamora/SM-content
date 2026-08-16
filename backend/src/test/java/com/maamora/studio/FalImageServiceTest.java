@@ -21,6 +21,8 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 
 class FalImageServiceTest {
 
@@ -52,6 +54,21 @@ class FalImageServiceTest {
                 "test prompt", "4:5", List.of("https://product.test/a.png", "https://model.test/b.png")))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("one reference image per request");
+    }
+
+    @Test
+    void explainsAccountLockWhenFalRequiresTopUp() {
+        server.expect(requestTo("https://fal.run/fal-ai/flux-pro/kontext"))
+                .andExpect(method(POST))
+                .andRespond(withStatus(FORBIDDEN)
+                        .body("{\"detail\":\"User is locked.Reason:TOP_UP.\"}")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON));
+
+        assertThatThrownBy(() -> service.generateImage("editorial product image", "1:1"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("account is locked pending a top-up")
+                .hasMessageContaining("configure another image provider");
+        server.verify();
     }
 
     @Test

@@ -17,6 +17,7 @@ import org.springframework.web.client.RestTemplate;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -115,9 +116,18 @@ public class FalImageService implements ManagedImageService {
             int status = e.getStatusCode().value();
             String detail = e.getResponseBodyAsString();
             if (detail != null && detail.length() > 500) detail = detail.substring(0, 500);
-            throw new IllegalStateException("fal.ai image generation failed with HTTP " + status
-                    + (detail == null || detail.isBlank() ? "." : ": " + detail), e);
+            throw new IllegalStateException(providerErrorMessage(status, detail), e);
         }
+    }
+
+    private String providerErrorMessage(int status, String detail) {
+        String normalized = detail == null ? "" : detail.toUpperCase(Locale.ROOT);
+        if (status == 403 && (normalized.contains("TOP_UP") || normalized.contains("USER IS LOCKED"))) {
+            return "fal.ai rejected image generation because this account is locked pending a top-up. "
+                    + "Add balance or configure another image provider, then retry.";
+        }
+        return "fal.ai image generation failed with HTTP " + status
+                + (detail == null || detail.isBlank() ? "." : ": " + detail);
     }
 
     private byte[] downloadMedia(String mediaUrl) {

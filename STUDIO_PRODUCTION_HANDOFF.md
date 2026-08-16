@@ -15,13 +15,13 @@ Use `backend/.env.example` as the variable-name source of truth. Copy it to `bac
 
 | Capability | Recommended variables | Behavior when absent |
 | --- | --- | --- |
-| Image generation | `IMAGE_PROVIDER=fal`, `FAL_KEY`, `FAL_IMAGE_MODEL=fal-ai/flux-pro/kontext` | Image generation and editing report unavailable. |
+| Image generation | `IMAGE_PROVIDER=fal`, `FAL_KEY`, `FAL_IMAGE_MODEL=fal-ai/flux-pro/kontext` | Image generation and editing report unavailable. A fal.ai `403` with `TOP_UP` means the account is locked for insufficient balance; add balance or switch to another configured provider. |
 | Captions | `GEMINI_CAPTION_API_KEY`, `GEMINI_MODEL` | Caption generation reports unavailable unless the optional Ollama path is intentionally enabled. `GEMINI_API_KEY` remains a compatibility fallback. |
 | Video | `GEMINI_VIDEO_API_KEY`, `GEMINI_VIDEO_MODEL=veo-3.1-generate-preview` | Video generation reports unavailable. Veo access and billing/model enablement are controlled by Google. `GEMINI_API_KEY` remains a compatibility fallback. |
 | SMTP | `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`, `APP_MAIL_FROM` | Email delivery records fail explicitly instead of claiming delivery. |
 | Cloud storage | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Local storage remains available; cloud-storage capability reports false. |
 
-The fal.ai adapter uses the FLUX.1 Kontext endpoint and accepts at most one reference image per request. Single-image edits and the main branded-post flow pass one direct product reference. For product-plus-model photo shoots, the backend downloads both references, creates a labeled composite reference board, uploads that board, and sends the single composite URL to fal.ai. This preserves both inputs without silently dropping either one; if a reference cannot be downloaded, the creative job fails with an actionable error.
+The fal.ai adapter uses the FLUX.1 Kontext endpoint and accepts at most one reference image per request. It does not retry a provider account-lock response: a `403` containing `TOP_UP` is converted into an actionable message telling the user to add balance or configure another provider. Single-image edits and the main branded-post flow pass one direct product reference. For product-plus-model photo shoots, the backend downloads both references, creates a labeled composite reference board, uploads that board, and sends the single composite URL to fal.ai. This preserves both inputs without silently dropping either one; if a reference cannot be downloaded, the creative job fails with an actionable error.
 
 The Gemini/Veo adapter submits a long-running operation, polls until completion or timeout, then downloads the returned video. The automated test suite mocks each of these phases. A passing test proves the adapter contract and lifecycle; it does not prove that a particular Google account has Veo access. Caption generation uses `GEMINI_CAPTION_API_KEY`, while Veo uses `GEMINI_VIDEO_API_KEY`; if either is absent, that service falls back to `GEMINI_API_KEY`.
 
