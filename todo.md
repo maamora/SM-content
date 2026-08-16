@@ -225,4 +225,4 @@
 - [x] Add separate caption/video key variables with backward-compatible fallback behavior.
 - [x] Update environment templates, handoff documentation, and capability reporting.
 - [x] Run backend/frontend validation and deterministic provider tests.
-- [ ] Commit and push the fix, then provide Windows pull and configuration steps.
+- [x] Commit and push the fix, then provide Windows pull and configuration steps.
