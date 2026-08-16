@@ -25,23 +25,12 @@ public class ImageGenerationProvider {
         return service().isConfigured();
     }
 
-    public boolean isVideoConfigured() {
-        return service().isVideoConfigured();
-    }
-
     public boolean supportsPhotoShoot() {
         return "higgsfield".equals(activeProvider()) && isConfigured();
     }
 
     public byte[] generateImage(String prompt, String aspectRatio, List<String> references) {
         return service().generateImage(prompt, aspectRatio, references);
-    }
-
-    public byte[] generateVideo(String imageUrl, String prompt, String aspectRatio) {
-        if (!"higgsfield".equals(activeProvider())) {
-            throw new IllegalStateException("Video generation is unavailable for the selected image provider.");
-        }
-        return higgsfieldImageService.generateVideo(imageUrl, prompt, aspectRatio);
     }
 
     private ManagedImageService service() {

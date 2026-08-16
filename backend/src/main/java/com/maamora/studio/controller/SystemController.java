@@ -5,6 +5,7 @@ import com.maamora.studio.dto.response.HiggsfieldDiagnosticsResponse;
 import com.maamora.studio.dto.response.SystemCapabilitiesResponse;
 import org.springframework.beans.factory.annotation.Value;
 import com.maamora.studio.service.ImageGenerationProvider;
+import com.maamora.studio.service.VideoGenerationService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,9 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class SystemController {
 
     private final ImageGenerationProvider imageGenerationProvider;
+    private final VideoGenerationService videoGenerationService;
 
-    public SystemController(ImageGenerationProvider imageGenerationProvider) {
+    public SystemController(ImageGenerationProvider imageGenerationProvider,
+                            VideoGenerationService videoGenerationService) {
         this.imageGenerationProvider = imageGenerationProvider;
+        this.videoGenerationService = videoGenerationService;
     }
 
     @Value("${app.gemini.api-key:}")
@@ -103,7 +107,7 @@ public class SystemController {
         boolean imageGeneration = configured(stabilityApiKey) || imageGenerationProvider.isConfigured();
         boolean creativeEditing = imageGenerationProvider.isConfigured();
         boolean photoShootGeneration = imageGenerationProvider.supportsPhotoShoot();
-        boolean videoGeneration = imageGenerationProvider.isVideoConfigured();
+        boolean videoGeneration = videoGenerationService.isConfigured();
         boolean cloudStorage = configured(cloudinaryCloudName)
                 && configured(cloudinaryApiKey);
         boolean smtpEmail = configured(smtpHost);

@@ -171,3 +171,51 @@
 - [x] Wire the existing STUDIO image-provider boundary to fal.ai without exposing the key in the frontend.
 - [x] Run a safe single-reference provider-contract test and explicit product-plus-model limitation test. (Live provider execution requires a real fal.ai key.)
 - [x] Document fal.ai quota, billing, error handling, and Windows startup commands.
+
+
+## SMTP configuration and validation
+- [ ] Inspect the current STUDIO SMTP environment contract and delivery endpoints.
+- [ ] Document provider-specific SMTP settings for Windows local development.
+- [ ] Verify SMTP configuration fails explicitly when incomplete and succeeds only with a configured provider.
+- [ ] Document non-destructive SMTP verification and troubleshooting steps.
+
+
+## SMTP capability mismatch troubleshooting
+- [ ] Verify the Windows backend process is loading the MailerSend SMTP variables without exposing secrets.
+- [ ] Resolve any SMTP variable-name, sender-address, or restart mismatch causing `smtpEmail=false`.
+- [ ] Recheck capabilities and perform one controlled delivery test after correction.
+
+
+## Social publishing and video integration setup
+- [ ] Inventory Meta, TikTok, LinkedIn, X, and video provider environment variables and callback routes.
+- [ ] Document current provider account, OAuth, verification, and approval prerequisites.
+- [ ] Configure available provider credentials without exposing secrets or committing them.
+- [ ] Validate capability reporting, OAuth entry points, publishing errors, and explicit unavailable states.
+
+
+## Gemini/Veo video generation
+- [ ] Inspect the existing STUDIO video-generation contract and Gemini configuration.
+- [ ] Verify current Veo image-to-video support, model names, pricing, and free-tier limits.
+- [ ] Add or prepare a server-side video provider adapter without exposing the Gemini key.
+- [ ] Add provider-contract tests and keep `videoGeneration` false until a working adapter is configured.
+
+
+## Gemini/Veo and loading-performance pass
+- [ ] Inspect the current video-generation contract, Gemini configuration, and frontend loading bottlenecks.
+- [ ] Implement the server-side Gemini/Veo provider with operation polling and durable video storage.
+- [ ] Add provider-contract tests and keep capability reporting honest for missing billing, model access, or credentials.
+- [ ] Profile and fix slow initial loading, route transitions, and oversized frontend work.
+- [ ] Run full backend/frontend/browser regression checks and create a pull-ready commit.
+
+## Features page interactive scroll revision
+- [x] Inspect the current Features route and shared STUDIO motion/design primitives.
+- [x] Define a scroll-linked narrative and feature-level interactions for desktop and mobile.
+- [x] Implement the interactive Features page without introducing fabricated product claims or testimonials.
+- [x] Verify the route at desktop and mobile breakpoints, including reduced-motion behavior.
+- [ ] Save a checkpoint and deliver the revised Features page.
+
+## Push interactive Features revision to GitHub
+- [ ] Inspect the repository and identify the verified Features-page revision.
+- [ ] Synchronize the verified active-project changes into the Git checkout.
+- [ ] Run focused validation and create a descriptive commit.
+- [ ] Push the commit to origin/main and provide safe Windows pull commands.

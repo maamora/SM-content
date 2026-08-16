@@ -1,13 +1,15 @@
 "use client";
 
-"use client";
-
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, FileImage, Palette, Sparkles } from "lucide-react";
 import { StudioFooter, StudioHeader, studioImages } from "./StudioShell";
-import CreativeWorkflowShowcase from "./CreativeWorkflowShowcase";
+const CreativeWorkflowShowcase = dynamic(() => import("./CreativeWorkflowShowcase"), {
+  ssr: false,
+  loading: () => <section className="creative-showcase creative-showcase--loading" aria-label="Loading creative workflow preview" />,
+});
 
 function FlowLines() {
   return <svg className="studio-flow-lines" viewBox="0 0 1200 520" aria-hidden="true" preserveAspectRatio="none"><path d="M80 130 C 320 40, 410 210, 610 170 S 920 60, 1120 150" /><path d="M80 385 C 290 470, 420 295, 630 330 S 950 470, 1120 340" /><circle cx="80" cy="130" r="5" /><circle cx="610" cy="170" r="5" /><circle cx="1120" cy="150" r="5" /><circle cx="80" cy="385" r="5" /><circle cx="630" cy="330" r="5" /><circle cx="1120" cy="340" r="5" /></svg>;
@@ -22,7 +24,7 @@ export default function StudioLanding() {
 
     <section className="studio-light-section"><div className="studio-shell studio-section-heading"><div><p className="studio-kicker studio-kicker--dark">A TOOLKIT FOR THE WHOLE MOTION</p><h2>Small teams.<br /><em>More surface area.</em></h2></div><p>Build the system once. Let the system keep the work moving.</p></div><div className="studio-shell studio-feature-grid">{[["01", "Generate", "Turn a single direction into a considered visual family.", Sparkles], ["02", "Translate", "Keep the tone intact across language, format, and market.", FileImage], ["03", "Compose", "Give every campaign a point of view before it becomes a post.", Palette], ["04", "Publish", "Move from approved to out there without losing the thread.", ArrowUpRight]].map(([index, title, text, Icon]) => { const FeatureIcon = Icon as typeof Sparkles; return <motion.article key={String(index)} className="studio-feature-card" whileHover={{ y: -6 }}><span>{String(index)}</span><FeatureIcon size={19} /><h3>{String(title)}</h3><p>{String(text)}</p><Link href="/features">Explore the system <ArrowRight size={14} /></Link></motion.article>; })}</div></section>
 
-    <section className="studio-demo studio-starfield"><div className="studio-shell studio-demo__grid"><div><p className="studio-kicker">LIVE PREVIEW / MODEL RUNNING</p><h2>Make once.<br /><em>Keep going.</em></h2><p>Every prompt becomes a visual thread. Every thread can become a campaign.</p><Link href="/register" className="studio-button studio-button--lime">Start creating <ArrowUpRight size={15} /></Link></div><div className="studio-demo__screen"><div className="studio-demo__toolbar"><span><span className="studio-dot studio-dot--lime" /> Model running</span><span>Draft / 004</span></div><div className="studio-demo__image"><Image src={studioImages.hero} alt="Creative generation preview" fill sizes="(max-width: 900px) 100vw, 52vw" className="studio-media" /></div><div className="studio-demo__caption"><span>Campaign direction / Summer 26</span><b>4 outputs ready</b></div></div></div></section>
+    <section className="studio-demo studio-starfield"><div className="studio-shell studio-demo__grid"><div><p className="studio-kicker">LIVE PREVIEW / MODEL RUNNING</p><h2>Make once.<br /><em>Keep going.</em></h2><p>Every prompt becomes a visual thread. Every thread can become a campaign.</p><Link href="/register" className="studio-button studio-button--lime">Start creating <ArrowUpRight size={15} /></Link></div><div className="studio-demo__screen"><div className="studio-demo__toolbar"><span><span className="studio-dot studio-dot--lime" /> Model running</span><span>Draft / 004</span></div><div className="studio-demo__image"><Image src={studioImages.hero} alt="Creative generation preview" fill loading="lazy" sizes="(max-width: 900px) 100vw, 52vw" className="studio-media" /></div><div className="studio-demo__caption"><span>Campaign direction / Summer 26</span><b>4 outputs ready</b></div></div></div></section>
     <CreativeWorkflowShowcase />
     <section className="studio-cta"><div className="studio-shell studio-cta__inner"><div><p className="studio-kicker studio-kicker--dark">THE NEXT DRAFT STARTS HERE</p><h2>Give the work<br /><em>some room.</em></h2></div><Link href="/register" className="studio-button studio-button--dark studio-button--large">Open STUDIO <ArrowUpRight size={17} /></Link></div></section>
     <StudioFooter />

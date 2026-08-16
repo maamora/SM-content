@@ -34,7 +34,7 @@ spring:
 
 app:
   image:
-    provider: ${IMAGE_PROVIDER:higgsfield}
+    provider: ${IMAGE_PROVIDER:fal}
 
   fal:
     key: ${FAL_KEY:}
@@ -63,7 +63,10 @@ app:
   gemini:
     api-key: ${GEMINI_API_KEY:}
     model: ${GEMINI_MODEL:gemini-1.5-pro}
+    video-model: ${GEMINI_VIDEO_MODEL:veo-3.1-generate-preview}
     base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+    video-timeout-ms: ${GEMINI_VIDEO_TIMEOUT_MS:600000}
+    video-poll-interval-ms: ${GEMINI_VIDEO_POLL_INTERVAL_MS:5000}
 
   higgsfield:
     api-key-id: ${HIGGSFIELD_API_KEY_ID:}

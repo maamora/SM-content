@@ -19,6 +19,7 @@ public class CreativeJobProcessor {
 
     private final CreativeJobRepository creativeJobRepository;
     private final ImageGenerationProvider imageGenerationProvider;
+    private final VideoGenerationService videoGenerationService;
     private final StorageService storageService;
 
     @Async("creativeTaskExecutor")
@@ -40,11 +41,11 @@ public class CreativeJobProcessor {
             job.setResultImageUrl(imageUrl);
 
             if (job.getType() == CreativeJobType.PHOTO_SHOOT_VIDEO) {
-                if (!imageGenerationProvider.isVideoConfigured()) {
+                if (!videoGenerationService.isConfigured()) {
                     throw new IllegalStateException(
-                            "Video generation is unavailable for the selected image provider.");
+                            "Video generation is unavailable. Configure Gemini/Veo with billing and model access.");
                 }
-                byte[] video = imageGenerationProvider.generateVideo(imageUrl, prompt, job.getAspectRatio());
+                byte[] video = videoGenerationService.generateVideo(imageUrl, prompt, job.getAspectRatio());
                 String videoUrl = storageService.upload(video, "creative/" + job.getId() + ".mp4", "video/mp4");
                 job.setResultVideoUrl(videoUrl);
             }
