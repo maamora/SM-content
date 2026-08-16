@@ -215,7 +215,7 @@
 - [ ] Save a checkpoint and deliver the revised Features page.
 
 ## Push interactive Features revision to GitHub
-- [ ] Inspect the repository and identify the verified Features-page revision.
-- [ ] Synchronize the verified active-project changes into the Git checkout.
-- [ ] Run focused validation and create a descriptive commit.
-- [ ] Push the commit to origin/main and provide safe Windows pull commands.
+- [x] Inspect the repository and identify the verified Features-page revision.
+- [x] Synchronize the verified active-project changes into the Git checkout.
+- [x] Run focused validation and create a descriptive commit.
+- [x] Push the commit to origin/main and provide safe Windows pull commands.
