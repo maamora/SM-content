@@ -34,7 +34,7 @@ spring:
 
 app:
   image:
-    provider: ${IMAGE_PROVIDER:openai}
+    provider: ${IMAGE_PROVIDER:deapi}
     fal-reference-mode: ${FAL_REFERENCE_MODE:product-only}
 
   stability:
@@ -68,7 +68,17 @@ app:
     api-secret: ${CLOUDINARY_API_SECRET:placeholder}
 
   caption:
-    provider: ${CAPTION_PROVIDER:openai}
+    provider: ${CAPTION_PROVIDER:gemini}
+
+  deapi:
+    api-key: ${DEAPI_API_KEY:}
+    image-model: ${DEAPI_IMAGE_MODEL:Flux1schnell}
+    edit-model: ${DEAPI_EDIT_MODEL:QwenImageEdit_Plus_NF4}
+    base-url: ${DEAPI_BASE_URL:https://api.deapi.ai}
+    steps: ${DEAPI_STEPS:4}
+    guidance: ${DEAPI_GUIDANCE:7.5}
+    poll-interval-ms: ${DEAPI_POLL_INTERVAL_MS:3000}
+    timeout-ms: ${DEAPI_TIMEOUT_MS:180000}
 
   openai:
     api-key: ${OPENAI_API_KEY:}
@@ -101,7 +111,7 @@ app:
     api-key: ${GEMINI_API_KEY:}
     caption-api-key: ${GEMINI_CAPTION_API_KEY:${GEMINI_API_KEY:}}
     video-api-key: ${GEMINI_VIDEO_API_KEY:${GEMINI_API_KEY:}}
-    model: ${GEMINI_MODEL:gemini-1.5-pro}
+    model: ${GEMINI_MODEL:gemini-2.5-flash}
     video-model: ${GEMINI_VIDEO_MODEL:veo-3.1-generate-preview}
     base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
     video-timeout-ms: ${GEMINI_VIDEO_TIMEOUT_MS:600000}

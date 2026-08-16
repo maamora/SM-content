@@ -320,3 +320,11 @@
 - [ ] Fix caption extraction, empty-response handling, and provider fallback behavior.
 - [ ] Update environment and local-run documentation for OpenAI image and caption credentials.
 - [ ] Run backend tests and provider-contract checks before pushing the migration.
+
+
+## DeAPI image generation and Gemini captions
+- [ ] Verify the current DeAPI endpoint, authentication header, model identifier, request format, and asynchronous response behavior from official documentation.
+- [ ] Inspect the existing Gemini caption adapter and separate caption/video key configuration.
+- [ ] Implement DeAPI image generation with reference-image support or an explicit product-only fallback when the selected DeAPI model cannot accept multiple images.
+- [ ] Set Gemini as the caption provider and ensure empty or malformed Gemini responses produce explicit errors.
+- [ ] Run backend tests and capability checks, then document the required environment variables without exposing secrets.

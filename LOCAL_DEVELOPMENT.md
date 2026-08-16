@@ -110,20 +110,30 @@ DB_SSL_MODE=disable
 JWT_SECRET=replace-this-with-a-long-random-secret-at-least-32-characters
 JWT_EXPIRATION_MS=86400000
 
-# OpenAI is the active image and caption provider.
+# deAPI is the active asynchronous image provider.
 # Keep this key server-side and never commit backend/.env.
-IMAGE_PROVIDER=openai
-CAPTION_PROVIDER=openai
-OPENAI_API_KEY=
-OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_IMAGE_MODEL=gpt-image-1
-OPENAI_TEXT_MODEL=gpt-4o-mini
-OPENAI_IMAGE_QUALITY=medium
-OPENAI_IMAGE_TIMEOUT_MS=180000
+IMAGE_PROVIDER=deapi
+DEAPI_API_KEY=
+DEAPI_BASE_URL=https://api.deapi.ai
+DEAPI_IMAGE_MODEL=Flux1schnell
+DEAPI_EDIT_MODEL=QwenImageEdit_Plus_NF4
+DEAPI_STEPS=4
+DEAPI_GUIDANCE=7.5
+DEAPI_POLL_INTERVAL_MS=3000
+DEAPI_TIMEOUT_MS=180000
+
+# Gemini is the active caption provider. Keep caption and video keys separate.
+CAPTION_PROVIDER=gemini
+GEMINI_API_KEY=
+GEMINI_CAPTION_API_KEY=
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
+# Optional video-only settings:
+# GEMINI_VIDEO_API_KEY=
+# GEMINI_VIDEO_MODEL=veo-3.1-generate-preview
 
 # Optional provider alternatives.
 ANTHROPIC_API_KEY=
-GEMINI_API_KEY=
 
 # Local caption fallback. Install Ollama and pull the model before enabling it.
 OLLAMA_ENABLED=false
@@ -170,10 +180,12 @@ If startup stops with `Duplicate key IMAGE_PROVIDER`, the backend `.env`
 contains that key more than once. Dotenv refuses to merge duplicate keys, so open `backend/.env`, keep exactly one `IMAGE_PROVIDER` line, and remove obsolete provider entries. For the current configuration, keep:
 
 ```dotenv
-IMAGE_PROVIDER=openai
-CAPTION_PROVIDER=openai
-OPENAI_IMAGE_MODEL=gpt-image-1
-OPENAI_TEXT_MODEL=gpt-4o-mini
+IMAGE_PROVIDER=deapi
+CAPTION_PROVIDER=gemini
+DEAPI_IMAGE_MODEL=Flux1schnell
+DEAPI_EDIT_MODEL=QwenImageEdit_Plus_NF4
+GEMINI_MODEL=gemini-2.5-flash
+
 ```
 
 
@@ -214,10 +226,10 @@ DB_SSL_MODE=require
 Do not add `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, or
 `SPRING_DATASOURCE_PASSWORD`; STUDIO already derives its datasource from the
 six `DB_*` variables. Keep exactly one entry for every key, including
-`IMAGE_PROVIDER`, `CAPTION_PROVIDER`, and the Gemini/OpenRouter/Groq provider
+`IMAGE_PROVIDER`, `CAPTION_PROVIDER`, and the DeAPI/Gemini provider
 variables. Duplicate keys are rejected before Spring Boot initializes.
 
-The API should become available at `http://localhost:8080`. OpenAI image generation uses `/v1/images/generations` for text-only jobs and `/v1/images/edits` for product/model reference jobs. The adapter decodes the returned base64 image bytes. Caption responses are validated for both plain-string and structured content formats; an empty response is treated as a provider failure rather than being returned to the frontend as a blank caption.
+The API should become available at `http://localhost:8080`. deAPI image generation uses asynchronous `/api/v2/images/generations` and `/api/v2/images/edits` jobs; the adapter polls `/api/v2/jobs/{request_id}` and downloads the completed result URL. Product-plus-model shoots use the edit model and retry product-only when the provider rejects multiple references. Gemini captions use the GenerateContent endpoint and validate `candidates[].content.parts[].text`; blocked, malformed, or empty responses are treated as provider failures rather than returned to the frontend as blank captions.
 
 The backend applies missing JPA schema objects with `ddl-auto: update`; this preserves existing rows while adding schema changes. Never use `create` or `create-drop` against a database containing real data.
 
