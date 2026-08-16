@@ -34,7 +34,7 @@ spring:
 
 app:
   image:
-    provider: ${IMAGE_PROVIDER:openrouter}
+    provider: ${IMAGE_PROVIDER:openai}
     fal-reference-mode: ${FAL_REFERENCE_MODE:product-only}
 
   stability:
@@ -68,7 +68,15 @@ app:
     api-secret: ${CLOUDINARY_API_SECRET:placeholder}
 
   caption:
-    provider: ${CAPTION_PROVIDER:groq}
+    provider: ${CAPTION_PROVIDER:openai}
+
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+    image-model: ${OPENAI_IMAGE_MODEL:gpt-image-1}
+    text-model: ${OPENAI_TEXT_MODEL:gpt-4o-mini}
+    image-quality: ${OPENAI_IMAGE_QUALITY:medium}
+    image-timeout-ms: ${OPENAI_IMAGE_TIMEOUT_MS:180000}
 
   openrouter:
     api-key: ${OPENROUTER_API_KEY:}

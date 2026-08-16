@@ -110,9 +110,18 @@ DB_SSL_MODE=disable
 JWT_SECRET=replace-this-with-a-long-random-secret-at-least-32-characters
 JWT_EXPIRATION_MS=86400000
 
-# Optional provider credentials. Leave them blank for local UI/API smoke tests
-# that do not call external providers. Gemini is preferred when configured;
-# Ollama is the local fallback for captions.
+# OpenAI is the active image and caption provider.
+# Keep this key server-side and never commit backend/.env.
+IMAGE_PROVIDER=openai
+CAPTION_PROVIDER=openai
+OPENAI_API_KEY=
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_IMAGE_MODEL=gpt-image-1
+OPENAI_TEXT_MODEL=gpt-4o-mini
+OPENAI_IMAGE_QUALITY=medium
+OPENAI_IMAGE_TIMEOUT_MS=180000
+
+# Optional provider alternatives.
 ANTHROPIC_API_KEY=
 GEMINI_API_KEY=
 
@@ -157,14 +166,16 @@ cd backend
 .\mvnw.cmd spring-boot:run
 ```
 
-If startup stops with `Duplicate key IMAGE_PROVIDER`, the backend `.env` contains that key more than once. Dotenv refuses to merge duplicate keys, so open `backend/.env`, keep exactly one `IMAGE_PROVIDER` line, and remove any obsolete duplicate such as `IMAGE_PROVIDER=stability` or `IMAGE_PROVIDER=disabled`. For the verified configuration, keep:
+If startup stops with `Duplicate key IMAGE_PROVIDER`, the backend `.env`
+contains that key more than once. Dotenv refuses to merge duplicate keys, so open `backend/.env`, keep exactly one `IMAGE_PROVIDER` line, and remove obsolete provider entries. For the current configuration, keep:
 
 ```dotenv
-IMAGE_PROVIDER=openrouter
-CAPTION_PROVIDER=groq
-OPENROUTER_IMAGE_MODEL=bytedance-seed/seedream-4.5
-OPENROUTER_IMAGE_API_PATH=/images
+IMAGE_PROVIDER=openai
+CAPTION_PROVIDER=openai
+OPENAI_IMAGE_MODEL=gpt-image-1
+OPENAI_TEXT_MODEL=gpt-4o-mini
 ```
+
 
 You can locate all provider entries without displaying secret values with:
 
@@ -206,7 +217,7 @@ six `DB_*` variables. Keep exactly one entry for every key, including
 `IMAGE_PROVIDER`, `CAPTION_PROVIDER`, and the Gemini/OpenRouter/Groq provider
 variables. Duplicate keys are rejected before Spring Boot initializes.
 
-The API should become available at `http://localhost:8080`. OpenRouter image generation uses the dedicated `/api/v1/images` endpoint and returns base64 image bytes. The default model is `bytedance-seed/seedream-4.5`; reference images are sent through `input_references`. If you override the model, verify it appears in OpenRouter’s image-model discovery endpoint and supports the parameters used by the workflow.
+The API should become available at `http://localhost:8080`. OpenAI image generation uses `/v1/images/generations` for text-only jobs and `/v1/images/edits` for product/model reference jobs. The adapter decodes the returned base64 image bytes. Caption responses are validated for both plain-string and structured content formats; an empty response is treated as a provider failure rather than being returned to the frontend as a blank caption.
 
 The backend applies missing JPA schema objects with `ddl-auto: update`; this preserves existing rows while adding schema changes. Never use `create` or `create-drop` against a database containing real data.
 

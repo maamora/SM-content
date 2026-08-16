@@ -312,3 +312,11 @@
 - [ ] Replace the unavailable default image model and update the OpenRouter image adapter if its response contract differs.
 - [ ] Update application configuration, environment templates, and setup documentation with the supported model.
 - [ ] Run backend tests and a non-secret provider-contract validation before pushing the correction.
+
+
+## OpenAI image provider and caption response failure
+- [ ] Inspect current image-provider selection, OpenAI-compatible configuration, and caption response parsing.
+- [ ] Implement a dedicated OpenAI Images API adapter with reference-image support where available.
+- [ ] Fix caption extraction, empty-response handling, and provider fallback behavior.
+- [ ] Update environment and local-run documentation for OpenAI image and caption credentials.
+- [ ] Run backend tests and provider-contract checks before pushing the migration.

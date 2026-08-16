@@ -64,6 +64,15 @@ public class CaptionGenerationService {
     @Value("${app.openrouter.api-key:}")
     private String openRouterApiKey;
 
+    @Value("${app.openai.api-key:}")
+    private String openAiApiKey;
+
+    @Value("${app.openai.text-model:gpt-4o-mini}")
+    private String openAiTextModel;
+
+    @Value("${app.openai.base-url:https://api.openai.com/v1}")
+    private String openAiBaseUrl;
+
     @Value("${app.openrouter.models:}")
     private String openRouterModels;
 
@@ -109,6 +118,9 @@ public class CaptionGenerationService {
         if ("groq".equalsIgnoreCase(captionProvider)) {
             return generateWithGroq(post, brand, language);
         }
+        if ("openai".equalsIgnoreCase(captionProvider)) {
+            return generateWithOpenAi(post, brand, language);
+        }
         if (!configured(apiKey)) {
             if (!ollamaEnabled) {
                 throw new IllegalStateException(
@@ -139,9 +151,36 @@ public class CaptionGenerationService {
                     .body(body)
                     .retrieve()
                     .body(String.class);
-            return extractOpenRouterText(rawResponse);
+            return extractCompatibleText(rawResponse, "Groq");
         } catch (HttpStatusCodeException e) {
             throw new IllegalStateException("Groq caption generation failed with HTTP "
+                    + e.getStatusCode().value() + ": " + compactProviderBody(e.getResponseBodyAsString()), e);
+        }
+    }
+
+    private String generateWithOpenAi(Post post, BrandSettings brand, String language) {
+        if (!configured(openAiApiKey)) {
+            throw new IllegalStateException("Caption generation is unavailable: configure OPENAI_API_KEY.");
+        }
+        Map<String, Object> body = Map.of(
+                "model", openAiTextModel,
+                "messages", List.of(Map.of("role", "user", "content", buildPrompt(post, brand, language))),
+                "temperature", 0.8,
+                "max_completion_tokens", 1200);
+        try {
+            String rawResponse = RestClient.builder()
+                    .baseUrl(openAiBaseUrl)
+                    .defaultHeader("Authorization", "Bearer " + openAiApiKey)
+                    .defaultHeader("content-type", "application/json")
+                    .build()
+                    .post()
+                    .uri("/chat/completions")
+                    .body(body)
+                    .retrieve()
+                    .body(String.class);
+            return extractCompatibleText(rawResponse, "OpenAI");
+        } catch (HttpStatusCodeException e) {
+            throw new IllegalStateException("OpenAI caption generation failed with HTTP "
                     + e.getStatusCode().value() + ": " + compactProviderBody(e.getResponseBodyAsString()), e);
         }
     }
@@ -188,7 +227,7 @@ public class CaptionGenerationService {
                         .body(body)
                         .retrieve()
                         .body(String.class);
-                return extractOpenRouterText(rawResponse);
+                return extractCompatibleText(rawResponse, "OpenRouter");
             } catch (HttpStatusCodeException e) {
                 lastError = new RuntimeException("OpenRouter model " + modelId + " failed ("
                         + e.getStatusCode().value() + "): " + compactProviderBody(e.getResponseBodyAsString()), e);
@@ -406,22 +445,47 @@ public class CaptionGenerationService {
         return textNode.asText().trim();
     }
 
-    private String extractOpenRouterText(String rawJson) {
+    private String extractCompatibleText(String rawJson, String providerName) {
         try {
             JsonNode root = objectMapper.readTree(rawJson);
             JsonNode choices = root.path("choices");
-            JsonNode textNode = choices.isArray() && !choices.isEmpty()
-                    ? choices.get(0).path("message").path("content")
-                    : null;
-            if (textNode == null || !textNode.isTextual() || textNode.asText().isBlank()) {
-                throw new EmptyCaptionException("OpenRouter returned no caption text.");
+            if (!choices.isArray() || choices.isEmpty()) {
+                throw new EmptyCaptionException(providerName + " returned no choices: " + compactProviderBody(rawJson));
             }
-            return textNode.asText().trim();
+            JsonNode message = choices.get(0).path("message");
+            String text = extractContentParts(message.path("content"));
+            if (text.isBlank()) {
+                String refusal = message.path("refusal").asText("");
+                throw new EmptyCaptionException(providerName + " returned no caption text"
+                        + (refusal.isBlank() ? "." : " (refusal: " + refusal + ")"));
+            }
+            return text.trim();
         } catch (EmptyCaptionException e) {
             throw e;
         } catch (Exception e) {
-            throw new IllegalStateException("Could not parse OpenRouter response.", e);
+            throw new IllegalStateException("Could not parse " + providerName + " response.", e);
         }
+    }
+
+    private String extractContentParts(JsonNode content) {
+        if (content == null || content.isMissingNode() || content.isNull()) {
+            return "";
+        }
+        if (content.isTextual()) {
+            return content.asText().trim();
+        }
+        if (content.isArray()) {
+            StringBuilder result = new StringBuilder();
+            for (JsonNode part : content) {
+                JsonNode text = part.path("text");
+                if (text.isTextual() && !text.asText().isBlank()) {
+                    if (result.length() > 0) result.append('\n');
+                    result.append(text.asText().trim());
+                }
+            }
+            return result.toString().trim();
+        }
+        return "";
     }
 
     private String extractOllamaText(String rawJson) {
