@@ -30,7 +30,7 @@ public class GeminiVideoService implements VideoGenerationService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    @Value("${app.gemini.api-key:}")
+    @Value("${app.gemini.video-api-key:}")
     private String apiKey;
 
     @Value("${app.gemini.video-model:veo-3.1-generate-preview}")

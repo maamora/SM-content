@@ -61,7 +61,11 @@ app:
     api-secret: ${CLOUDINARY_API_SECRET:placeholder}
 
   gemini:
+    # Use separate credentials when caption and Veo access are provisioned independently.
+    # GEMINI_API_KEY remains a compatibility fallback for both services.
     api-key: ${GEMINI_API_KEY:}
+    caption-api-key: ${GEMINI_CAPTION_API_KEY:${GEMINI_API_KEY:}}
+    video-api-key: ${GEMINI_VIDEO_API_KEY:${GEMINI_API_KEY:}}
     model: ${GEMINI_MODEL:gemini-1.5-pro}
     video-model: ${GEMINI_VIDEO_MODEL:veo-3.1-generate-preview}
     base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}

@@ -219,3 +219,10 @@
 - [x] Synchronize the verified active-project changes into the Git checkout.
 - [x] Run focused validation and create a descriptive commit.
 - [x] Push the commit to origin/main and provide safe Windows pull commands.
+
+## Separate Gemini caption and video credentials
+- [x] Inspect caption and video services and current Gemini environment names.
+- [x] Add separate caption/video key variables with backward-compatible fallback behavior.
+- [x] Update environment templates, handoff documentation, and capability reporting.
+- [x] Run backend/frontend validation and deterministic provider tests.
+- [ ] Commit and push the fix, then provide Windows pull and configuration steps.

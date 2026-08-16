@@ -11,19 +11,19 @@ The application deliberately reports provider-dependent features as unavailable 
 
 ## Provider configuration
 
-Use `backend/.env.example` as the variable-name source of truth. Copy it to `backend/.env`; never commit the resulting file and never place provider secrets in `NEXT_PUBLIC_*` variables.
+Use `backend/.env.example` as the variable-name source of truth. Copy it to `backend/.env`; never commit the resulting file and never place provider secrets in `NEXT_PUBLIC_*` variables. Each environment variable name must appear only once in `backend/.env`; duplicate names cause the dotenv loader to stop Spring Boot before startup.
 
 | Capability | Recommended variables | Behavior when absent |
 | --- | --- | --- |
 | Image generation | `IMAGE_PROVIDER=fal`, `FAL_KEY`, `FAL_IMAGE_MODEL=fal-ai/flux-pro/kontext` | Image generation and editing report unavailable. |
-| Captions | `GEMINI_API_KEY`, `GEMINI_MODEL` | Caption generation reports unavailable unless the optional Ollama path is intentionally enabled. |
-| Video | `GEMINI_API_KEY`, `GEMINI_VIDEO_MODEL=veo-3.1-generate-preview` | Video generation reports unavailable. Veo access and billing/model enablement are controlled by Google. |
+| Captions | `GEMINI_CAPTION_API_KEY`, `GEMINI_MODEL` | Caption generation reports unavailable unless the optional Ollama path is intentionally enabled. `GEMINI_API_KEY` remains a compatibility fallback. |
+| Video | `GEMINI_VIDEO_API_KEY`, `GEMINI_VIDEO_MODEL=veo-3.1-generate-preview` | Video generation reports unavailable. Veo access and billing/model enablement are controlled by Google. `GEMINI_API_KEY` remains a compatibility fallback. |
 | SMTP | `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`, `APP_MAIL_FROM` | Email delivery records fail explicitly instead of claiming delivery. |
 | Cloud storage | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Local storage remains available; cloud-storage capability reports false. |
 
 The fal.ai adapter uses the FLUX.1 Kontext endpoint and accepts at most one reference image per request. A product image and a model image cannot be passed as two independent references to the current adapter; use a composite reference or treat the two-stage product-plus-model workflow as a future provider enhancement. The backend intentionally returns an explicit error for more than one reference rather than dropping one of the inputs.
 
-The Gemini/Veo adapter submits a long-running operation, polls until completion or timeout, then downloads the returned video. The automated test suite mocks each of these phases. A passing test proves the adapter contract and lifecycle; it does not prove that a particular Google account has Veo access.
+The Gemini/Veo adapter submits a long-running operation, polls until completion or timeout, then downloads the returned video. The automated test suite mocks each of these phases. A passing test proves the adapter contract and lifecycle; it does not prove that a particular Google account has Veo access. Caption generation uses `GEMINI_CAPTION_API_KEY`, while Veo uses `GEMINI_VIDEO_API_KEY`; if either is absent, that service falls back to `GEMINI_API_KEY`.
 
 ## MailerSend SMTP
 

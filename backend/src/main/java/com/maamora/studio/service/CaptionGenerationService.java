@@ -36,7 +36,7 @@ public class CaptionGenerationService {
      */
     private final Semaphore geminiThrottle = new Semaphore(1);
 
-    @Value("${app.gemini.api-key}")
+    @Value("${app.gemini.caption-api-key:}")
     private String apiKey;
 
     @Value("${app.gemini.model}")
@@ -78,7 +78,7 @@ public class CaptionGenerationService {
         if (!configured(apiKey)) {
             if (!ollamaEnabled) {
                 throw new IllegalStateException(
-                        "Caption generation is unavailable: configure GEMINI_API_KEY or enable Ollama locally.");
+                        "Caption generation is unavailable: configure GEMINI_CAPTION_API_KEY or GEMINI_API_KEY, or enable Ollama locally.");
             }
             return generateWithOllama(post, brand, language);
         }

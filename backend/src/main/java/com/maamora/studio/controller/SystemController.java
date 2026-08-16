@@ -23,8 +23,8 @@ public class SystemController {
         this.videoGenerationService = videoGenerationService;
     }
 
-    @Value("${app.gemini.api-key:}")
-    private String geminiApiKey;
+    @Value("${app.gemini.caption-api-key:}")
+    private String geminiCaptionApiKey;
 
     @Value("${STABILITY_API_KEY:}")
     private String stabilityApiKey;
@@ -103,7 +103,7 @@ public class SystemController {
 
     @GetMapping("/capabilities")
     public ApiResponse<SystemCapabilitiesResponse> capabilities() {
-        boolean captionGeneration = configured(geminiApiKey) || ollamaEnabled;
+        boolean captionGeneration = configured(geminiCaptionApiKey) || ollamaEnabled;
         boolean imageGeneration = configured(stabilityApiKey) || imageGenerationProvider.isConfigured();
         boolean creativeEditing = imageGenerationProvider.isConfigured();
         boolean photoShootGeneration = imageGenerationProvider.supportsPhotoShoot();
