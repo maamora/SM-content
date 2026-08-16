@@ -291,3 +291,10 @@
 - [ ] Route caption generation through Groq and image generation through OpenRouter.
 - [ ] Update environment templates and capability reporting.
 - [ ] Validate provider isolation and deliver the corrected configuration.
+
+
+## Duplicate environment-variable startup failure
+- [ ] Inspect backend/.env for duplicate IMAGE_PROVIDER, GEMINI_API_KEY, and other repeated keys.
+- [ ] Remove duplicate environment entries and align IMAGE_PROVIDER/CAPTION_PROVIDER with the verified provider configuration.
+- [ ] Add or verify a startup-safe environment validation path that reports duplicate keys clearly without exposing secrets.
+- [ ] Re-run Spring Boot startup and backend tests on the Linux checkout, then document Windows recovery commands.

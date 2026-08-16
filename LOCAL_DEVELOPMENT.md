@@ -157,8 +157,20 @@ cd backend
 .\mvnw.cmd spring-boot:run
 ```
 
-Alternatively, use the committed Windows helper. It performs a local preflight
-without printing secret values, detects duplicate keys such as
+If startup stops with `Duplicate key IMAGE_PROVIDER`, the backend `.env` contains that key more than once. Dotenv refuses to merge duplicate keys, so open `backend/.env`, keep exactly one `IMAGE_PROVIDER` line, and remove any obsolete duplicate such as `IMAGE_PROVIDER=stability` or `IMAGE_PROVIDER=disabled`. For the verified configuration, keep:
+
+```dotenv
+IMAGE_PROVIDER=openrouter
+CAPTION_PROVIDER=groq
+```
+
+You can locate all provider entries without displaying secret values with:
+
+```powershell
+Select-String -Path .\.env -Pattern '^(IMAGE_PROVIDER|CAPTION_PROVIDER|GEMINI_API_KEY|GEMINI_CAPTION_API_KEY|GEMINI_VIDEO_API_KEY|OPENROUTER_IMAGE_MODEL|GROQ_MODEL)='
+```
+
+Alternatively, use the committed Windows helper. It performs a local preflight without printing secret values, detects duplicate keys such as
 `HIGGSFIELD_MODEL`, rejects accidental `SPRING_DATASOURCE_*` overrides, and
 checks the Supabase pooler username format before starting Spring Boot:
 
@@ -188,7 +200,9 @@ DB_SSL_MODE=require
 
 Do not add `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, or
 `SPRING_DATASOURCE_PASSWORD`; STUDIO already derives its datasource from the
-six `DB_*` variables. Keep exactly one `HIGGSFIELD_MODEL` entry.
+six `DB_*` variables. Keep exactly one entry for every key, including
+`IMAGE_PROVIDER`, `CAPTION_PROVIDER`, and the Gemini/OpenRouter/Groq provider
+variables. Duplicate keys are rejected before Spring Boot initializes.
 
 The API should become available at `http://localhost:8080`. The backend applies missing JPA schema objects with `ddl-auto: update`; this preserves existing rows while adding schema changes. Never use `create` or `create-drop` against a database containing real data.
 
