@@ -156,3 +156,18 @@
 - [ ] Verify the SDK’s exact base-path construction after the direct request returned HTTP 404.
 - [ ] Correct STUDIO’s endpoint path or document the provider route requirement.
 - [ ] Rerun image generation, then caption generation, after the endpoint correction.
+
+
+## Stability AI fallback evaluation
+- [x] Research current Stability AI managed image APIs, models, authentication, and usage limits.
+- [x] Compare Stability AI reference-image support and editorial quality with STUDIO’s workflow.
+- [x] Determine the safest provider fallback architecture and required environment variables.
+- [x] Decide whether to implement Stability AI as a fallback without disabling Higgsfield.
+
+
+## fal.ai FLUX.1 Kontext Pro image-generation configuration
+- [ ] Create or verify a fal.ai account and API key with image-inference access. (Requires a real provider credential outside the sandbox.)
+- [x] Add server-side FAL_API_KEY and model configuration to the backend environment template.
+- [x] Wire the existing STUDIO image-provider boundary to fal.ai without exposing the key in the frontend.
+- [x] Run a safe single-reference provider-contract test and explicit product-plus-model limitation test. (Live provider execution requires a real fal.ai key.)
+- [x] Document fal.ai quota, billing, error handling, and Windows startup commands.

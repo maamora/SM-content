@@ -12,6 +12,8 @@ import com.maamora.studio.security.CurrentUserProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -51,8 +53,21 @@ public class CreativeJobService {
                 .modelImageUrl(modelImageUrl)
                 .build();
         CreativeJob saved = creativeJobRepository.save(job);
-        creativeJobProcessor.processAsync(saved.getId());
+        scheduleProcessingAfterCommit(saved.getId());
         return CreativeJobResponse.from(saved);
+    }
+
+    private void scheduleProcessingAfterCommit(String jobId) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    creativeJobProcessor.processAsync(jobId);
+                }
+            });
+        } else {
+            creativeJobProcessor.processAsync(jobId);
+        }
     }
 
     @Transactional(readOnly = true)

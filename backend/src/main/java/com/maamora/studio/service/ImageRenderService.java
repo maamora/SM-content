@@ -41,7 +41,7 @@ public class ImageRenderService {
     @Value("${STABILITY_API_KEY:}")
     private String apiKey;
 
-    private final HiggsfieldImageService higgsfieldImageService;
+    private final ImageGenerationProvider imageGenerationProvider;
 
     // Logo loaded from the classpath (placed in
     // src/main/resources/static/maamora-logo.png)
@@ -49,8 +49,8 @@ public class ImageRenderService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public ImageRenderService(HiggsfieldImageService higgsfieldImageService) {
-        this.higgsfieldImageService = higgsfieldImageService;
+    public ImageRenderService(ImageGenerationProvider imageGenerationProvider) {
+        this.imageGenerationProvider = imageGenerationProvider;
     }
 
     // -----------------------------------------------------------------------
@@ -82,14 +82,14 @@ public class ImageRenderService {
         // preserve STUDIO's existing synchronous endpoint.
         boolean hasProductImage = product.getImageUrl() != null && !product.getImageUrl().isBlank();
         boolean stabilityConfigured = apiKey != null && !apiKey.isBlank();
-        if (higgsfieldImageService.isConfigured() && (!hasProductImage || !stabilityConfigured)) {
+        if (imageGenerationProvider.isConfigured() && (!hasProductImage || !stabilityConfigured)) {
             try {
                 String prompt = buildPrompt(product.getName(), product.getDescription(), product.getSellingPoint(),
                         badgeText, promoText, accentColor, mood);
-                byte[] aiPng = higgsfieldImageService.generateImage(prompt, isSquare ? "1:1" : "9:16");
+                byte[] aiPng = imageGenerationProvider.generateImage(prompt, isSquare ? "1:1" : "9:16", List.of());
                 return compositeOverlays(aiPng, badgeText, promoText, accentColor, mood);
             } catch (Exception e) {
-                log.warn("Higgsfield image generation failed; falling back to Stability/local rendering: {}",
+                log.warn("Managed image generation failed; falling back to Stability/local rendering: {}",
                         e.getMessage());
             }
         }

@@ -27,7 +27,7 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-public class HiggsfieldImageService {
+public class HiggsfieldImageService implements ManagedImageService {
 
     private static final int MAX_SUBMIT_ATTEMPTS = 3;
     private static final long MAX_OUTPUT_BYTES = 25L * 1024L * 1024L;

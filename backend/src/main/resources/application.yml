@@ -33,6 +33,15 @@ spring:
             enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:${SMTP_STARTTLS:true}}
 
 app:
+  image:
+    provider: ${IMAGE_PROVIDER:higgsfield}
+
+  fal:
+    key: ${FAL_KEY:}
+    model: ${FAL_IMAGE_MODEL:fal-ai/flux-pro/kontext}
+    base-url: ${FAL_BASE_URL:https://fal.run}
+    timeout-ms: ${FAL_TIMEOUT_MS:180000}
+
   anthropic:
     api-key: ${ANTHROPIC_API_KEY:}
     model: ${ANTHROPIC_MODEL:claude-3-5-sonnet-20240620}

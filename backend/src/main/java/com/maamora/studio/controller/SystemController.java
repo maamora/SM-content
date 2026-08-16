@@ -4,6 +4,7 @@ import com.maamora.studio.dto.response.ApiResponse;
 import com.maamora.studio.dto.response.HiggsfieldDiagnosticsResponse;
 import com.maamora.studio.dto.response.SystemCapabilitiesResponse;
 import org.springframework.beans.factory.annotation.Value;
+import com.maamora.studio.service.ImageGenerationProvider;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,6 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/system")
 public class SystemController {
+
+    private final ImageGenerationProvider imageGenerationProvider;
+
+    public SystemController(ImageGenerationProvider imageGenerationProvider) {
+        this.imageGenerationProvider = imageGenerationProvider;
+    }
 
     @Value("${app.gemini.api-key:}")
     private String geminiApiKey;
@@ -93,12 +100,10 @@ public class SystemController {
     @GetMapping("/capabilities")
     public ApiResponse<SystemCapabilitiesResponse> capabilities() {
         boolean captionGeneration = configured(geminiApiKey) || ollamaEnabled;
-        boolean imageGeneration = configured(stabilityApiKey)
-                || configured(higgsfieldApiKeyId) && configured(higgsfieldApiKeySecret);
-        boolean creativeEditing = configured(higgsfieldApiKeyId)
-                && configured(higgsfieldApiKeySecret);
-        boolean photoShootGeneration = creativeEditing;
-        boolean videoGeneration = creativeEditing && configured(higgsfieldVideoModel);
+        boolean imageGeneration = configured(stabilityApiKey) || imageGenerationProvider.isConfigured();
+        boolean creativeEditing = imageGenerationProvider.isConfigured();
+        boolean photoShootGeneration = imageGenerationProvider.supportsPhotoShoot();
+        boolean videoGeneration = imageGenerationProvider.isVideoConfigured();
         boolean cloudStorage = configured(cloudinaryCloudName)
                 && configured(cloudinaryApiKey);
         boolean smtpEmail = configured(smtpHost);

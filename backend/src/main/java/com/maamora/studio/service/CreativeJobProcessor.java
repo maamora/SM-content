@@ -18,7 +18,7 @@ import java.util.List;
 public class CreativeJobProcessor {
 
     private final CreativeJobRepository creativeJobRepository;
-    private final HiggsfieldImageService higgsfieldImageService;
+    private final ImageGenerationProvider imageGenerationProvider;
     private final StorageService storageService;
 
     @Async("creativeTaskExecutor")
@@ -35,16 +35,16 @@ public class CreativeJobProcessor {
             if (job.getModelImageUrl() != null) references.add(job.getModelImageUrl());
 
             String prompt = buildPrompt(job);
-            byte[] image = higgsfieldImageService.generateImage(prompt, job.getAspectRatio(), references);
+            byte[] image = imageGenerationProvider.generateImage(prompt, job.getAspectRatio(), references);
             String imageUrl = storageService.upload(image, "creative/" + job.getId() + ".png", "image/png");
             job.setResultImageUrl(imageUrl);
 
             if (job.getType() == CreativeJobType.PHOTO_SHOOT_VIDEO) {
-                if (!higgsfieldImageService.isVideoConfigured()) {
+                if (!imageGenerationProvider.isVideoConfigured()) {
                     throw new IllegalStateException(
-                            "Video generation is unavailable. Configure HIGGSFIELD_VIDEO_MODEL and video access.");
+                            "Video generation is unavailable for the selected image provider.");
                 }
-                byte[] video = higgsfieldImageService.generateVideo(imageUrl, prompt, job.getAspectRatio());
+                byte[] video = imageGenerationProvider.generateVideo(imageUrl, prompt, job.getAspectRatio());
                 String videoUrl = storageService.upload(video, "creative/" + job.getId() + ".mp4", "video/mp4");
                 job.setResultVideoUrl(videoUrl);
             }
