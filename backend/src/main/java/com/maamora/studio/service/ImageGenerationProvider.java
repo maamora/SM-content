@@ -13,12 +13,13 @@ public class ImageGenerationProvider {
 
     private final HiggsfieldImageService higgsfieldImageService;
     private final FalImageService falImageService;
+    private final StabilityImageService stabilityImageService;
 
-    @Value("${app.image.provider:higgsfield}")
+    @Value("${app.image.provider:stability}")
     private String provider;
 
     public String activeProvider() {
-        return provider == null || provider.isBlank() ? "higgsfield" : provider.trim().toLowerCase();
+        return provider == null || provider.isBlank() ? "stability" : provider.trim().toLowerCase();
     }
 
     public boolean isConfigured() {
@@ -27,7 +28,8 @@ public class ImageGenerationProvider {
 
     public boolean supportsPhotoShoot() {
         String active = activeProvider();
-        return ("higgsfield".equals(active) || "fal".equals(active) || "fal.ai".equals(active))
+        return ("higgsfield".equals(active) || "fal".equals(active) || "fal.ai".equals(active)
+                || "stability".equals(active) || "stability.ai".equals(active))
                 && isConfigured();
     }
 
@@ -39,8 +41,9 @@ public class ImageGenerationProvider {
         return switch (activeProvider()) {
             case "fal", "fal.ai" -> falImageService;
             case "higgsfield" -> higgsfieldImageService;
+            case "stability", "stability.ai" -> stabilityImageService;
             default -> throw new IllegalStateException(
-                    "Unsupported image provider: " + activeProvider() + ". Use higgsfield or fal.");
+                    "Unsupported image provider: " + activeProvider() + ". Use stability, fal, or higgsfield.");
         };
     }
 }

@@ -245,3 +245,21 @@
 - [x] Implement product-only generation with explicit model-description prompting when multi-reference input is unavailable.
 - [x] Expose fallback mode clearly and validate creative workflow states.
 - [ ] Commit and deliver the provider-aware fallback.
+
+## Evaluate Stability AI as an image provider
+- [ ] Review current STUDIO image-provider requirements and official Stability API capabilities.
+- [ ] Compare Stability AI with fal.ai for product-reference and product-only workflows.
+- [ ] Recommend or implement the compatible provider path without fabricating output.
+- [ ] Validate the decision and document required configuration.
+
+## Evaluate zero-cost unlimited image generation
+- [ ] Research hosted free tiers and self-hosted/open-model cost constraints.
+- [ ] Compare options with STUDIO's product-reference workflow and no-self-hosting preference.
+- [ ] Deliver an honest recommendation and configuration path.
+
+## Switch image generation to Stability AI
+- [x] Inspect the official Stability API contract and STUDIO provider interfaces.
+- [x] Implement the Stability adapter and environment configuration.
+- [x] Preserve product-only/composite reference strategies and add quota errors.
+- [x] Run backend/frontend validation and deterministic provider tests.
+- [x] Commit, push, and document the Stability setup.

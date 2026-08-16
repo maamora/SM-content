@@ -34,8 +34,14 @@ spring:
 
 app:
   image:
-    provider: ${IMAGE_PROVIDER:fal}
+    provider: ${IMAGE_PROVIDER:stability}
     fal-reference-mode: ${FAL_REFERENCE_MODE:product-only}
+
+  stability:
+    api-key: ${STABILITY_API_KEY:}
+    model: ${STABILITY_IMAGE_MODEL:ultra}
+    base-url: ${STABILITY_BASE_URL:https://api.stability.ai}
+    timeout-ms: ${STABILITY_TIMEOUT_MS:180000}
 
   fal:
     key: ${FAL_KEY:}
