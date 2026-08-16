@@ -67,6 +67,15 @@ app:
     api-key: ${CLOUDINARY_API_KEY:placeholder}
     api-secret: ${CLOUDINARY_API_SECRET:placeholder}
 
+  caption:
+    provider: ${CAPTION_PROVIDER:gemini}
+
+  openrouter:
+    api-key: ${OPENROUTER_API_KEY:}
+    models: ${OPENROUTER_MODELS:openai/gpt-4o-mini,google/gemini-2.0-flash-001}
+    base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1}
+    max-attempts: ${OPENROUTER_MAX_ATTEMPTS:2}
+
   gemini:
     # Use separate credentials when caption and Veo access are provisioned independently.
     # GEMINI_API_KEY remains a compatibility fallback for both services.

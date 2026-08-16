@@ -26,6 +26,15 @@ public class SystemController {
     @Value("${app.gemini.caption-api-key:}")
     private String geminiCaptionApiKey;
 
+    @Value("${app.caption.provider:gemini}")
+    private String captionProvider;
+
+    @Value("${app.openrouter.api-key:}")
+    private String openRouterApiKey;
+
+    @Value("${app.openrouter.models:}")
+    private String openRouterModels;
+
     @Value("${STABILITY_API_KEY:}")
     private String stabilityApiKey;
 
@@ -103,7 +112,10 @@ public class SystemController {
 
     @GetMapping("/capabilities")
     public ApiResponse<SystemCapabilitiesResponse> capabilities() {
-        boolean captionGeneration = configured(geminiCaptionApiKey) || ollamaEnabled;
+        boolean openRouterCaption = "openrouter".equalsIgnoreCase(captionProvider)
+                && configured(openRouterApiKey)
+                && configured(openRouterModels);
+        boolean captionGeneration = openRouterCaption || configured(geminiCaptionApiKey) || ollamaEnabled;
         boolean imageGeneration = configured(stabilityApiKey) || imageGenerationProvider.isConfigured();
         boolean creativeEditing = imageGenerationProvider.isConfigured();
         boolean photoShootGeneration = imageGenerationProvider.supportsPhotoShoot();

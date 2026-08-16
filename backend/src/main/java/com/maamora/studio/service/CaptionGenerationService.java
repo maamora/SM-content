@@ -11,8 +11,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClient;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
 
 @Slf4j
@@ -45,6 +49,21 @@ public class CaptionGenerationService {
     @Value("${app.gemini.base-url}")
     private String baseUrl;
 
+    @Value("${app.caption.provider:gemini}")
+    private String captionProvider;
+
+    @Value("${app.openrouter.api-key:}")
+    private String openRouterApiKey;
+
+    @Value("${app.openrouter.models:}")
+    private String openRouterModels;
+
+    @Value("${app.openrouter.base-url:https://openrouter.ai/api/v1}")
+    private String openRouterBaseUrl;
+
+    @Value("${app.openrouter.max-attempts:2}")
+    private int openRouterMaxAttempts;
+
     @Value("${app.ollama.enabled:false}")
     private boolean ollamaEnabled;
 
@@ -75,14 +94,94 @@ public class CaptionGenerationService {
      * exhausts its retries doesn't cost the other languages their captions.
      */
     public String generateCaption(Post post, BrandSettings brand, String language) {
+        if ("openrouter".equalsIgnoreCase(captionProvider)) {
+            return generateWithOpenRouter(post, brand, language);
+        }
         if (!configured(apiKey)) {
             if (!ollamaEnabled) {
                 throw new IllegalStateException(
-                        "Caption generation is unavailable: configure GEMINI_CAPTION_API_KEY or GEMINI_API_KEY, or enable Ollama locally.");
+                        "Caption generation is unavailable: configure GEMINI_CAPTION_API_KEY or GEMINI_API_KEY, select CAPTION_PROVIDER=openrouter with OPENROUTER_API_KEY, or enable Ollama locally.");
             }
             return generateWithOllama(post, brand, language);
         }
         return generateWithGemini(post, brand, language);
+    }
+
+    private String generateWithOpenRouter(Post post, BrandSettings brand, String language) {
+        if (!configured(openRouterApiKey)) {
+            throw new IllegalStateException("Caption generation is unavailable: configure OPENROUTER_API_KEY.");
+        }
+
+        Set<String> models = new LinkedHashSet<>();
+        if (openRouterModels != null) {
+            Arrays.stream(openRouterModels.split(","))
+                    .map(String::trim)
+                    .filter(this::configured)
+                    .forEach(models::add);
+        }
+        if (models.isEmpty()) {
+            throw new IllegalStateException("Caption generation is unavailable: configure OPENROUTER_MODELS as an ordered comma-separated model list.");
+        }
+
+        String prompt = buildPrompt(post, brand, language);
+        Map<String, Object> bodyBase = Map.of(
+                "messages", List.of(Map.of("role", "user", "content", prompt)),
+                "temperature", 0.8,
+                "max_tokens", 1200);
+        List<String> attempted = new ArrayList<>();
+        RuntimeException lastError = null;
+        int maxModels = Math.max(1, Math.min(openRouterMaxAttempts, models.size()));
+
+        for (String modelId : models.stream().limit(maxModels).toList()) {
+            attempted.add(modelId);
+            Map<String, Object> body = new java.util.HashMap<>(bodyBase);
+            body.put("model", modelId);
+            try {
+                String rawResponse = RestClient.builder()
+                        .baseUrl(openRouterBaseUrl)
+                        .defaultHeader("Authorization", "Bearer " + openRouterApiKey)
+                        .defaultHeader("HTTP-Referer", "http://localhost:3000")
+                        .defaultHeader("X-Title", "STUDIO")
+                        .defaultHeader("content-type", "application/json")
+                        .build()
+                        .post()
+                        .uri("/chat/completions")
+                        .body(body)
+                        .retrieve()
+                        .body(String.class);
+                return extractOpenRouterText(rawResponse);
+            } catch (HttpStatusCodeException e) {
+                lastError = new RuntimeException("OpenRouter model " + modelId + " failed ("
+                        + e.getStatusCode().value() + "): " + compactProviderBody(e.getResponseBodyAsString()), e);
+                if (!isOpenRouterFallbackError(e) || attempted.size() >= maxModels) {
+                    throw lastError;
+                }
+                log.warn("OpenRouter model fallback {}/{} for lang {} after {}: {}",
+                        attempted.size(), maxModels, language, e.getStatusCode(), modelId);
+            } catch (EmptyCaptionException e) {
+                lastError = e;
+                if (attempted.size() >= maxModels) {
+                    throw e;
+                }
+                log.warn("OpenRouter model fallback {}/{} for lang {} after empty response: {}",
+                        attempted.size(), maxModels, language, modelId);
+            }
+        }
+
+        throw new IllegalStateException("OpenRouter caption generation failed for models " + attempted, lastError);
+    }
+
+    private boolean isOpenRouterFallbackError(HttpStatusCodeException e) {
+        int status = e.getStatusCode().value();
+        return status == 400 || status == 404 || status == 408 || status == 409
+                || status == 413 || status == 429 || e.getStatusCode().is5xxServerError();
+    }
+
+    private String compactProviderBody(String body) {
+        if (body == null || body.isBlank()) {
+            return "no provider details";
+        }
+        return body.replaceAll("\\s+", " ").substring(0, Math.min(body.length(), 500));
     }
 
     private String generateWithGemini(Post post, BrandSettings brand, String language) {
@@ -266,6 +365,24 @@ public class CaptionGenerationService {
         }
 
         return textNode.asText().trim();
+    }
+
+    private String extractOpenRouterText(String rawJson) {
+        try {
+            JsonNode root = objectMapper.readTree(rawJson);
+            JsonNode choices = root.path("choices");
+            JsonNode textNode = choices.isArray() && !choices.isEmpty()
+                    ? choices.get(0).path("message").path("content")
+                    : null;
+            if (textNode == null || !textNode.isTextual() || textNode.asText().isBlank()) {
+                throw new EmptyCaptionException("OpenRouter returned no caption text.");
+            }
+            return textNode.asText().trim();
+        } catch (EmptyCaptionException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not parse OpenRouter response.", e);
+        }
     }
 
     private String extractOllamaText(String rawJson) {

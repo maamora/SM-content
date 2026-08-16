@@ -263,3 +263,14 @@
 - [x] Preserve product-only/composite reference strategies and add quota errors.
 - [x] Run backend/frontend validation and deterministic provider tests.
 - [x] Commit, push, and document the Stability setup.
+
+## Evaluate OpenRouter for STUDIO
+- [ ] Review current OpenRouter model routing, multimodal support, pricing, and policy limits.
+- [ ] Compare OpenRouter with STUDIO's caption, image, video, and reference-image requirements.
+- [ ] Deliver an architecture recommendation and configuration path without claiming it is an unlimited provider.
+
+## Add OpenRouter model fallback routing
+- [x] Inspect current caption provider and request retry architecture.
+- [x] Implement ordered OpenRouter model fallback with bounded retries for token, rate, and provider failures.
+- [x] Add environment configuration, capability reporting, and safe observability without logging secrets.
+- [x] Validate fallback routing with deterministic tests and deliver the implementation.
