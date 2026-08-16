@@ -232,4 +232,4 @@
 - [x] Define a supported two-stage or composite-reference workflow for fal.ai.
 - [x] Fix backend generation/caption errors and preserve explicit unavailable states.
 - [x] Verify frontend progress, success, and failure states with backend validation.
-- [ ] Commit and deliver the workflow fix.
+- [x] Commit and deliver the workflow fix.
