@@ -52,6 +52,15 @@ public class CaptionGenerationService {
     @Value("${app.caption.provider:gemini}")
     private String captionProvider;
 
+    @Value("${app.groq.api-key:}")
+    private String groqApiKey;
+
+    @Value("${app.groq.model:llama-3.3-70b-versatile}")
+    private String groqModel;
+
+    @Value("${app.groq.base-url:https://api.groq.com/openai/v1}")
+    private String groqBaseUrl;
+
     @Value("${app.openrouter.api-key:}")
     private String openRouterApiKey;
 
@@ -97,6 +106,9 @@ public class CaptionGenerationService {
         if ("openrouter".equalsIgnoreCase(captionProvider)) {
             return generateWithOpenRouter(post, brand, language);
         }
+        if ("groq".equalsIgnoreCase(captionProvider)) {
+            return generateWithGroq(post, brand, language);
+        }
         if (!configured(apiKey)) {
             if (!ollamaEnabled) {
                 throw new IllegalStateException(
@@ -105,6 +117,33 @@ public class CaptionGenerationService {
             return generateWithOllama(post, brand, language);
         }
         return generateWithGemini(post, brand, language);
+    }
+
+    private String generateWithGroq(Post post, BrandSettings brand, String language) {
+        if (!configured(groqApiKey)) {
+            throw new IllegalStateException("Caption generation is unavailable: configure GROQ_API_KEY.");
+        }
+        Map<String, Object> body = Map.of(
+                "model", groqModel,
+                "messages", List.of(Map.of("role", "user", "content", buildPrompt(post, brand, language))),
+                "temperature", 0.8,
+                "max_tokens", 1200);
+        try {
+            String rawResponse = RestClient.builder()
+                    .baseUrl(groqBaseUrl)
+                    .defaultHeader("Authorization", "Bearer " + groqApiKey)
+                    .defaultHeader("content-type", "application/json")
+                    .build()
+                    .post()
+                    .uri("/chat/completions")
+                    .body(body)
+                    .retrieve()
+                    .body(String.class);
+            return extractOpenRouterText(rawResponse);
+        } catch (HttpStatusCodeException e) {
+            throw new IllegalStateException("Groq caption generation failed with HTTP "
+                    + e.getStatusCode().value() + ": " + compactProviderBody(e.getResponseBodyAsString()), e);
+        }
     }
 
     private String generateWithOpenRouter(Post post, BrandSettings brand, String language) {

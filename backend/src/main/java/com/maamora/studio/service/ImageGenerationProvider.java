@@ -14,6 +14,7 @@ public class ImageGenerationProvider {
     private final HiggsfieldImageService higgsfieldImageService;
     private final FalImageService falImageService;
     private final StabilityImageService stabilityImageService;
+    private final OpenRouterImageService openRouterImageService;
 
     @Value("${app.image.provider:disabled}")
     private String provider;
@@ -29,7 +30,8 @@ public class ImageGenerationProvider {
     public boolean supportsPhotoShoot() {
         String active = activeProvider();
         return ("higgsfield".equals(active) || "fal".equals(active) || "fal.ai".equals(active)
-                || "stability".equals(active) || "stability.ai".equals(active))
+                || "stability".equals(active) || "stability.ai".equals(active)
+                || "openrouter".equals(active) || "open-router".equals(active))
                 && isConfigured();
     }
 
@@ -49,10 +51,11 @@ public class ImageGenerationProvider {
             case "fal", "fal.ai" -> falImageService;
             case "higgsfield" -> higgsfieldImageService;
             case "stability", "stability.ai" -> stabilityImageService;
+            case "openrouter", "open-router" -> openRouterImageService;
             case "disabled", "none" -> throw new IllegalStateException(
                     "Image generation is disabled in OpenRouter-only test mode.");
             default -> throw new IllegalStateException(
-                    "Unsupported image provider: " + activeProvider() + ". Use stability, fal, higgsfield, or disabled.");
+                    "Unsupported image provider: " + activeProvider() + ". Use openrouter, stability, fal, higgsfield, or disabled.");
         };
     }
 }

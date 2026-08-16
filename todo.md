@@ -280,3 +280,14 @@
 - [x] Configure OpenRouter as the only active test provider without deleting other adapters.
 - [x] Validate provider isolation and capability reporting.
 - [ ] Commit and deliver the OpenRouter-only test setup.
+
+## Fix duplicate IMAGE_PROVIDER startup error
+- [ ] Identify all duplicate IMAGE_PROVIDER entries and local override sources.
+- [ ] Remove duplicate entries while preserving OpenRouter-only test settings.
+- [ ] Restart and verify backend capability reporting.
+
+## Groq captions and OpenRouter images
+- [ ] Inspect provider selectors and current environment mappings.
+- [ ] Route caption generation through Groq and image generation through OpenRouter.
+- [ ] Update environment templates and capability reporting.
+- [ ] Validate provider isolation and deliver the corrected configuration.

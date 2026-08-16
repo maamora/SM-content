@@ -34,8 +34,7 @@ spring:
 
 app:
   image:
-    # OpenRouter-only test mode disables image generation while retaining all adapters.
-    provider: ${IMAGE_PROVIDER:disabled}
+    provider: ${IMAGE_PROVIDER:openrouter}
     fal-reference-mode: ${FAL_REFERENCE_MODE:product-only}
 
   stability:
@@ -69,13 +68,20 @@ app:
     api-secret: ${CLOUDINARY_API_SECRET:placeholder}
 
   caption:
-    provider: ${CAPTION_PROVIDER:openrouter}
+    provider: ${CAPTION_PROVIDER:groq}
 
   openrouter:
     api-key: ${OPENROUTER_API_KEY:}
     models: ${OPENROUTER_MODELS:openai/gpt-4o-mini,google/gemini-2.0-flash-001}
+    image-model: ${OPENROUTER_IMAGE_MODEL:google/gemini-2.5-flash-image-preview}
     base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1}
     max-attempts: ${OPENROUTER_MAX_ATTEMPTS:2}
+    image-timeout-ms: ${OPENROUTER_IMAGE_TIMEOUT_MS:180000}
+
+  groq:
+    api-key: ${GROQ_API_KEY:}
+    model: ${GROQ_MODEL:llama-3.3-70b-versatile}
+    base-url: ${GROQ_BASE_URL:https://api.groq.com/openai/v1}
 
   video:
     provider: ${VIDEO_PROVIDER:disabled}
