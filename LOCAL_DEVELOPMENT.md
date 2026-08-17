@@ -113,45 +113,30 @@ DB_SSL_MODE=disable
 JWT_SECRET=replace-this-with-a-long-random-secret-at-least-32-characters
 JWT_EXPIRATION_MS=86400000
 
-# Cloudflare Workers AI FLUX.2 [dev] is the active image provider.
-# Keep the token server-side and never commit backend/.env.
-IMAGE_PROVIDER=cloudflare
-CLOUDFLARE_ACCOUNT_ID=
-CLOUDFLARE_API_TOKEN=
-CLOUDFLARE_AI_BASE_URL=https://api.cloudflare.com/client/v4
-CLOUDFLARE_AI_MODEL=@cf/black-forest-labs/flux-2-dev
-CLOUDFLARE_AI_STEPS=25
-CLOUDFLARE_AI_GUIDANCE=4.0
-CLOUDFLARE_AI_POLL_INTERVAL_MS=3000
-CLOUDFLARE_AI_RETRY_ATTEMPTS=3
-CLOUDFLARE_AI_RETRY_BACKOFF_MS=1500
-CLOUDFLARE_AI_TIMEOUT_MS=180000
+# Replicate is the active hosted image provider. Keep the token server-side
+# and never commit backend/.env.
+IMAGE_PROVIDER=replicate
+IMAGE_PROVIDER_FALLBACK=disabled
+REPLICATE_API_TOKEN=
+REPLICATE_MODEL=black-forest-labs/flux-2-dev
+REPLICATE_BASE_URL=https://api.replicate.com/v1
+REPLICATE_POLL_INTERVAL_MS=3000
+REPLICATE_TIMEOUT_MS=180000
+REPLICATE_MAX_REFERENCES=10
 
-# Cloudflare HTTP 429/code 3040 responses indicate temporary capacity exhaustion.
-# STUDIO retries with bounded exponential backoff, then returns a retryable error.
-# Optional configured fallback after a retryable Cloudflare failure or Cloudflare safety code 3030:
-# IMAGE_FALLBACK_PROVIDER=replicate
-# REPLICATE_API_TOKEN=
-# REPLICATE_MODEL=black-forest-labs/flux-2-dev
-# REPLICATE_BASE_URL=https://api.replicate.com/v1
-# REPLICATE_POLL_INTERVAL_MS=3000
-# REPLICATE_TIMEOUT_MS=180000
-# REPLICATE_MAX_REFERENCES=10
-# DeAPI remains another optional fallback: IMAGE_FALLBACK_PROVIDER=deapi
-# DEAPI_API_KEY=
+# Cloudflare is intentionally disabled because its current account returned
+# temporary capacity code 3040 and safety code 3030 for the tested workflow.
+# Keep these values only if Cloudflare is re-enabled later; do not set
+# IMAGE_PROVIDER=cloudflare in the current configuration.
+# CLOUDFLARE_ACCOUNT_ID=
+# CLOUDFLARE_API_TOKEN=
+# CLOUDFLARE_AI_BASE_URL=https://api.cloudflare.com/client/v4
+# CLOUDFLARE_AI_MODEL=@cf/black-forest-labs/flux-2-dev
+# CLOUDFLARE_AI_RETRY_ATTEMPTS=3
+# CLOUDFLARE_AI_RETRY_BACKOFF_MS=1500
+# CLOUDFLARE_AI_TIMEOUT_MS=180000
 
-# Optional Replicate hosted alternative. Use this when Cloudflare returns safety code 3030
-# or sustained capacity code 3040. Replicate supports FLUX.2 [dev] predictions with
-# product/model reference images through input_images.
-# IMAGE_PROVIDER=replicate
-# REPLICATE_API_TOKEN=
-# REPLICATE_MODEL=black-forest-labs/flux-2-dev
-# REPLICATE_BASE_URL=https://api.replicate.com/v1
-# REPLICATE_POLL_INTERVAL_MS=3000
-# REPLICATE_TIMEOUT_MS=180000
-# REPLICATE_MAX_REFERENCES=10
-
-# Optional DeAPI alternative. To use it, replace IMAGE_PROVIDER=cloudflare with
+# Optional DeAPI alternative. To use it, replace IMAGE_PROVIDER=replicate with
 # IMAGE_PROVIDER=deapi and configure the variables below.
 # DEAPI_API_KEY=
 # DEAPI_BASE_URL=https://api.deapi.ai
@@ -220,11 +205,11 @@ If startup stops with `Duplicate key IMAGE_PROVIDER`, the backend `.env`
 contains that key more than once. Dotenv refuses to merge duplicate keys, so open `backend/.env`, keep exactly one `IMAGE_PROVIDER` line, and remove obsolete provider entries. For the current configuration, keep:
 
 ```dotenv
-IMAGE_PROVIDER=cloudflare
+IMAGE_PROVIDER=replicate
+IMAGE_PROVIDER_FALLBACK=disabled
 CAPTION_PROVIDER=gemini
-CLOUDFLARE_AI_MODEL=@cf/black-forest-labs/flux-2-dev
+REPLICATE_MODEL=black-forest-labs/flux-2-dev
 GEMINI_MODEL=gemini-2.5-flash
-
 ```
 
 
@@ -264,9 +249,7 @@ DB_SSL_MODE=require
 
 Do not add `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, or
 `SPRING_DATASOURCE_PASSWORD`; STUDIO already derives its datasource from the
-six `DB_*` variables. Keep exactly one entry for every key, including
-`IMAGE_PROVIDER`, `CAPTION_PROVIDER`, and the Cloudflare/Gemini provider
-variables. Duplicate keys are rejected before Spring Boot initializes.
+six `DB_*` variables. Keep exactly one entry for every key, including `IMAGE_PROVIDER`, `IMAGE_PROVIDER_FALLBACK`, `CAPTION_PROVIDER`, and the Replicate/Gemini provider variables. Duplicate keys are rejected before Spring Boot initializes.
 
 The API should become available at `http://localhost:8080`. Cloudflare Workers AI FLUX.2 [dev] uses a multipart inference request and supports up to four `input_image_N` references, each resized below 512px before submission. Product-plus-model shoots send the product and model references together. Gemini captions use the GenerateContent endpoint and validate `candidates[].content.parts[].text`; blocked, malformed, or empty responses are treated as provider failures rather than returned to the frontend as blank captions.
 

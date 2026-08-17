@@ -365,3 +365,25 @@
 - [ ] Verify caption-generation request construction, Gemini response extraction, persistence, and frontend rendering.
 - [ ] Exercise multiple configured and unavailable provider paths in the sandbox without fabricating provider success.
 - [ ] Fix confirmed defects, run backend/frontend production checks, and document any external quota or credential constraint.
+
+
+## Replicate API-key configuration verification
+- [ ] Verify the current Replicate API token creation flow and Bearer authentication requirements.
+- [ ] Verify the selected FLUX.2 prediction endpoint, input_images field, output response, and polling lifecycle.
+- [ ] Compare the official contract with ReplicateImageService and correct any model or URL mismatch.
+- [ ] Add a safe PowerShell token diagnostic and document token scope, billing, and common HTTP errors.
+- [ ] Re-run backend tests and commit any required adapter correction.
+
+
+## Duplicate CAPTION_PROVIDER startup failure
+- [ ] Inspect backend/.env for repeated CAPTION_PROVIDER entries and related duplicate Gemini variables.
+- [ ] Keep exactly one active caption provider, with Gemini selected for the current configuration.
+- [ ] Run the Windows preflight and Spring Boot startup after cleanup.
+- [ ] Confirm the capabilities endpoint reports caption configuration without exposing secrets.
+
+
+## Remove Cloudflare from active image generation
+- [ ] Set Replicate as the sole active image provider in local and documented configuration.
+- [ ] Remove Cloudflare from the active fallback chain while retaining optional provider code for later use.
+- [ ] Verify no duplicate IMAGE_PROVIDER or IMAGE_FALLBACK_PROVIDER entries remain.
+- [ ] Run backend/frontend checks and confirm capability reporting uses Replicate without Cloudflare requests.

@@ -34,7 +34,7 @@ spring:
 
 app:
   image:
-    provider: ${IMAGE_PROVIDER:deapi}
+    provider: ${IMAGE_PROVIDER:replicate}
     fallback-provider: ${IMAGE_PROVIDER_FALLBACK:disabled}
 
   fal-reference-mode: ${FAL_REFERENCE_MODE:product-only}
