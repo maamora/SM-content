@@ -129,9 +129,27 @@ CLOUDFLARE_AI_TIMEOUT_MS=180000
 
 # Cloudflare HTTP 429/code 3040 responses indicate temporary capacity exhaustion.
 # STUDIO retries with bounded exponential backoff, then returns a retryable error.
-# Optional configured fallback after a retryable Cloudflare failure:
-# IMAGE_FALLBACK_PROVIDER=deapi
+# Optional configured fallback after a retryable Cloudflare failure or Cloudflare safety code 3030:
+# IMAGE_FALLBACK_PROVIDER=replicate
+# REPLICATE_API_TOKEN=
+# REPLICATE_MODEL=black-forest-labs/flux-2-dev
+# REPLICATE_BASE_URL=https://api.replicate.com/v1
+# REPLICATE_POLL_INTERVAL_MS=3000
+# REPLICATE_TIMEOUT_MS=180000
+# REPLICATE_MAX_REFERENCES=10
+# DeAPI remains another optional fallback: IMAGE_FALLBACK_PROVIDER=deapi
 # DEAPI_API_KEY=
+
+# Optional Replicate hosted alternative. Use this when Cloudflare returns safety code 3030
+# or sustained capacity code 3040. Replicate supports FLUX.2 [dev] predictions with
+# product/model reference images through input_images.
+# IMAGE_PROVIDER=replicate
+# REPLICATE_API_TOKEN=
+# REPLICATE_MODEL=black-forest-labs/flux-2-dev
+# REPLICATE_BASE_URL=https://api.replicate.com/v1
+# REPLICATE_POLL_INTERVAL_MS=3000
+# REPLICATE_TIMEOUT_MS=180000
+# REPLICATE_MAX_REFERENCES=10
 
 # Optional DeAPI alternative. To use it, replace IMAGE_PROVIDER=cloudflare with
 # IMAGE_PROVIDER=deapi and configure the variables below.
