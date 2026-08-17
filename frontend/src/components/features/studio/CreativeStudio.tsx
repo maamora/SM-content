@@ -178,6 +178,19 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
             });
             setPost(result);
             onPostChange?.();
+
+            // A completed visual should immediately enter the copy workflow.
+            // Keep the visual visible if Gemini is temporarily unavailable.
+            try {
+                const captioned = await generateCaptions(result.id);
+                setPost(captioned);
+                onPostChange?.();
+            } catch (captionError) {
+                const detail = captionError instanceof Error
+                    ? captionError.message
+                    : "Caption generation failed.";
+                setErrorMsg(`Visual created, but captions could not be generated: ${detail}`);
+            }
         } catch (err) {
             setErrorMsg(err instanceof Error ? err.message : "Failed to generate image");
         } finally {

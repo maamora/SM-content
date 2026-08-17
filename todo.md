@@ -356,3 +356,12 @@
 - [ ] Add a configurable retry count and retry delay without creating unbounded request loops.
 - [ ] Preserve product-only fallback behavior and return a clear retryable error after capacity is exhausted.
 - [ ] Add automated tests and document Cloudflare capacity-limit operations.
+
+
+## Studio workflow functional repair
+- [ ] Trace Studio frontend controls and map each action to its backend endpoint and request payload.
+- [ ] Verify image-generation and image-editing controllers, authentication, multipart uploads, provider selection, and output persistence.
+- [ ] Verify prompt propagation and validation from the editor textarea through provider requests.
+- [ ] Verify caption-generation request construction, Gemini response extraction, persistence, and frontend rendering.
+- [ ] Exercise multiple configured and unavailable provider paths in the sandbox without fabricating provider success.
+- [ ] Fix confirmed defects, run backend/frontend production checks, and document any external quota or credential constraint.

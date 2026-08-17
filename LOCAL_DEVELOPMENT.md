@@ -1,5 +1,8 @@
 # STUDIO local development guide
 
+> Studio workflow note: the authenticated Studio page submits the selected product, template, prompt, and references through the managed image provider. After a visual is created, it automatically requests captions and keeps the visual visible if Gemini is temporarily unavailable. Configure a real fallback provider before expecting failover from Cloudflare capacity errors.
+
+
 This guide explains how to run the merged STUDIO application locally. The repository contains a **Next.js 16 frontend**, a **Spring Boot 3.3 backend**, and a **PostgreSQL database**. The browser talks to Spring Boot over HTTP; Spring Boot owns authentication, authorization, persistence, product workflows, brand settings, posts, templates, uploads, and the integration boundary for future AI and publishing providers.
 
 > **Important scope note:** The current branch has been hardened for the implemented backend surface and the live frontend integration. Some provider-dependent capabilities still require operator credentials, and audit-log persistence plus destructive user/workspace administration are intentionally not exposed until their dedicated schema and authorization workflows exist.
@@ -126,6 +129,9 @@ CLOUDFLARE_AI_TIMEOUT_MS=180000
 
 # Cloudflare HTTP 429/code 3040 responses indicate temporary capacity exhaustion.
 # STUDIO retries with bounded exponential backoff, then returns a retryable error.
+# Optional configured fallback after a retryable Cloudflare failure:
+# IMAGE_FALLBACK_PROVIDER=deapi
+# DEAPI_API_KEY=
 
 # Optional DeAPI alternative. To use it, replace IMAGE_PROVIDER=cloudflare with
 # IMAGE_PROVIDER=deapi and configure the variables below.
