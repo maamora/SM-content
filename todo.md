@@ -387,3 +387,34 @@
 - [ ] Remove Cloudflare from the active fallback chain while retaining optional provider code for later use.
 - [ ] Verify no duplicate IMAGE_PROVIDER or IMAGE_FALLBACK_PROVIDER entries remain.
 - [ ] Run backend/frontend checks and confirm capability reporting uses Replicate without Cloudflare requests.
+
+
+## DeepAI provider migration
+- [ ] Verify DeepAI’s current API key format, image-generation endpoint, model options, and image-edit/reference support from official documentation.
+- [ ] Remove Replicate from the active provider configuration without deleting optional adapter code until DeepAI is validated.
+- [ ] Implement or adapt a DeepAI image service for prompt generation and reference-image editing if the official contract supports both.
+- [ ] Run backend/frontend tests and validate capability reporting and error handling.
+- [ ] Document exact DeepAI environment variables, billing/limits, and any unsupported Studio workflow constraints.
+
+
+## ApiFrame provider evaluation
+- [x] Verify ApiFrame API-key format, image-generation endpoint, supported models, and response lifecycle from official documentation.
+- [x] Verify ApiFrame image-editing/reference-image support for product-plus-model workflows.
+- [x] Compare ApiFrame request and response schemas with STUDIO’s ManagedImageService contract.
+- [x] Integrate ApiFrame because the documented API supports prompt generation, editing, and multi-reference workflows.
+- [x] Run backend/frontend validation and document limits, billing, and required environment variables.
+
+### ApiFrame research notes — 2026-08-17
+ApiFrame’s official documentation states that requests use https://api.apiframe.ai/v2, authenticate with an X-API-Key header, submit image jobs to POST /v2/images/generate, and return 202 Accepted with a jobId and queued status. Completed jobs are polled through GET /v2/jobs/:id or received through webhooks; image results are CDN URLs and are retained for 90 days. The docs list flux-2-pro, seedream-4, seedream-4.5, seedream-5-pro, qwen-image variants, wan-image variants, and grok-image variants as supporting editing or reference-image use cases. The image product page claims reference-image generation and editing, but the common request body only documents prompt, model, webhookUrl, and webhookEvents; model-specific reference-image fields must be verified on individual model pages. ApiFrame advertises 500 authenticated requests per minute, with errors including 401 for invalid keys, 402 for insufficient credits, 429 for rate limits, and 503 for temporary unavailability. Pricing is described as pay-as-you-go with free credits to start, not unlimited free usage.
+
+
+## Remove stale Replicate active references
+- [x] Trace all Replicate references and classify active configuration versus historical research or optional adapter code.
+- [x] Make ApiFrame the intended active image provider and remove stale Replicate fallback/configuration guidance where appropriate.
+- [x] Validate backend tests, frontend checks, and final diff; save a corrected checkpoint.
+
+
+## Push ApiFrame provider cleanup to GitHub
+- [ ] Inspect current branch, remotes, and diff before committing.
+- [ ] Commit the verified removal of Replicate and ApiFrame activation.
+- [ ] Push the commit to the linked repository main branch and provide exact Windows pull steps.

@@ -20,7 +20,7 @@ public class ImageGenerationProvider {
     private final OpenAIImageService openAIImageService;
     private final DeapiImageService deapiImageService;
     private final CloudflareWorkersAIImageService cloudflareWorkersAIImageService;
-    private final ReplicateImageService replicateImageService;
+    private final ApiFrameImageService apiFrameImageService;
 
     @Value("${app.image.provider:disabled}")
     private String provider;
@@ -48,7 +48,7 @@ public class ImageGenerationProvider {
     public byte[] generateImage(String prompt, String aspectRatio, List<String> references) {
         String active = activeProvider();
         if (isDisabled(active)) {
-            throw new IllegalStateException("Image generation is disabled. Configure IMAGE_PROVIDER=cloudflare, replicate, deapi, openai, stability, fal, higgsfield, or disabled.");
+            throw new IllegalStateException("Image generation is disabled. Configure IMAGE_PROVIDER=apiframe, deapi, openai, stability, fal, higgsfield, or disabled.");
         }
         try {
             return service().generateImage(prompt, aspectRatio, references);
@@ -78,8 +78,8 @@ public class ImageGenerationProvider {
 
     private boolean supportsReferences(String selectedProvider) {
         return switch (selectedProvider) {
-            case "higgsfield", "fal", "fal.ai", "stability", "stability.ai", "openrouter", "open-router",
-                    "openai", "deapi", "de-api", "cloudflare", "cloudflare-ai", "workers-ai", "replicate" -> true;
+                case "apiframe", "api-frame", "higgsfield", "fal", "fal.ai", "stability", "stability.ai", "openrouter", "open-router",
+                    "openai", "deapi", "de-api", "cloudflare", "cloudflare-ai", "workers-ai" -> true;
             default -> false;
         };
     }
@@ -121,11 +121,11 @@ public class ImageGenerationProvider {
             case "openai" -> openAIImageService;
             case "deapi", "de-api" -> deapiImageService;
             case "cloudflare", "cloudflare-ai", "workers-ai" -> cloudflareWorkersAIImageService;
-            case "replicate" -> replicateImageService;
+            case "apiframe", "api-frame" -> apiFrameImageService;
             case "disabled", "none" -> throw new IllegalStateException(
-                    "Image generation is disabled. Configure IMAGE_PROVIDER=cloudflare, replicate, deapi, openai, stability, fal, higgsfield, or disabled.");
+                    "Image generation is disabled. Configure IMAGE_PROVIDER=apiframe, deapi, openai, stability, fal, higgsfield, or disabled.");
             default -> throw new IllegalStateException(
-                    "Unsupported image provider: " + activeProvider() + ". Use cloudflare, replicate, deapi, openai, stability, fal, higgsfield, or disabled.");
+                    "Unsupported image provider: " + activeProvider() + ". Use apiframe, deapi, openai, stability, fal, higgsfield, or disabled.");
         };
     }
 }

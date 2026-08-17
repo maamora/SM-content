@@ -34,7 +34,7 @@ spring:
 
 app:
   image:
-    provider: ${IMAGE_PROVIDER:replicate}
+    provider: ${IMAGE_PROVIDER:apiframe}
     fallback-provider: ${IMAGE_PROVIDER_FALLBACK:disabled}
 
   fal-reference-mode: ${FAL_REFERENCE_MODE:product-only}
@@ -94,13 +94,14 @@ app:
     poll-interval-ms: ${DEAPI_POLL_INTERVAL_MS:3000}
     timeout-ms: ${DEAPI_TIMEOUT_MS:180000}
 
-  replicate:
-    api-token: ${REPLICATE_API_TOKEN:}
-    model: ${REPLICATE_MODEL:black-forest-labs/flux-2-dev}
-    base-url: ${REPLICATE_BASE_URL:https://api.replicate.com/v1}
-    poll-interval-ms: ${REPLICATE_POLL_INTERVAL_MS:3000}
-    timeout-ms: ${REPLICATE_TIMEOUT_MS:180000}
-    max-references: ${REPLICATE_MAX_REFERENCES:10}
+  apiframe:
+    api-key: ${APIFRAME_API_KEY:}
+    model: ${APIFRAME_IMAGE_MODEL:flux-2-pro}
+    base-url: ${APIFRAME_BASE_URL:https://api.apiframe.ai/v2}
+    poll-interval-ms: ${APIFRAME_POLL_INTERVAL_MS:3000}
+    timeout-ms: ${APIFRAME_TIMEOUT_MS:180000}
+    output-format: ${APIFRAME_OUTPUT_FORMAT:png}
+
 
   openai:
     api-key: ${OPENAI_API_KEY:}
