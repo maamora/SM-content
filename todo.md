@@ -328,3 +328,23 @@
 - [ ] Implement DeAPI image generation with reference-image support or an explicit product-only fallback when the selected DeAPI model cannot accept multiple images.
 - [ ] Set Gemini as the caption provider and ensure empty or malformed Gemini responses produce explicit errors.
 - [ ] Run backend tests and capability checks, then document the required environment variables without exposing secrets.
+
+
+## Cloudflare image integration evaluation
+- [ ] Inspect existing Cloudflare connector/API configuration before creating or enabling anything.
+- [ ] Verify official Cloudflare MCP, Workers AI image-generation, and Images API capabilities and authentication.
+- [ ] Determine whether the option supports product-plus-model references, image editing, asynchronous jobs, and STUDIO’s raw-byte image contract.
+- [ ] Decide whether Cloudflare can replace DeAPI or should be used only for storage/transformation, then document exact setup and limits.
+
+
+## Cloudflare Workers AI environment setup guide
+- [ ] Document where to obtain the Cloudflare Account ID and how to create the least-privilege Workers AI API token.
+- [ ] Map Cloudflare dashboard values to backend/.env without exposing the token.
+- [ ] Document safe API verification, duplicate-key checks, and backend restart steps.
+
+
+## Cloudflare provider implementation blocker
+- [ ] Inspect the current ManagedImageService contract, provider selector, application properties, and provider tests.
+- [ ] Implement Cloudflare Workers AI image generation and reference-image handling.
+- [ ] Register the cloudflare provider and update capability reporting and supported-provider messages.
+- [ ] Add configuration documentation and tests, then compile, test, commit, and push the implementation.

@@ -35,7 +35,8 @@ spring:
 app:
   image:
     provider: ${IMAGE_PROVIDER:deapi}
-    fal-reference-mode: ${FAL_REFERENCE_MODE:product-only}
+
+  fal-reference-mode: ${FAL_REFERENCE_MODE:product-only}
 
   stability:
     api-key: ${STABILITY_API_KEY:}
@@ -69,6 +70,16 @@ app:
 
   caption:
     provider: ${CAPTION_PROVIDER:gemini}
+
+  cloudflare:
+    account-id: ${CLOUDFLARE_ACCOUNT_ID:}
+    api-token: ${CLOUDFLARE_API_TOKEN:}
+    base-url: ${CLOUDFLARE_AI_BASE_URL:https://api.cloudflare.com/client/v4}
+    image-model: ${CLOUDFLARE_AI_MODEL:@cf/black-forest-labs/flux-2-dev}
+    timeout-ms: ${CLOUDFLARE_AI_TIMEOUT_MS:180000}
+    poll-interval-ms: ${CLOUDFLARE_AI_POLL_INTERVAL_MS:3000}
+    steps: ${CLOUDFLARE_AI_STEPS:25}
+    guidance: ${CLOUDFLARE_AI_GUIDANCE:4.0}
 
   deapi:
     api-key: ${DEAPI_API_KEY:}

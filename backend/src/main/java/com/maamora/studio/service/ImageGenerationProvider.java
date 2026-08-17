@@ -17,6 +17,7 @@ public class ImageGenerationProvider {
     private final OpenRouterImageService openRouterImageService;
     private final OpenAIImageService openAIImageService;
     private final DeapiImageService deapiImageService;
+    private final CloudflareWorkersAIImageService cloudflareWorkersAIImageService;
 
     @Value("${app.image.provider:disabled}")
     private String provider;
@@ -34,7 +35,8 @@ public class ImageGenerationProvider {
         return ("higgsfield".equals(active) || "fal".equals(active) || "fal.ai".equals(active)
                 || "stability".equals(active) || "stability.ai".equals(active)
                 || "openrouter".equals(active) || "open-router".equals(active)
-                || "openai".equals(active) || "deapi".equals(active))
+                || "openai".equals(active) || "deapi".equals(active)
+                || "de-api".equals(active) || "cloudflare".equals(active))
                 && isConfigured();
     }
 
@@ -57,10 +59,11 @@ public class ImageGenerationProvider {
             case "openrouter", "open-router" -> openRouterImageService;
             case "openai" -> openAIImageService;
             case "deapi", "de-api" -> deapiImageService;
+            case "cloudflare", "cloudflare-ai", "workers-ai" -> cloudflareWorkersAIImageService;
             case "disabled", "none" -> throw new IllegalStateException(
-                    "Image generation is disabled. Configure IMAGE_PROVIDER=deapi, openai, stability, fal, higgsfield, or disabled.");
+                    "Image generation is disabled. Configure IMAGE_PROVIDER=cloudflare, deapi, openai, stability, fal, higgsfield, or disabled.");
             default -> throw new IllegalStateException(
-                    "Unsupported image provider: " + activeProvider() + ". Use deapi, openai, stability, fal, higgsfield, or disabled.");
+                    "Unsupported image provider: " + activeProvider() + ". Use cloudflare, deapi, openai, stability, fal, higgsfield, or disabled.");
         };
     }
 }

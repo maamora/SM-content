@@ -110,17 +110,28 @@ DB_SSL_MODE=disable
 JWT_SECRET=replace-this-with-a-long-random-secret-at-least-32-characters
 JWT_EXPIRATION_MS=86400000
 
-# deAPI is the active asynchronous image provider.
-# Keep this key server-side and never commit backend/.env.
-IMAGE_PROVIDER=deapi
-DEAPI_API_KEY=
-DEAPI_BASE_URL=https://api.deapi.ai
-DEAPI_IMAGE_MODEL=Flux1schnell
-DEAPI_EDIT_MODEL=QwenImageEdit_Plus_NF4
-DEAPI_STEPS=4
-DEAPI_GUIDANCE=7.5
-DEAPI_POLL_INTERVAL_MS=3000
-DEAPI_TIMEOUT_MS=180000
+# Cloudflare Workers AI FLUX.2 [dev] is the active image provider.
+# Keep the token server-side and never commit backend/.env.
+IMAGE_PROVIDER=cloudflare
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_API_TOKEN=
+CLOUDFLARE_AI_BASE_URL=https://api.cloudflare.com/client/v4
+CLOUDFLARE_AI_MODEL=@cf/black-forest-labs/flux-2-dev
+CLOUDFLARE_AI_STEPS=25
+CLOUDFLARE_AI_GUIDANCE=4.0
+CLOUDFLARE_AI_POLL_INTERVAL_MS=3000
+CLOUDFLARE_AI_TIMEOUT_MS=180000
+
+# Optional DeAPI alternative. To use it, replace IMAGE_PROVIDER=cloudflare with
+# IMAGE_PROVIDER=deapi and configure the variables below.
+# DEAPI_API_KEY=
+# DEAPI_BASE_URL=https://api.deapi.ai
+# DEAPI_IMAGE_MODEL=Flux1schnell
+# DEAPI_EDIT_MODEL=QwenImageEdit_Plus_NF4
+# DEAPI_STEPS=4
+# DEAPI_GUIDANCE=7.5
+# DEAPI_POLL_INTERVAL_MS=3000
+# DEAPI_TIMEOUT_MS=180000
 
 # Gemini is the active caption provider. Keep caption and video keys separate.
 CAPTION_PROVIDER=gemini
@@ -180,10 +191,9 @@ If startup stops with `Duplicate key IMAGE_PROVIDER`, the backend `.env`
 contains that key more than once. Dotenv refuses to merge duplicate keys, so open `backend/.env`, keep exactly one `IMAGE_PROVIDER` line, and remove obsolete provider entries. For the current configuration, keep:
 
 ```dotenv
-IMAGE_PROVIDER=deapi
+IMAGE_PROVIDER=cloudflare
 CAPTION_PROVIDER=gemini
-DEAPI_IMAGE_MODEL=Flux1schnell
-DEAPI_EDIT_MODEL=QwenImageEdit_Plus_NF4
+CLOUDFLARE_AI_MODEL=@cf/black-forest-labs/flux-2-dev
 GEMINI_MODEL=gemini-2.5-flash
 
 ```
@@ -226,10 +236,10 @@ DB_SSL_MODE=require
 Do not add `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, or
 `SPRING_DATASOURCE_PASSWORD`; STUDIO already derives its datasource from the
 six `DB_*` variables. Keep exactly one entry for every key, including
-`IMAGE_PROVIDER`, `CAPTION_PROVIDER`, and the DeAPI/Gemini provider
+`IMAGE_PROVIDER`, `CAPTION_PROVIDER`, and the Cloudflare/Gemini provider
 variables. Duplicate keys are rejected before Spring Boot initializes.
 
-The API should become available at `http://localhost:8080`. deAPI image generation uses asynchronous `/api/v2/images/generations` and `/api/v2/images/edits` jobs; the adapter polls `/api/v2/jobs/{request_id}` and downloads the completed result URL. Product-plus-model shoots use the edit model and retry product-only when the provider rejects multiple references. Gemini captions use the GenerateContent endpoint and validate `candidates[].content.parts[].text`; blocked, malformed, or empty responses are treated as provider failures rather than returned to the frontend as blank captions.
+The API should become available at `http://localhost:8080`. Cloudflare Workers AI FLUX.2 [dev] uses a multipart inference request and supports up to four `input_image_N` references, each resized below 512px before submission. Product-plus-model shoots send the product and model references together. Gemini captions use the GenerateContent endpoint and validate `candidates[].content.parts[].text`; blocked, malformed, or empty responses are treated as provider failures rather than returned to the frontend as blank captions.
 
 The backend applies missing JPA schema objects with `ddl-auto: update`; this preserves existing rows while adding schema changes. Never use `create` or `create-drop` against a database containing real data.
 
