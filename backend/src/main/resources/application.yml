@@ -80,6 +80,8 @@ app:
     poll-interval-ms: ${CLOUDFLARE_AI_POLL_INTERVAL_MS:3000}
     steps: ${CLOUDFLARE_AI_STEPS:25}
     guidance: ${CLOUDFLARE_AI_GUIDANCE:4.0}
+    retry-attempts: ${CLOUDFLARE_AI_RETRY_ATTEMPTS:3}
+    retry-backoff-ms: ${CLOUDFLARE_AI_RETRY_BACKOFF_MS:1500}
 
   deapi:
     api-key: ${DEAPI_API_KEY:}

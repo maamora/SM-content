@@ -348,3 +348,11 @@
 - [ ] Implement Cloudflare Workers AI image generation and reference-image handling.
 - [ ] Register the cloudflare provider and update capability reporting and supported-provider messages.
 - [ ] Add configuration documentation and tests, then compile, test, commit, and push the implementation.
+
+
+## Cloudflare temporary capacity errors
+- [ ] Inspect current Cloudflare HTTP error handling and provider fallback behavior.
+- [ ] Add bounded exponential backoff for HTTP 429/code 3040 capacity responses.
+- [ ] Add a configurable retry count and retry delay without creating unbounded request loops.
+- [ ] Preserve product-only fallback behavior and return a clear retryable error after capacity is exhausted.
+- [ ] Add automated tests and document Cloudflare capacity-limit operations.

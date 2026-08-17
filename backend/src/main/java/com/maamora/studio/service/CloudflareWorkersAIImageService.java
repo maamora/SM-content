@@ -49,6 +49,8 @@ public class CloudflareWorkersAIImageService implements ManagedImageService {
     private final long timeoutMs;
     private final int steps;
     private final double guidance;
+    private final int retryAttempts;
+    private final long retryBackoffMs;
 
     public CloudflareWorkersAIImageService(
             RestTemplateBuilder builder,
@@ -58,7 +60,9 @@ public class CloudflareWorkersAIImageService implements ManagedImageService {
             @Value("${app.cloudflare.image-model:@cf/black-forest-labs/flux-2-dev}") String model,
             @Value("${app.cloudflare.timeout-ms:180000}") long timeoutMs,
             @Value("${app.cloudflare.steps:25}") int steps,
-            @Value("${app.cloudflare.guidance:4.0}") double guidance) {
+            @Value("${app.cloudflare.guidance:4.0}") double guidance,
+            @Value("${app.cloudflare.retry-attempts:3}") int retryAttempts,
+            @Value("${app.cloudflare.retry-backoff-ms:1500}") long retryBackoffMs) {
         this.accountId = valueOrDefault(accountId, "");
         this.apiToken = valueOrDefault(apiToken, "");
         this.baseUrl = normalizeBaseUrl(baseUrl);
@@ -66,6 +70,8 @@ public class CloudflareWorkersAIImageService implements ManagedImageService {
         this.timeoutMs = Math.max(30_000, timeoutMs);
         this.steps = Math.max(1, steps);
         this.guidance = guidance > 0 ? guidance : 4.0;
+        this.retryAttempts = Math.min(5, Math.max(1, retryAttempts));
+        this.retryBackoffMs = Math.min(10_000, Math.max(250, retryBackoffMs));
         this.restTemplate = builder
                 .setConnectTimeout(Duration.ofSeconds(20))
                 .setReadTimeout(Duration.ofMillis(this.timeoutMs))
@@ -109,15 +115,26 @@ public class CloudflareWorkersAIImageService implements ManagedImageService {
             });
         }
 
-        try {
-            JsonNode response = restTemplate.postForObject(
-                    endpoint(),
-                    new HttpEntity<>(body, headers()),
-                    JsonNode.class);
-            return decodeImage(response);
-        } catch (HttpStatusCodeException e) {
-            throw providerError(e);
+        HttpStatusCodeException lastCapacityError = null;
+        for (int attempt = 1; attempt <= retryAttempts; attempt++) {
+            try {
+                JsonNode response = restTemplate.postForObject(
+                        endpoint(),
+                        new HttpEntity<>(body, headers()),
+                        JsonNode.class);
+                return decodeImage(response);
+            } catch (HttpStatusCodeException e) {
+                if (!isCapacityError(e)) {
+                    throw providerError(e);
+                }
+                lastCapacityError = e;
+                if (attempt == retryAttempts) break;
+                long delay = Math.min(30_000L, retryBackoffMs * (1L << Math.min(attempt - 1, 4)));
+                log.warn("Cloudflare Workers AI capacity unavailable (attempt {}/{}); retrying in {} ms", attempt, retryAttempts, delay);
+                sleepBeforeRetry(delay);
+            }
         }
+        throw capacityError(lastCapacityError);
     }
 
     private byte[] prepareReference(String referenceUrl) {
@@ -196,6 +213,27 @@ public class CloudflareWorkersAIImageService implements ManagedImageService {
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         return headers;
+    }
+
+    private boolean isCapacityError(HttpStatusCodeException e) {
+        return e.getStatusCode().value() == 429
+                || e.getResponseBodyAsString().contains("3040")
+                || e.getResponseBodyAsString().toLowerCase().contains("capacity temporarily exceeded");
+    }
+
+    private void sleepBeforeRetry(long delayMs) {
+        try {
+            Thread.sleep(delayMs);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Cloudflare image generation retry was interrupted.", interrupted);
+        }
+    }
+
+    private IllegalStateException capacityError(HttpStatusCodeException e) {
+        String details = e == null ? "temporary provider capacity limit" : compactText(e.getResponseBodyAsString());
+        return new IllegalStateException("Cloudflare image generation is temporarily unavailable after "
+                + retryAttempts + " attempts. Please retry shortly. Provider response: " + details, e);
     }
 
     private IllegalStateException providerError(HttpStatusCodeException e) {

@@ -120,7 +120,12 @@ CLOUDFLARE_AI_MODEL=@cf/black-forest-labs/flux-2-dev
 CLOUDFLARE_AI_STEPS=25
 CLOUDFLARE_AI_GUIDANCE=4.0
 CLOUDFLARE_AI_POLL_INTERVAL_MS=3000
+CLOUDFLARE_AI_RETRY_ATTEMPTS=3
+CLOUDFLARE_AI_RETRY_BACKOFF_MS=1500
 CLOUDFLARE_AI_TIMEOUT_MS=180000
+
+# Cloudflare HTTP 429/code 3040 responses indicate temporary capacity exhaustion.
+# STUDIO retries with bounded exponential backoff, then returns a retryable error.
 
 # Optional DeAPI alternative. To use it, replace IMAGE_PROVIDER=cloudflare with
 # IMAGE_PROVIDER=deapi and configure the variables below.
