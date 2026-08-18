@@ -20,6 +20,7 @@ import { generateCaptions, editCaption, approvePost, exportPost, type Post } fro
 import { Product3DModel } from "@/components/features/products/Product3DModel";
 import { CreativeWorkflowPanel } from "./CreativeWorkflowPanel";
 import { generatePuterVisual } from "@/lib/puter";
+import { generateLocalCaption, generateLocalCreativeDirection, isWebLLMAvailable } from "@/lib/webllm";
 
 interface Product {
     id: string;
@@ -69,6 +70,10 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const [badgeText, setBadgeText] = useState<string>("-20% TODAY");
     const [mood, setMood] = useState<(typeof MOOD_PRESETS)[number]>(MOOD_PRESETS[0]);
     const [puterImageSrc, setPuterImageSrc] = useState<string | null>(null);
+    const [localDirection, setLocalDirection] = useState<string>("");
+    const [isGeneratingDirection, setIsGeneratingDirection] = useState(false);
+    const [isGeneratingLocalCaption, setIsGeneratingLocalCaption] = useState(false);
+    const [webLlmProgress, setWebLlmProgress] = useState<string>("");
 
     const [post, setPost] = useState<Post | null>(null);
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -172,7 +177,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
         setIsGeneratingImage(true);
         try {
             const formatDirection = selectedFormat === "SQUARE_POST" ? "square 1:1 composition" : "vertical 9:16 story composition";
-            const prompt = `Create a premium editorial brand visual for ${selectedProduct.name}. Product description: ${selectedProduct.description || "commercial product"}. Preserve the exact product identity, shape, label, materials, and colors. ${formatDirection}. Art direction: ${mood.name}, refined studio lighting, intentional composition, realistic texture, campaign-ready finish. Offer headline: ${promoText || "no headline"}. Badge: ${badgeText || "no badge"}. Do not invent a different product or distort the packaging.`;
+            const prompt = `Create a premium editorial brand visual for ${selectedProduct.name}. Product description: ${selectedProduct.description || "commercial product"}. Preserve the exact product identity, shape, label, materials, and colors. ${formatDirection}. Art direction: ${mood.name}, refined studio lighting, intentional composition, realistic texture, campaign-ready finish. Offer headline: ${promoText || "no headline"}. Badge: ${badgeText || "no badge"}. ${localDirection ? `Creative direction: ${localDirection}.` : ""} Do not invent a different product or distort the packaging.`;
             const imageSrc = await generatePuterVisual(prompt, {
                 inputImages: selectedProduct.imageUrl ? [selectedProduct.imageUrl] : [],
                 ratio: selectedFormat === "SQUARE_POST" ? { w: 1, h: 1 } : { w: 9, h: 16 },
@@ -184,6 +189,50 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
             setErrorMsg(err instanceof Error ? err.message : "Failed to generate image");
         } finally {
             setIsGeneratingImage(false);
+        }
+    };
+
+    const handleGenerateLocalDirection = async () => {
+        if (!selectedProduct) return;
+        setErrorMsg(null);
+        setIsGeneratingDirection(true);
+        setWebLlmProgress("Chargement du modèle local...");
+        try {
+            const result = await generateLocalCreativeDirection(
+                selectedProduct.name,
+                selectedProduct.description,
+                `${mood.name}; ${promoText}; ${badgeText}; format ${selectedFormat}`,
+            );
+            setLocalDirection(result);
+            setWebLlmProgress("Direction prête");
+        } catch (err) {
+            setErrorMsg(err instanceof Error ? err.message : "L'assistance locale est indisponible");
+            setWebLlmProgress("");
+        } finally {
+            setIsGeneratingDirection(false);
+        }
+    };
+
+    const handleGenerateLocalCaption = async () => {
+        if (!selectedProduct) return;
+        setErrorMsg(null);
+        setIsGeneratingLocalCaption(true);
+        setWebLlmProgress("Chargement du modèle local...");
+        try {
+            const language = LANGS.find((lang) => lang.id === activeCaptionLang)?.label ?? "Français";
+            const caption = await generateLocalCaption(
+                selectedProduct.name,
+                selectedProduct.description,
+                language,
+                localDirection || `${mood.name}; ${promoText}; ${badgeText}`,
+            );
+            setDraftCaption(caption);
+            setWebLlmProgress("Légende locale prête");
+        } catch (err) {
+            setErrorMsg(err instanceof Error ? err.message : "L'assistance locale est indisponible");
+            setWebLlmProgress("");
+        } finally {
+            setIsGeneratingLocalCaption(false);
         }
     };
 
@@ -467,9 +516,19 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                 </div>
                             </div>
 
-                            <button
-                                onClick={handleGenerateImage}
-                                disabled={isGeneratingImage || !selectedProduct || !selectedTemplateId}
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                <button
+                                    type="button"
+                                    onClick={handleGenerateLocalDirection}
+                                    disabled={isGeneratingDirection || !selectedProduct || !isWebLLMAvailable()}
+                                    className="studio-button studio-button--paper h-9 text-[11px] disabled:opacity-40"
+                                >
+                                    {isGeneratingDirection ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                                    {isGeneratingDirection ? "Assistance..." : "Affiner la direction"}
+                                </button>
+                                <button
+                                    onClick={handleGenerateImage}
+                                    disabled={isGeneratingImage || !selectedProduct || !selectedTemplateId}
                                 className="studio-button studio-button--lime studio-button--large w-full disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {isGeneratingImage ? (
@@ -478,7 +537,11 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                     <Sparkles className="h-3.5 w-3.5" />
                                 )}
                                 {isGeneratingImage ? "Rendu en cours..." : puterImageSrc ? "Régénérer le visuel" : "Générer le visuel"}
-                            </button>
+                                </button>
+                            </div>
+                            <p className="mt-2 text-[10px] font-medium text-[#91918b]">
+                                {isWebLLMAvailable() ? (webLlmProgress || "Assistance locale disponible pour la direction et les légendes.") : "WebGPU indisponible : l'assistance locale nécessite Chrome ou Edge récent."}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -571,8 +634,8 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                             value={draftCaption}
                                             onChange={(e) => setDraftCaption(e.target.value)}
                                             onBlur={handleSaveCaption}
-                                            disabled={!post}
-                                            placeholder={post ? "Aucune légende générée pour cette langue." : "Générez d'abord un visuel."}
+                                            disabled={!post && !selectedProduct}
+                                            placeholder={post || selectedProduct ? "Générez une légende locale ou serveur." : "Sélectionnez un produit approuvé."}
                                             className="min-h-[190px] w-full resize-none border border-[#bdbdb4] bg-[#faf9f4] p-3.5 text-xs font-sans leading-relaxed tracking-wide text-[var(--studio-ink)] outline-none focus:border-[var(--studio-lime)] disabled:opacity-50"
                                         />
 
@@ -597,14 +660,24 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                         </div>
                                     </div>
 
-                                    <button
-                                        onClick={handleGenerateCaptions}
-                                        disabled={isGeneratingCaptions || !post}
-                                        className="studio-button studio-button--paper h-9 w-full text-[11px] disabled:opacity-40"
-                                    >
-                                        <RefreshCw className={`h-3.5 w-3.5 ${isGeneratingCaptions ? "animate-spin" : ""}`} />
-                                        {isGeneratingCaptions ? "Génération..." : "Générer toutes les légendes"}
-                                    </button>
+                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                        <button
+                                            onClick={handleGenerateLocalCaption}
+                                            disabled={isGeneratingLocalCaption || !selectedProduct || !isWebLLMAvailable()}
+                                            className="studio-button studio-button--lime h-9 text-[11px] disabled:opacity-40"
+                                        >
+                                            <Sparkles className={`h-3.5 w-3.5 ${isGeneratingLocalCaption ? "animate-pulse" : ""}`} />
+                                            {isGeneratingLocalCaption ? "Local..." : "Légende locale"}
+                                        </button>
+                                        <button
+                                            onClick={handleGenerateCaptions}
+                                            disabled={isGeneratingCaptions || !post}
+                                            className="studio-button studio-button--paper h-9 text-[11px] disabled:opacity-40"
+                                        >
+                                            <RefreshCw className={`h-3.5 w-3.5 ${isGeneratingCaptions ? "animate-spin" : ""}`} />
+                                            {isGeneratingCaptions ? "Génération..." : "Légendes serveur"}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
