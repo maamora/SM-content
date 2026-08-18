@@ -3,14 +3,14 @@ import React, { useState, useEffect } from "react";
 import { Layers, Loader2 } from "lucide-react";
 import { type Product } from "@/lib/api/products";
 import { listTemplates, type Template } from "@/lib/api/templates";
-import { generatePuterVisual } from "@/lib/puter";
+import { generateImage, type Post } from "@/lib/api/posts";
 
 interface BatchStudioProps {
     products: Product[];
     onBatchChange?: () => void;
 }
 
-export default function BatchStudio({ products }: BatchStudioProps) {
+export default function BatchStudio({ products, onBatchChange }: BatchStudioProps) {
     const [templates, setTemplates] = useState<Template[]>([]);
     const [selectedFormat, setSelectedFormat] = useState<"SQUARE_POST" | "STORY">("SQUARE_POST");
     const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
@@ -18,7 +18,7 @@ export default function BatchStudio({ products }: BatchStudioProps) {
 
     const [isStartingBatch, setIsStartingBatch] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    const [puterOutputs, setPuterOutputs] = useState<Array<{ productName: string; src: string }>>([]);
+    const [generatedPosts, setGeneratedPosts] = useState<Array<Post>>([]);
 
     const approvedProducts = products
         .filter(p => p.status === "APPROVED")
@@ -50,20 +50,21 @@ export default function BatchStudio({ products }: BatchStudioProps) {
         if (selectedProducts.size === 0 || !selectedTemplateId) return;
         setIsStartingBatch(true);
         setErrorMsg(null);
-        setPuterOutputs([]);
+        setGeneratedPosts([]);
         try {
             const chosen = approvedProducts.filter((product) => selectedProducts.has(product.id));
-            const outputs: Array<{ productName: string; src: string }> = [];
+            const outputs: Post[] = [];
             for (const product of chosen) {
-                const prompt = `Create a cohesive premium campaign visual for ${product.name}. Preserve the exact product identity, packaging, label, materials, and colors. Use a ${selectedFormat === "SQUARE_POST" ? "square 1:1" : "vertical 9:16"} composition, refined editorial lighting, clean art direction, realistic commercial texture, and a consistent campaign language across the batch. Product description: ${product.description || "commercial product"}.`;
-                const src = await generatePuterVisual(prompt, {
-                    inputImages: product.imageUrl ? [product.imageUrl] : [],
-                    ratio: selectedFormat === "SQUARE_POST" ? { w: 1, h: 1 } : { w: 9, h: 16 },
+                const post = await generateImage({
+                    productId: product.id,
+                    templateId: selectedTemplateId,
+                    mood: "Cohesive premium campaign with refined editorial lighting and commercial texture.",
                 });
-                outputs.push({ productName: product.name, src });
-                setPuterOutputs([...outputs]);
+                outputs.push(post);
+                setGeneratedPosts([...outputs]);
+                onBatchChange?.();
             }
-            setErrorMsg("Batch visuals are ready in the browser. Download each image below.");
+            setErrorMsg("Batch visuals are ready. Generate captions from each post in the Atelier Creative workflow.");
         } catch (err) {
             setErrorMsg(err instanceof Error ? err.message : "Failed to start batch");
         } finally {
@@ -91,23 +92,23 @@ export default function BatchStudio({ products }: BatchStudioProps) {
                 </div>
             )}
 
-            {puterOutputs.length > 0 ? (
+            {generatedPosts.length > 0 ? (
                 <div className="studio-creative-card space-y-6 p-6">
                     <div className="flex items-center justify-between gap-4">
                         <div>
                             <p className="studio-kicker">VISUELS GÉNÉRÉS</p>
                             <h3 className="font-serif text-2xl font-normal text-[var(--studio-ink)]">Batch visuel</h3>
                         </div>
-                        <button type="button" className="studio-text-button" onClick={() => setPuterOutputs([])}>Nouveau lot</button>
+                        <button type="button" className="studio-text-button" onClick={() => setGeneratedPosts([])}>Nouveau lot</button>
                     </div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {puterOutputs.map((output) => (
-                            <div key={`${output.productName}-${output.src.slice(-24)}`} className="border border-[#deddd5] bg-[#faf9f4] p-3">
+                        {generatedPosts.map((output) => (
+                            <div key={output.id} className="border border-[#deddd5] bg-[#faf9f4] p-3">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={output.src} alt={`${output.productName} generated visual`} className={`w-full object-cover ${selectedFormat === "SQUARE_POST" ? "aspect-square" : "aspect-[9/16]"}`} />
+                                <img src={output.imageUrl || ""} alt={`${output.productName} generated visual`} className={`w-full object-cover ${selectedFormat === "SQUARE_POST" ? "aspect-square" : "aspect-[9/16]"}`} />
                                 <div className="mt-3 flex items-center justify-between gap-2">
                                     <span className="truncate text-xs font-bold text-[var(--studio-ink)]">{output.productName}</span>
-                                    <a className="studio-text-button shrink-0" href={output.src} download={`puter-${output.productName}.png`}>Download</a>
+                                    {output.imageUrl && <a className="studio-text-button shrink-0" href={output.imageUrl} download={`studio-${output.productName}.png`}>Download</a>}
                                 </div>
                             </div>
                         ))}

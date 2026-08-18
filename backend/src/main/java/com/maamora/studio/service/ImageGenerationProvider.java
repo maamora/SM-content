@@ -21,6 +21,7 @@ public class ImageGenerationProvider {
     private final DeapiImageService deapiImageService;
     private final CloudflareWorkersAIImageService cloudflareWorkersAIImageService;
     private final ApiFrameImageService apiFrameImageService;
+    private final GeminiImageService geminiImageService;
 
     @Value("${app.image.provider:disabled}")
     private String provider;
@@ -48,7 +49,7 @@ public class ImageGenerationProvider {
     public byte[] generateImage(String prompt, String aspectRatio, List<String> references) {
         String active = activeProvider();
         if (isDisabled(active)) {
-            throw new IllegalStateException("Image generation is disabled. Configure IMAGE_PROVIDER=apiframe, deapi, openai, stability, fal, higgsfield, or disabled.");
+            throw new IllegalStateException("Image generation is disabled. Configure IMAGE_PROVIDER=gemini or disabled.");
         }
         try {
             return service().generateImage(prompt, aspectRatio, references);
@@ -78,7 +79,7 @@ public class ImageGenerationProvider {
 
     private boolean supportsReferences(String selectedProvider) {
         return switch (selectedProvider) {
-                case "apiframe", "api-frame", "higgsfield", "fal", "fal.ai", "stability", "stability.ai", "openrouter", "open-router",
+                case "gemini", "apiframe", "api-frame", "higgsfield", "fal", "fal.ai", "stability", "stability.ai", "openrouter", "open-router",
                     "openai", "deapi", "de-api", "cloudflare", "cloudflare-ai", "workers-ai" -> true;
             default -> false;
         };
@@ -114,6 +115,7 @@ public class ImageGenerationProvider {
 
     private ManagedImageService serviceFor(String selectedProvider) {
         return switch (selectedProvider) {
+            case "gemini" -> geminiImageService;
             case "fal", "fal.ai" -> falImageService;
             case "higgsfield" -> higgsfieldImageService;
             case "stability", "stability.ai" -> stabilityImageService;
@@ -123,9 +125,9 @@ public class ImageGenerationProvider {
             case "cloudflare", "cloudflare-ai", "workers-ai" -> cloudflareWorkersAIImageService;
             case "apiframe", "api-frame" -> apiFrameImageService;
             case "disabled", "none" -> throw new IllegalStateException(
-                    "Image generation is disabled. Configure IMAGE_PROVIDER=apiframe, deapi, openai, stability, fal, higgsfield, or disabled.");
+                    "Image generation is disabled. Configure IMAGE_PROVIDER=gemini or disabled.");
             default -> throw new IllegalStateException(
-                    "Unsupported image provider: " + activeProvider() + ". Use apiframe, deapi, openai, stability, fal, higgsfield, or disabled.");
+                    "Unsupported image provider: " + activeProvider() + ". Use gemini or disabled.");
         };
     }
 }

@@ -113,16 +113,14 @@ DB_SSL_MODE=disable
 JWT_SECRET=replace-this-with-a-long-random-secret-at-least-32-characters
 JWT_EXPIRATION_MS=86400000
 
-# Replicate is the active hosted image provider. Keep the token server-side
-# and never commit backend/.env.
-IMAGE_PROVIDER=replicate
+# Gemini is the active server-side image provider. The key must remain in
+# backend/.env and must never be exposed through NEXT_PUBLIC_* values.
+IMAGE_PROVIDER=gemini
 IMAGE_PROVIDER_FALLBACK=disabled
-REPLICATE_API_TOKEN=
-REPLICATE_MODEL=black-forest-labs/flux-2-dev
-REPLICATE_BASE_URL=https://api.replicate.com/v1
-REPLICATE_POLL_INTERVAL_MS=3000
-REPLICATE_TIMEOUT_MS=180000
-REPLICATE_MAX_REFERENCES=10
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_IMAGE_MODEL=gemini-3.1-flash-image
+GEMINI_IMAGE_TIMEOUT_MS=180000
+GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
 
 # Cloudflare is intentionally disabled because its current account returned
 # temporary capacity code 3040 and safety code 3030 for the tested workflow.
@@ -155,7 +153,6 @@ GROQ_MODEL=llama-3.3-70b-versatile
 GROQ_BASE_URL=https://api.groq.com/openai/v1
 
 # Optional Gemini caption alternative. Select it with CAPTION_PROVIDER=gemini.
-# GEMINI_API_KEY=
 # GEMINI_CAPTION_API_KEY=
 # GEMINI_MODEL=gemini-2.5-flash
 # GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
@@ -211,10 +208,10 @@ If startup stops with `Duplicate key IMAGE_PROVIDER`, the backend `.env`
 contains that key more than once. Dotenv refuses to merge duplicate keys, so open `backend/.env`, keep exactly one `IMAGE_PROVIDER` line, and remove obsolete provider entries. For the current configuration, keep:
 
 ```dotenv
-IMAGE_PROVIDER=replicate
+IMAGE_PROVIDER=gemini
 IMAGE_PROVIDER_FALLBACK=disabled
 CAPTION_PROVIDER=groq
-REPLICATE_MODEL=black-forest-labs/flux-2-dev
+GEMINI_IMAGE_MODEL=gemini-3.1-flash-image
 GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
@@ -222,7 +219,7 @@ GROQ_MODEL=llama-3.3-70b-versatile
 You can locate all provider entries without displaying secret values with:
 
 ```powershell
-Select-String -Path .\.env -Pattern '^(IMAGE_PROVIDER|CAPTION_PROVIDER|GROQ_API_KEY|GROQ_MODEL|GEMINI_API_KEY|GEMINI_CAPTION_API_KEY|GEMINI_VIDEO_API_KEY|OPENROUTER_IMAGE_MODEL)='
+Select-String -Path .\.env -Pattern '^(IMAGE_PROVIDER|CAPTION_PROVIDER|GROQ_API_KEY|GROQ_MODEL|GEMINI_API_KEY|GEMINI_IMAGE_MODEL|GEMINI_CAPTION_API_KEY|GEMINI_VIDEO_API_KEY)='
 ```
 
 Alternatively, use the committed Windows helper. It performs a local preflight without printing secret values, detects duplicate keys such as

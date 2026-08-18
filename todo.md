@@ -596,3 +596,11 @@ The second attachment does not show an application compile or route error. `pnpm
 - [x] Trace the generated-caption click handler, selected-caption state, and post-composer binding.
 - [x] Make caption selection visibly apply the text to the active workflow and preserve selection state.
 - [ ] Perform one authenticated, live browser verification after a visual provider can generate a result.
+
+## Gemini visual provider migration
+- [x] Verify Gemini image-model request, image-editing, and reference-image support against current official documentation.
+- [x] Replace the active Puter.js browser visual path with the Gemini-backed server provider.
+- [x] Align Creative Studio, Photo Shoot, Edit Image, and Batch Studio with the supported Gemini workflow or explicit unavailable states.
+- [x] Remove obsolete Puter client dependencies and configuration guidance without removing unrelated validated functionality.
+- [x] Validate backend tests, frontend build, capabilities, and secure local Gemini configuration steps before publishing.
+- [ ] Perform one authenticated live generation with the server-side Gemini key after the update is pulled locally.

@@ -34,7 +34,7 @@ spring:
 
 app:
   image:
-    provider: ${IMAGE_PROVIDER:apiframe}
+    provider: ${IMAGE_PROVIDER:gemini}
     fallback-provider: ${IMAGE_PROVIDER_FALLBACK:disabled}
 
   fal-reference-mode: ${FAL_REFERENCE_MODE:product-only}
@@ -132,6 +132,8 @@ app:
     # Use separate credentials when caption and Veo access are provisioned independently.
     # GEMINI_API_KEY remains a compatibility fallback for both services.
     api-key: ${GEMINI_API_KEY:}
+    image-model: ${GEMINI_IMAGE_MODEL:gemini-3.1-flash-image}
+    image-timeout-ms: ${GEMINI_IMAGE_TIMEOUT_MS:180000}
     caption-api-key: ${GEMINI_CAPTION_API_KEY:${GEMINI_API_KEY:}}
     video-api-key: ${GEMINI_VIDEO_API_KEY:${GEMINI_API_KEY:}}
     model: ${GEMINI_MODEL:gemini-2.5-flash}

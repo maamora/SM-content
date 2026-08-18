@@ -5,22 +5,13 @@
 
 import { useMemo, useState } from "react";
 import { ImagePlus, Loader2, Sparkles, Upload, WandSparkles } from "lucide-react";
-import { generatePuterVisual } from "@/lib/puter";
+import { createCreativeJob, getCreativeJob, uploadCreativeReference } from "@/lib/api/creative";
 
 type CreativeWorkflowPanelProps = {
     compact?: boolean;
 };
 
 type CreativeType = "PHOTO_SHOOT" | "EDIT_IMAGE";
-
-function fileToDataUrl(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result));
-        reader.onerror = () => reject(new Error("Could not read the reference image."));
-        reader.readAsDataURL(file);
-    });
-}
 
 const PROMPTS = {
     EDIT_IMAGE: "Keep the product exactly recognizable. Change the background to a warm daylight studio with soft editorial shadows and a quiet cream palette. Preserve the packaging, label, materials, and colors.",
@@ -58,17 +49,30 @@ export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanel
     const [modelFile, setModelFile] = useState<File | null>(null);
     const [productUrl, setProductUrl] = useState<string | null>(null);
     const [modelUrl, setModelUrl] = useState<string | null>(null);
-    const [puterImageUrl, setPuterImageUrl] = useState<string | null>(null);
+    const [resultImageUrl, setResultImageUrl] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const isPhotoShoot = type === "PHOTO_SHOOT";
     const hasRequiredReferences = Boolean(isPhotoShoot ? productFile && modelFile : productFile);
-    const activeImageUrl = puterImageUrl ?? productUrl ?? null;
+    const activeImageUrl = resultImageUrl ?? productUrl ?? null;
     const statusLabel = useMemo(() => {
-        if (puterImageUrl) return isPhotoShoot ? "Photo shoot ready" : "Edit ready";
+        if (resultImageUrl) return isPhotoShoot ? "Photo shoot ready" : "Edit ready";
         return isPhotoShoot ? "Ready for a photo shoot direction" : "Ready for an image edit";
-    }, [isPhotoShoot, puterImageUrl]);
+    }, [isPhotoShoot, resultImageUrl]);
+
+    async function waitForCreativeJob(jobId: string) {
+        for (let attempt = 0; attempt < 72; attempt += 1) {
+            await new Promise((resolve) => window.setTimeout(resolve, 2500));
+            const job = await getCreativeJob(jobId);
+            if (job.status === "COMPLETED") {
+                if (!job.resultImageUrl) throw new Error("Gemini completed without an image result.");
+                return job.resultImageUrl;
+            }
+            if (job.status === "FAILED") throw new Error(job.errorMessage || "Gemini could not generate this visual.");
+        }
+        throw new Error("Visual generation timed out. Please try again.");
+    }
 
     async function handleGenerate() {
         if (!hasRequiredReferences) {
@@ -77,18 +81,18 @@ export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanel
         }
         setBusy(true);
         setError(null);
-        setPuterImageUrl(null);
+        setResultImageUrl(null);
         try {
-            const references = await Promise.all(
-                [productFile, isPhotoShoot ? modelFile : null]
-                    .filter((file): file is File => Boolean(file))
-                    .map(fileToDataUrl)
-            );
-            const imageSrc = await generatePuterVisual(prompt.trim(), {
-                inputImages: references,
-                ratio: isPhotoShoot ? { w: 16, h: 9 } : { w: 1, h: 1 },
+            const product = await uploadCreativeReference(productFile!);
+            const model = isPhotoShoot && modelFile ? await uploadCreativeReference(modelFile) : null;
+            const job = await createCreativeJob({
+                type,
+                prompt: prompt.trim(),
+                aspectRatio: isPhotoShoot ? "16:9" : "1:1",
+                productImageUrl: product.url,
+                modelImageUrl: model?.url,
             });
-            setPuterImageUrl(imageSrc);
+            setResultImageUrl(await waitForCreativeJob(job.id));
         } catch (generateError) {
             setError(generateError instanceof Error ? generateError.message : "Visual generation failed.");
         } finally {
@@ -108,15 +112,15 @@ export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanel
             </div>
 
             <div className="creative-workflow__modebar">
-                <button type="button" className={type === "PHOTO_SHOOT" ? "is-active" : ""} onClick={() => { setType("PHOTO_SHOOT"); setPrompt(PROMPTS.PHOTO_SHOOT); setPuterImageUrl(null); setError(null); }}><WandSparkles size={15} /> Photo shoot</button>
-                <button type="button" className={type === "EDIT_IMAGE" ? "is-active" : ""} onClick={() => { setType("EDIT_IMAGE"); setPrompt(PROMPTS.EDIT_IMAGE); setPuterImageUrl(null); setError(null); }}><ImagePlus size={15} /> Edit an image</button>
+                <button type="button" className={type === "PHOTO_SHOOT" ? "is-active" : ""} onClick={() => { setType("PHOTO_SHOOT"); setPrompt(PROMPTS.PHOTO_SHOOT); setResultImageUrl(null); setError(null); }}><WandSparkles size={15} /> Photo shoot</button>
+                <button type="button" className={type === "EDIT_IMAGE" ? "is-active" : ""} onClick={() => { setType("EDIT_IMAGE"); setPrompt(PROMPTS.EDIT_IMAGE); setResultImageUrl(null); setError(null); }}><ImagePlus size={15} /> Edit an image</button>
             </div>
 
             <div className="creative-workflow__grid">
                 <div className="creative-workflow__inputs">
                     <div className="creative-workflow__references">
-                        <ReferenceTile label="01 / PRODUCT" file={productFile} url={productUrl} onChange={(file) => { setProductFile(file); setProductUrl(URL.createObjectURL(file)); setPuterImageUrl(null); }} />
-                        {isPhotoShoot && <ReferenceTile label="02 / MODEL" file={modelFile} url={modelUrl} onChange={(file) => { setModelFile(file); setModelUrl(URL.createObjectURL(file)); setPuterImageUrl(null); }} />}
+                        <ReferenceTile label="01 / PRODUCT" file={productFile} url={productUrl} onChange={(file) => { setProductFile(file); setProductUrl(URL.createObjectURL(file)); setResultImageUrl(null); }} />
+                        {isPhotoShoot && <ReferenceTile label="02 / MODEL" file={modelFile} url={modelUrl} onChange={(file) => { setModelFile(file); setModelUrl(URL.createObjectURL(file)); setResultImageUrl(null); }} />}
                     </div>
                     <label className="creative-workflow__prompt">
                         <span>SCENARIO / PROMPT</span>
@@ -127,7 +131,7 @@ export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanel
                             {busy ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                             {busy ? "Generating visual..." : isPhotoShoot ? "Generate photo shoot" : "Apply image edit"}
                         </button>
-                        <span>Image output · browser generation</span>
+                        <span>Gemini image output · server generation</span>
                     </div>
                     {error && <p className="studio-form-error">{error}</p>}
                 </div>
@@ -138,7 +142,7 @@ export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanel
                     ) : (
                         <div className="creative-workflow__empty"><Sparkles size={24} /><span>Your result lands here.</span><small>Reference → direction → visual</small></div>
                     )}
-                    {puterImageUrl && <div className="creative-workflow__result-meta"><span><span className="studio-dot studio-dot--lime" /> VISUAL READY</span><span>{isPhotoShoot ? "Photo shoot frame" : "Edited image"}</span></div>}
+                    {resultImageUrl && <div className="creative-workflow__result-meta"><span><span className="studio-dot studio-dot--lime" /> VISUAL READY</span><span>{isPhotoShoot ? "Photo shoot frame" : "Edited image"}</span></div>}
                 </div>
             </div>
         </section>

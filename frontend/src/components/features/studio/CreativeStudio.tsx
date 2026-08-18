@@ -16,10 +16,9 @@ import {
     Search,
 } from "lucide-react";
 import { listTemplates, type Template } from "@/lib/api/templates";
-import { createBrowserVisualPost, generateCaptions, editCaption, approvePost, exportPost, type Post } from "@/lib/api/posts";
+import { generateImage, generateCaptions, editCaption, approvePost, exportPost, type Post } from "@/lib/api/posts";
 import { Product3DModel } from "@/components/features/products/Product3DModel";
 import { CreativeWorkflowPanel } from "./CreativeWorkflowPanel";
-import { generatePuterVisual } from "@/lib/puter";
 
 interface Product {
     id: string;
@@ -68,11 +67,10 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const [accentColor, setAccentColor] = useState<string>("#b9ff43");
     const [badgeText, setBadgeText] = useState<string>("-20% TODAY");
     const [mood, setMood] = useState<(typeof MOOD_PRESETS)[number]>(MOOD_PRESETS[0]);
-    const [puterImageSrc, setPuterImageSrc] = useState<string | null>(null);
+    const [generatedImageSrc, setGeneratedImageSrc] = useState<string | null>(null);
 
     const [post, setPost] = useState<Post | null>(null);
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-    const [isSavingBrowserVisual, setIsSavingBrowserVisual] = useState(false);
     const [isGeneratingCaptions, setIsGeneratingCaptions] = useState(false);
     const [isApproving, setIsApproving] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
@@ -159,7 +157,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- stale post must be cleared when its inputs change
         setPost(null);
-        setPuterImageSrc(null);
+        setGeneratedImageSrc(null);
     }, [selectedProductId, selectedTemplateId, promoText, accentColor, badgeText]);
 
     useEffect(() => {
@@ -172,37 +170,17 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
         setErrorMsg(null);
         setIsGeneratingImage(true);
         try {
-            const formatDirection = selectedFormat === "SQUARE_POST" ? "square 1:1 composition" : "vertical 9:16 story composition";
-            const prompt = `Create a premium editorial brand visual for ${selectedProduct.name}. Product description: ${selectedProduct.description || "commercial product"}. Preserve the exact product identity, shape, label, materials, and colors. ${formatDirection}. Art direction: ${mood.name}, refined studio lighting, intentional composition, realistic texture, campaign-ready finish. Offer headline: ${promoText || "no headline"}. Badge: ${badgeText || "no badge"}. Do not invent a different product or distort the packaging.`;
-            const imageSrc = await generatePuterVisual(prompt, {
-                inputImages: selectedProduct.imageUrl ? [selectedProduct.imageUrl] : [],
-                ratio: selectedFormat === "SQUARE_POST" ? { w: 1, h: 1 } : { w: 9, h: 16 },
+            const result = await generateImage({
+                productId: selectedProduct.id,
+                templateId: selectedTemplateId,
+                badgeText,
+                promoText,
+                accentColor,
+                mood: mood.name,
             });
-            setPuterImageSrc(imageSrc);
-            setPost(null);
-            setIsSavingBrowserVisual(true);
-
-            try {
-                const imageResponse = await fetch(imageSrc);
-                if (!imageResponse.ok) throw new Error("The generated visual could not be prepared for saving.");
-                const image = await imageResponse.blob();
-                const savedPost = await createBrowserVisualPost({
-                    productId: selectedProduct.id,
-                    templateId: selectedTemplateId,
-                    image,
-                    badgeText,
-                    promoText,
-                });
-                setPost(savedPost);
-                onPostChange?.();
-                setErrorMsg(null);
-            } catch (saveError) {
-                setErrorMsg(saveError instanceof Error
-                    ? `Visual ready, but it could not be saved for captions: ${saveError.message}`
-                    : "Visual ready, but it could not be saved for captions. Try generating again.");
-            } finally {
-                setIsSavingBrowserVisual(false);
-            }
+            setPost(result);
+            setGeneratedImageSrc(result.imageUrl);
+            onPostChange?.();
         } catch (err) {
             setErrorMsg(err instanceof Error ? err.message : "Failed to generate image");
         } finally {
@@ -213,7 +191,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const handleSelectCaptionLanguage = (lang: CaptionLang) => {
         setActiveCaptionLang(lang);
         if (!post) {
-            setErrorMsg("Save a generated visual first. Caption choices become active as soon as the visual is attached to a Studio post.");
+            setErrorMsg("Generate a visual first. Caption choices become active as soon as Gemini creates the Studio post.");
         }
     };
 
@@ -258,11 +236,11 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
         }
     };
 
-    const handleDownloadPuter = () => {
-        if (!puterImageSrc) return;
+    const handleDownloadGeneratedVisual = () => {
+        if (!generatedImageSrc) return;
         const link = document.createElement("a");
-        link.href = puterImageSrc;
-        link.download = `puter-studio-visual-${Date.now()}.png`;
+        link.href = generatedImageSrc;
+        link.download = `studio-visual-${Date.now()}.png`;
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -507,7 +485,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                 ) : (
                                     <Sparkles className="h-3.5 w-3.5" />
                                 )}
-                                {isGeneratingImage ? "Rendu en cours..." : puterImageSrc ? "Régénérer le visuel" : "Générer le visuel"}
+                                {isGeneratingImage ? "Rendu Gemini en cours..." : generatedImageSrc ? "Régénérer le visuel" : "Générer le visuel"}
                             </button>
                         </div>
                     </div>
@@ -522,14 +500,14 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                         <div className={`studio-creative-preview bg-gradient-to-br ${mood.bg}`}>
                             <p className="absolute left-4 top-4 z-10 flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-[#777870]">
                                 <Eye className="h-3 w-3" style={{ color: mood.accent }} />
-                                {puterImageSrc ? "Visuel généré" : post?.imageUrl ? "Visuel Rendu" : "Aperçu en direct"}
+                                {generatedImageSrc ? "Visuel Gemini généré" : post?.imageUrl ? "Visuel rendu" : "Aperçu en direct"}
                             </p>
 
-                            {puterImageSrc ? (
+                            {generatedImageSrc ? (
                                 <div className="flex flex-col items-center gap-3">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={puterImageSrc} alt="Generated creative visual" className={`object-cover ${selectedFormat === "SQUARE_POST" ? "h-[300px] w-[300px]" : "h-[400px] w-[240px]"}`} />
-                                    <button type="button" onClick={handleDownloadPuter} className="studio-button studio-button--dark"><Download className="h-3.5 w-3.5" /> Download PNG</button>
+                                    <img src={generatedImageSrc} alt="Generated creative visual" className={`object-cover ${selectedFormat === "SQUARE_POST" ? "h-[300px] w-[300px]" : "h-[400px] w-[240px]"}`} />
+                                    <button type="button" onClick={handleDownloadGeneratedVisual} className="studio-button studio-button--dark"><Download className="h-3.5 w-3.5" /> Download PNG</button>
                                 </div>
                             ) : post?.imageUrl ? (
                                 // eslint-disable-next-line @next/next/no-img-element
@@ -632,14 +610,12 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                     <p className="mt-2 text-[10px] font-medium text-[#777870]" aria-live="polite">
                                         {post
                                             ? `Langue sélectionnée : ${LANGS.find((lang) => lang.id === activeCaptionLang)?.label}. Cliquez sur une langue pour appliquer sa légende générée dans l’éditeur.`
-                                            : isSavingBrowserVisual
-                                                ? "Enregistrement du visuel : les légendes seront disponibles dans un instant."
-                                                : "Générez un visuel pour activer les légendes."}
+                                            : "Générez un visuel pour activer les légendes."}
                                     </p>
 
                                     <button
                                         onClick={handleGenerateCaptions}
-                                        disabled={isGeneratingCaptions || !post || isSavingBrowserVisual}
+                                        disabled={isGeneratingCaptions || !post}
                                         className="studio-button studio-button--paper h-9 w-full text-[11px] disabled:opacity-40"
                                     >
                                         <RefreshCw className={`h-3.5 w-3.5 ${isGeneratingCaptions ? "animate-spin" : ""}`} />
