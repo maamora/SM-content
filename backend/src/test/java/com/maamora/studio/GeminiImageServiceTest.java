@@ -9,7 +9,11 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
-import java.nio.charset.StandardCharsets;
+import javax.imageio.ImageIO;
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Base64;
 import java.util.List;
 
@@ -51,9 +55,9 @@ class GeminiImageServiceTest {
     }
 
     @Test
-    void sendsTextAndReferenceThenDecodesGeminiImageOutput() {
-        byte[] reference = "reference-image".getBytes(StandardCharsets.UTF_8);
-        byte[] expected = "generated-image".getBytes(StandardCharsets.UTF_8);
+    void sendsTextAndReferenceThenNormalizesGeminiJpegOutputToPng() throws IOException {
+        byte[] reference = pngBytes();
+        byte[] generatedJpeg = jpegBytes();
 
         server.expect(requestTo("https://assets.test/product.png"))
                 .andExpect(method(GET))
@@ -67,14 +71,33 @@ class GeminiImageServiceTest {
                 .andExpect(jsonPath("$.input[1].type").value("image"))
                 .andExpect(jsonPath("$.input[1].mime_type").value("image/png"))
                 .andExpect(jsonPath("$.response_format.aspect_ratio").value("4:5"))
+                .andExpect(jsonPath("$.response_format.mime_type").value("image/jpeg"))
                 .andRespond(withSuccess(
-                        "{\"output_image\":{\"data\":\"" + Base64.getEncoder().encodeToString(expected) + "\",\"mime_type\":\"image/png\"}}",
+                        "{\"output_image\":{\"data\":\"" + Base64.getEncoder().encodeToString(generatedJpeg) + "\",\"mime_type\":\"image/jpeg\"}}",
                         org.springframework.http.MediaType.APPLICATION_JSON));
 
         byte[] actual = service.generateImage(
                 "editorial product visual", "4:5", List.of("https://assets.test/product.png"));
 
-        assertThat(actual).isEqualTo(expected);
+        assertThat(actual).startsWith((byte) 0x89, (byte) 0x50, (byte) 0x4E, (byte) 0x47);
+        assertThat(ImageIO.read(new java.io.ByteArrayInputStream(actual))).isNotNull();
         server.verify();
+    }
+
+    private byte[] pngBytes() throws IOException {
+        return imageBytes("png");
+    }
+
+    private byte[] jpegBytes() throws IOException {
+        return imageBytes("jpg");
+    }
+
+    private byte[] imageBytes(String format) throws IOException {
+        BufferedImage image = new BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB);
+        image.setRGB(0, 0, Color.ORANGE.getRGB());
+        try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            ImageIO.write(image, format, output);
+            return output.toByteArray();
+        }
     }
 }

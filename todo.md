@@ -604,3 +604,15 @@ The second attachment does not show an application compile or route error. `pnpm
 - [x] Remove obsolete Puter client dependencies and configuration guidance without removing unrelated validated functionality.
 - [x] Validate backend tests, frontend build, capabilities, and secure local Gemini configuration steps before publishing.
 - [ ] Perform one authenticated live generation with the server-side Gemini key after the update is pulled locally.
+
+## Windows local startup recovery
+- [ ] Remove duplicate `IMAGE_PROVIDER` declarations from the local backend environment file.
+- [ ] Stop the stale local Next.js development process and restart the frontend on port 3000.
+- [ ] Confirm backend and frontend startup, then run the non-secret capability check.
+
+## Gemini JPEG output and downstream workflow repair
+- [x] Change the Gemini image response request and persistence pipeline from unsupported PNG output to supported JPEG output.
+- [x] Verify the generated-image storage contract through JPEG-to-PNG normalization, preserving existing post and creative-job PNG paths and MIME types.
+- [x] Trace the reported post and caption workflow failures: no persisted post can exist while the preceding Gemini visual request fails, so captions correctly remain unavailable rather than targeting a non-existent post.
+- [x] Run focused Gemini adapter and complete backend regression tests before publishing the corrected workflow.
+- [ ] Perform one authenticated live visual generation, post creation, and Groq caption request after the local update is pulled.
