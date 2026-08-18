@@ -4,6 +4,7 @@ import { Layers, Loader2, CheckCircle, Download, AlertCircle } from "lucide-reac
 import { type Product } from "@/lib/api/products";
 import { listTemplates, type Template } from "@/lib/api/templates";
 import { createBatch, getBatch, exportBatch, type BatchJob } from "@/lib/api/batches";
+import { generatePuterVisual } from "@/lib/puter";
 
 interface BatchStudioProps {
     products: Product[];
@@ -21,6 +22,8 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
     const [activeBatch, setActiveBatch] = useState<BatchJob | null>(null);
     const [isExporting, setIsExporting] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [generationEngine, setGenerationEngine] = useState<"puter" | "studio">("puter");
+    const [puterOutputs, setPuterOutputs] = useState<Array<{ productName: string; src: string }>>([]);
 
     const approvedProducts = products
         .filter(p => p.status === "APPROVED")
@@ -71,7 +74,23 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
         if (selectedProducts.size === 0 || !selectedTemplateId) return;
         setIsStartingBatch(true);
         setErrorMsg(null);
+        setPuterOutputs([]);
         try {
+            if (generationEngine === "puter") {
+                const chosen = approvedProducts.filter((product) => selectedProducts.has(product.id));
+                const outputs: Array<{ productName: string; src: string }> = [];
+                for (const product of chosen) {
+                    const prompt = `Create a cohesive premium campaign visual for ${product.name}. Preserve the exact product identity, packaging, label, materials, and colors. Use a ${selectedFormat === "SQUARE_POST" ? "square 1:1" : "vertical 9:16"} composition, refined editorial lighting, clean art direction, realistic commercial texture, and a consistent campaign language across the batch. Product description: ${product.description || "commercial product"}.`;
+                    const src = await generatePuterVisual(prompt, {
+                        inputImages: product.imageUrl ? [product.imageUrl] : [],
+                        ratio: selectedFormat === "SQUARE_POST" ? { w: 1, h: 1 } : { w: 9, h: 16 },
+                    });
+                    outputs.push({ productName: product.name, src });
+                    setPuterOutputs([...outputs]);
+                }
+                setErrorMsg("Experimental Puter batch ready in the browser. Server batch persistence and ZIP export remain available through STUDIO / SERVER.");
+                return;
+            }
             const batch = await createBatch({
                 productIds: Array.from(selectedProducts),
                 templateId: selectedTemplateId
@@ -116,6 +135,11 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                 <p className="mt-1 text-xs font-medium text-[#777870]">
                     Générez des visuels et légendes multilingues pour plusieurs produits en même temps.
                 </p>
+                <div className="studio-engine-switch mt-4" aria-label="Batch generation engine">
+                    <span className="studio-engine-switch__label">ENGINE</span>
+                    <button type="button" className={generationEngine === "puter" ? "is-active" : ""} onClick={() => setGenerationEngine("puter")}>PUTER / EXPERIMENT</button>
+                    <button type="button" className={generationEngine === "studio" ? "is-active" : ""} onClick={() => setGenerationEngine("studio")}>STUDIO / SERVER</button>
+                </div>
             </div>
 
             {errorMsg && (
@@ -124,7 +148,29 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                 </div>
             )}
 
-            {!activeBatchId ? (
+            {generationEngine === "puter" && puterOutputs.length > 0 ? (
+                <div className="studio-creative-card space-y-6 p-6">
+                    <div className="flex items-center justify-between gap-4">
+                        <div>
+                            <p className="studio-kicker">PUTER / EXPERIMENT</p>
+                            <h3 className="font-serif text-2xl font-normal text-[var(--studio-ink)]">Batch visuel expérimental</h3>
+                        </div>
+                        <button type="button" className="studio-text-button" onClick={() => setPuterOutputs([])}>Nouveau lot</button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {puterOutputs.map((output) => (
+                            <div key={`${output.productName}-${output.src.slice(-24)}`} className="border border-[#deddd5] bg-[#faf9f4] p-3">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={output.src} alt={`${output.productName} experimental visual`} className={`w-full object-cover ${selectedFormat === "SQUARE_POST" ? "aspect-square" : "aspect-[9/16]"}`} />
+                                <div className="mt-3 flex items-center justify-between gap-2">
+                                    <span className="truncate text-xs font-bold text-[var(--studio-ink)]">{output.productName}</span>
+                                    <a className="studio-text-button shrink-0" href={output.src} download={`puter-${output.productName}.png`}>Download</a>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ) : !activeBatchId ? (
                 <div className="studio-live-columns">
                     <div className="studio-creative-card p-6">
                         <h3 className="mb-4 block text-sm font-black text-[var(--studio-ink)]">Produits à inclure</h3>
