@@ -16,10 +16,9 @@ import {
     Search,
 } from "lucide-react";
 import { listTemplates, type Template } from "@/lib/api/templates";
-import { generateImage, generateCaptions, editCaption, approvePost, exportPost, type Post } from "@/lib/api/posts";
+import { generateCaptions, editCaption, approvePost, exportPost, type Post } from "@/lib/api/posts";
 import { Product3DModel } from "@/components/features/products/Product3DModel";
 import { CreativeWorkflowPanel } from "./CreativeWorkflowPanel";
-import { PuterProductVisualLab } from "./PuterProductVisualLab";
 import { generatePuterVisual } from "@/lib/puter";
 
 interface Product {
@@ -69,7 +68,6 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const [accentColor, setAccentColor] = useState<string>("#b9ff43");
     const [badgeText, setBadgeText] = useState<string>("-20% TODAY");
     const [mood, setMood] = useState<(typeof MOOD_PRESETS)[number]>(MOOD_PRESETS[0]);
-    const [generationEngine, setGenerationEngine] = useState<"puter" | "studio">("puter");
     const [puterImageSrc, setPuterImageSrc] = useState<string | null>(null);
 
     const [post, setPost] = useState<Post | null>(null);
@@ -173,41 +171,15 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
         setErrorMsg(null);
         setIsGeneratingImage(true);
         try {
-            if (generationEngine === "puter") {
-                const formatDirection = selectedFormat === "SQUARE_POST" ? "square 1:1 composition" : "vertical 9:16 story composition";
-                const prompt = `Create a premium editorial brand visual for ${selectedProduct.name}. Product description: ${selectedProduct.description || "commercial product"}. Preserve the exact product identity, shape, label, materials, and colors. ${formatDirection}. Art direction: ${mood.name}, refined studio lighting, intentional composition, realistic texture, campaign-ready finish. Offer headline: ${promoText || "no headline"}. Badge: ${badgeText || "no badge"}. Do not invent a different product or distort the packaging.`;
-                const imageSrc = await generatePuterVisual(prompt, {
-                    inputImages: selectedProduct.imageUrl ? [selectedProduct.imageUrl] : [],
-                    ratio: selectedFormat === "SQUARE_POST" ? { w: 1, h: 1 } : { w: 9, h: 16 },
-                });
-                setPuterImageSrc(imageSrc);
-                setPost(null);
-                setErrorMsg("Experimental Puter image ready in the browser. Captions, approval, and Supabase export remain server-only until a post is created through the Studio engine.");
-                return;
-            }
-            const result = await generateImage({
-                productId: selectedProduct.id,
-                templateId: selectedTemplateId,
-                badgeText,
-                promoText,
-                accentColor,
-                mood: mood.id,
+            const formatDirection = selectedFormat === "SQUARE_POST" ? "square 1:1 composition" : "vertical 9:16 story composition";
+            const prompt = `Create a premium editorial brand visual for ${selectedProduct.name}. Product description: ${selectedProduct.description || "commercial product"}. Preserve the exact product identity, shape, label, materials, and colors. ${formatDirection}. Art direction: ${mood.name}, refined studio lighting, intentional composition, realistic texture, campaign-ready finish. Offer headline: ${promoText || "no headline"}. Badge: ${badgeText || "no badge"}. Do not invent a different product or distort the packaging.`;
+            const imageSrc = await generatePuterVisual(prompt, {
+                inputImages: selectedProduct.imageUrl ? [selectedProduct.imageUrl] : [],
+                ratio: selectedFormat === "SQUARE_POST" ? { w: 1, h: 1 } : { w: 9, h: 16 },
             });
-            setPost(result);
-            onPostChange?.();
-
-            // A completed visual should immediately enter the copy workflow.
-            // Keep the visual visible if Gemini is temporarily unavailable.
-            try {
-                const captioned = await generateCaptions(result.id);
-                setPost(captioned);
-                onPostChange?.();
-            } catch (captionError) {
-                const detail = captionError instanceof Error
-                    ? captionError.message
-                    : "Caption generation failed.";
-                setErrorMsg(`Visual created, but captions could not be generated: ${detail}`);
-            }
+            setPuterImageSrc(imageSrc);
+            setPost(null);
+            setErrorMsg("Visual generated in the browser. Captions and publishing become available after a saved Studio post is created.");
         } catch (err) {
             setErrorMsg(err instanceof Error ? err.message : "Failed to generate image");
         } finally {
@@ -309,11 +281,6 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                         Composez un visuel de marque, générez les légendes, approuvez, puis exportez.
                     </p>
                 </div>
-                <div className="studio-engine-switch" aria-label="Visual generation engine">
-                    <span className="studio-engine-switch__label">ENGINE</span>
-                    <button type="button" className={generationEngine === "puter" ? "is-active" : ""} onClick={() => setGenerationEngine("puter")}>PUTER / EXPERIMENT</button>
-                    <button type="button" className={generationEngine === "studio" ? "is-active" : ""} onClick={() => setGenerationEngine("studio")}>STUDIO / SERVER</button>
-                </div>
             </div>
 
             {errorMsg && (
@@ -323,8 +290,6 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
             )}
 
             <CreativeWorkflowPanel />
-
-            <PuterProductVisualLab product={selectedProduct} />
 
             <div className="studio-creative-grid">
 
@@ -512,7 +477,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                 ) : (
                                     <Sparkles className="h-3.5 w-3.5" />
                                 )}
-                                {isGeneratingImage ? "Rendu en cours..." : generationEngine === "puter" ? (puterImageSrc ? "Régénérer l’expérimentation" : "Expérimenter le visuel") : post ? "Régénérer le visuel" : "Générer le visuel"}
+                                {isGeneratingImage ? "Rendu en cours..." : puterImageSrc ? "Régénérer le visuel" : "Générer le visuel"}
                             </button>
                         </div>
                     </div>
@@ -527,14 +492,14 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                         <div className={`studio-creative-preview bg-gradient-to-br ${mood.bg}`}>
                             <p className="absolute left-4 top-4 z-10 flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-[#777870]">
                                 <Eye className="h-3 w-3" style={{ color: mood.accent }} />
-                                {puterImageSrc ? "PUTER / EXPERIMENT" : post?.imageUrl ? "Visuel Rendu" : "Aperçu en direct"}
+                                {puterImageSrc ? "Visuel généré" : post?.imageUrl ? "Visuel Rendu" : "Aperçu en direct"}
                             </p>
 
                             {puterImageSrc ? (
                                 <div className="flex flex-col items-center gap-3">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={puterImageSrc} alt="Experimental Puter visual" className={`object-cover ${selectedFormat === "SQUARE_POST" ? "h-[300px] w-[300px]" : "h-[400px] w-[240px]"}`} />
-                                    <button type="button" onClick={handleDownloadPuter} className="studio-button studio-button--dark"><Download className="h-3.5 w-3.5" /> Download experimental PNG</button>
+                                    <img src={puterImageSrc} alt="Generated creative visual" className={`object-cover ${selectedFormat === "SQUARE_POST" ? "h-[300px] w-[300px]" : "h-[400px] w-[240px]"}`} />
+                                    <button type="button" onClick={handleDownloadPuter} className="studio-button studio-button--dark"><Download className="h-3.5 w-3.5" /> Download PNG</button>
                                 </div>
                             ) : post?.imageUrl ? (
                                 // eslint-disable-next-line @next/next/no-img-element

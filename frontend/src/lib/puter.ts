@@ -1,4 +1,4 @@
-/* STUDIO experimental visual layer: one browser-only Puter contract shared by product, workflow, and batch experiments. */
+/* STUDIO visual layer: one browser-only Puter contract shared by product, workflow, and batch generation. */
 
 export type PuterImageResult = HTMLImageElement;
 
@@ -35,7 +35,7 @@ export function isPuterReady() {
 export async function ensurePuterSignedIn() {
     if (!window.puter?.auth?.isSignedIn) return;
     if (window.puter.auth.isSignedIn()) return;
-    if (!window.puter.auth.signIn) throw new Error("Puter sign-in is required for this experiment.");
+    if (!window.puter.auth.signIn) throw new Error("Puter sign-in is required to generate visuals.");
     await window.puter.auth.signIn();
 }
 
