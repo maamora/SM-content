@@ -1,6 +1,7 @@
 package com.maamora.studio.controller;
 
 import com.maamora.studio.dto.request.EditCaptionRequest;
+import com.maamora.studio.dto.request.CreateBrowserVisualPostRequest;
 import com.maamora.studio.dto.request.GenerateCaptionsRequest;
 import com.maamora.studio.dto.request.GenerateImageRequest;
 import com.maamora.studio.dto.response.ApiResponse;
@@ -35,6 +36,17 @@ public class PostController {
     @PostMapping("/generate-image")
     public ApiResponse<PostResponse> generateImage(@Valid @RequestBody GenerateImageRequest request) {
         var post = postService.generateImage(currentUser.getCurrentUserId(), request);
+        return ApiResponse.ok(new PostResponse(post));
+    }
+
+    /**
+     * Persists an authenticated browser-generated image as a regular draft post.
+     * Once saved, the same caption, approval, export, and publishing workflow is
+     * available as for server-rendered visuals.
+     */
+    @PostMapping("/from-browser-visual")
+    public ApiResponse<PostResponse> createFromBrowserVisual(@Valid @RequestBody CreateBrowserVisualPostRequest request) {
+        var post = postService.createFromBrowserVisual(currentUser.getCurrentUserId(), request);
         return ApiResponse.ok(new PostResponse(post));
     }
 

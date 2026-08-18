@@ -16,7 +16,7 @@ import {
     Search,
 } from "lucide-react";
 import { listTemplates, type Template } from "@/lib/api/templates";
-import { generateCaptions, editCaption, approvePost, exportPost, type Post } from "@/lib/api/posts";
+import { createBrowserVisualPost, generateCaptions, editCaption, approvePost, exportPost, type Post } from "@/lib/api/posts";
 import { Product3DModel } from "@/components/features/products/Product3DModel";
 import { CreativeWorkflowPanel } from "./CreativeWorkflowPanel";
 import { generatePuterVisual } from "@/lib/puter";
@@ -72,6 +72,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
 
     const [post, setPost] = useState<Post | null>(null);
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+    const [isSavingBrowserVisual, setIsSavingBrowserVisual] = useState(false);
     const [isGeneratingCaptions, setIsGeneratingCaptions] = useState(false);
     const [isApproving, setIsApproving] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
@@ -179,11 +180,40 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
             });
             setPuterImageSrc(imageSrc);
             setPost(null);
-            setErrorMsg("Visual generated in the browser. Captions and publishing become available after a saved Studio post is created.");
+            setIsSavingBrowserVisual(true);
+
+            try {
+                const imageResponse = await fetch(imageSrc);
+                if (!imageResponse.ok) throw new Error("The generated visual could not be prepared for saving.");
+                const image = await imageResponse.blob();
+                const savedPost = await createBrowserVisualPost({
+                    productId: selectedProduct.id,
+                    templateId: selectedTemplateId,
+                    image,
+                    badgeText,
+                    promoText,
+                });
+                setPost(savedPost);
+                onPostChange?.();
+                setErrorMsg(null);
+            } catch (saveError) {
+                setErrorMsg(saveError instanceof Error
+                    ? `Visual ready, but it could not be saved for captions: ${saveError.message}`
+                    : "Visual ready, but it could not be saved for captions. Try generating again.");
+            } finally {
+                setIsSavingBrowserVisual(false);
+            }
         } catch (err) {
             setErrorMsg(err instanceof Error ? err.message : "Failed to generate image");
         } finally {
             setIsGeneratingImage(false);
+        }
+    };
+
+    const handleSelectCaptionLanguage = (lang: CaptionLang) => {
+        setActiveCaptionLang(lang);
+        if (!post) {
+            setErrorMsg("Save a generated visual first. Caption choices become active as soon as the visual is attached to a Studio post.");
         }
     };
 
@@ -554,7 +584,9 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                         {LANGS.map(lang => (
                                             <button
                                                 key={lang.id}
-                                                onClick={() => setActiveCaptionLang(lang.id)}
+                                                type="button"
+                                                aria-selected={activeCaptionLang === lang.id}
+                                                onClick={() => handleSelectCaptionLanguage(lang.id)}
                                                 className={`studio-caption-tab ${activeCaptionLang === lang.id
                                                     ? "studio-caption-tab--active"
                                                     : "hover:text-[var(--studio-ink)]"
@@ -597,9 +629,17 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                         </div>
                                     </div>
 
+                                    <p className="mt-2 text-[10px] font-medium text-[#777870]" aria-live="polite">
+                                        {post
+                                            ? `Langue sélectionnée : ${LANGS.find((lang) => lang.id === activeCaptionLang)?.label}. Cliquez sur une langue pour appliquer sa légende générée dans l’éditeur.`
+                                            : isSavingBrowserVisual
+                                                ? "Enregistrement du visuel : les légendes seront disponibles dans un instant."
+                                                : "Générez un visuel pour activer les légendes."}
+                                    </p>
+
                                     <button
                                         onClick={handleGenerateCaptions}
-                                        disabled={isGeneratingCaptions || !post}
+                                        disabled={isGeneratingCaptions || !post || isSavingBrowserVisual}
                                         className="studio-button studio-button--paper h-9 w-full text-[11px] disabled:opacity-40"
                                     >
                                         <RefreshCw className={`h-3.5 w-3.5 ${isGeneratingCaptions ? "animate-spin" : ""}`} />

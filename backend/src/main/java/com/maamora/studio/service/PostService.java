@@ -2,6 +2,7 @@ package com.maamora.studio.service;
 
 import com.maamora.studio.dto.request.GenerateCaptionsRequest;
 import com.maamora.studio.dto.request.GenerateImageRequest;
+import com.maamora.studio.dto.request.CreateBrowserVisualPostRequest;
 import com.maamora.studio.exception.ResourceNotFoundException;
 import com.maamora.studio.exception.UnauthorizedException;
 import com.maamora.studio.model.*;
@@ -62,6 +63,31 @@ public class PostService {
                 .batchJob(batchJob)
                 .format(template.getFormat())
                 .imageUrl(imageUrl)
+                .badgeText(request.getBadgeText())
+                .promoText(request.getPromoText())
+                .status(PostStatus.DRAFT)
+                .build();
+
+        return postRepository.save(post);
+    }
+
+    /**
+     * Turns a browser-generated visual that has already passed through the
+     * authenticated upload endpoint into a normal draft post. This keeps the
+     * caption editor and every downstream post action connected to the visual.
+     */
+    public Post createFromBrowserVisual(String userId, CreateBrowserVisualPostRequest request) {
+        Product product = productService.getOwned(userId, request.getProductId());
+        if (product.getStatus() != ProductStatus.APPROVED) {
+            throw new UnauthorizedException("Product is pending admin approval and cannot be used yet.");
+        }
+        Template template = templateService.getById(request.getTemplateId());
+
+        Post post = Post.builder()
+                .product(product)
+                .template(template)
+                .format(template.getFormat())
+                .imageUrl(request.getImageUrl())
                 .badgeText(request.getBadgeText())
                 .promoText(request.getPromoText())
                 .status(PostStatus.DRAFT)

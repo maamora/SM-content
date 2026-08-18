@@ -591,3 +591,8 @@ The second attachment does not show an application compile or route error. `pnpm
 - [x] Set Groq as the documented active caption provider without committing an API key.
 - [x] Verify configuration binding, error handling, and the Groq generation request through backend tests.
 - [x] Document secure Windows activation and a non-secret capability validation command.
+
+## Generated-caption selection interaction
+- [x] Trace the generated-caption click handler, selected-caption state, and post-composer binding.
+- [x] Make caption selection visibly apply the text to the active workflow and preserve selection state.
+- [ ] Perform one authenticated, live browser verification after a visual provider can generate a result.
