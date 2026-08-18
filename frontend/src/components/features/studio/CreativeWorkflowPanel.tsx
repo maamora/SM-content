@@ -18,6 +18,31 @@ type CreativeWorkflowPanelProps = {
     compact?: boolean;
 };
 
+type CreativeEngine = "puter" | "server";
+
+declare global {
+    interface Window {
+        puter?: {
+            ai?: {
+                txt2img: (prompt: string, options?: Record<string, unknown>) => Promise<HTMLImageElement>;
+            };
+            auth?: {
+                isSignedIn?: () => boolean;
+                signIn?: () => Promise<unknown>;
+            };
+        };
+    }
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("Could not read the reference image."));
+        reader.readAsDataURL(file);
+    });
+}
+
 const PROMPTS = {
     EDIT_IMAGE: "Keep the product exactly recognizable. Change the background to a warm daylight studio with soft editorial shadows and a quiet cream palette.",
     PHOTO_SHOOT: "Create a running campaign frame with the model in motion, the product clearly visible, a muted olive set, directional daylight, and a premium sports-fashion editorial finish.",
@@ -55,12 +80,14 @@ export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanel
     const [productUrl, setProductUrl] = useState<string | null>(null);
     const [modelUrl, setModelUrl] = useState<string | null>(null);
     const [job, setJob] = useState<CreativeJob | null>(null);
+    const [puterImageUrl, setPuterImageUrl] = useState<string | null>(null);
+    const [engine, setEngine] = useState<CreativeEngine>("puter");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const isPhotoShoot = type === "PHOTO_SHOOT";
     const hasRequiredReferences = Boolean(isPhotoShoot ? productFile && modelFile : productFile || modelFile);
-    const activeImageUrl = job?.resultImageUrl ?? productUrl ?? null;
+    const activeImageUrl = puterImageUrl ?? job?.resultImageUrl ?? productUrl ?? null;
 
     useEffect(() => {
         if (!job || !["QUEUED", "PROCESSING"].includes(job.status)) return;
@@ -75,12 +102,13 @@ export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanel
     }, [job]);
 
     const statusLabel = useMemo(() => {
-        if (!job) return "Ready for a direction";
+        if (puterImageUrl) return "Browser experiment ready";
+        if (!job) return engine === "puter" ? "Puter experiment armed" : "Ready for a direction";
         if (job.status === "QUEUED") return "Queued for the model";
         if (job.status === "PROCESSING") return "Model running";
         if (job.status === "FAILED") return "Generation unavailable";
         return job.resultVideoUrl ? "Motion ready" : "Image ready";
-    }, [job]);
+    }, [job, engine, puterImageUrl]);
 
     async function handleGenerate() {
         if (!hasRequiredReferences) {
@@ -89,7 +117,32 @@ export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanel
         }
         setBusy(true);
         setError(null);
+        setPuterImageUrl(null);
         try {
+            if (engine === "puter") {
+                if (!window.puter?.ai?.txt2img) {
+                    throw new Error("The Puter experimental layer is not loaded. Refresh the page and try again.");
+                }
+                if (window.puter.auth?.isSignedIn && !window.puter.auth.isSignedIn()) {
+                    if (window.puter.auth.signIn) await window.puter.auth.signIn();
+                }
+                const references = await Promise.all(
+                    [productFile, isPhotoShoot ? modelFile : null]
+                        .filter((file): file is File => Boolean(file))
+                        .map(fileToDataUrl)
+                );
+                const image = await window.puter.ai.txt2img(prompt.trim(), {
+                    provider: "gemini",
+                    model: "gemini-3.1-flash-image-preview",
+                    input_images: references,
+                    quality: "1K",
+                    ratio: { w: 16, h: 9 },
+                });
+                setPuterImageUrl(image.src);
+                setJob(null);
+                return;
+            }
+
             let nextProductUrl = productUrl;
             let nextModelUrl = modelUrl;
             if (productFile && !nextProductUrl) {
@@ -130,7 +183,10 @@ export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanel
             </div>
 
             <div className="creative-workflow__modebar">
-                <button type="button" className={type === "PHOTO_SHOOT" ? "is-active" : ""} onClick={() => { setType("PHOTO_SHOOT"); setPrompt(PROMPTS.PHOTO_SHOOT); setJob(null); setError(null); }}><WandSparkles size={15} /> Photo shoot</button>
+                <button type="button" className={engine === "puter" ? "is-active" : ""} onClick={() => { setEngine("puter"); setJob(null); setPuterImageUrl(null); setError(null); }}><Sparkles size={15} /> Puter experiment</button>
+                <button type="button" className={engine === "server" ? "is-active" : ""} onClick={() => { setEngine("server"); setPuterImageUrl(null); setError(null); }}><Film size={15} /> STUDIO server
+                </button>
+                <button type="button" className={type === "PHOTO_SHOOT" ? "is-active" : ""} onClick={() => { setType("PHOTO_SHOOT"); setPrompt(PROMPTS.PHOTO_SHOOT); setJob(null); setPuterImageUrl(null); setError(null); }}><WandSparkles size={15} /> Photo shoot</button>
                 <button type="button" className={type === "EDIT_IMAGE" ? "is-active" : ""} onClick={() => { setType("EDIT_IMAGE"); setPrompt(PROMPTS.EDIT_IMAGE); setJob(null); setError(null); }}><ImagePlus size={15} /> Edit an image</button>
             </div>
 
@@ -147,9 +203,9 @@ export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanel
                     <div className="creative-workflow__actions">
                         <button type="button" className="studio-button studio-button--dark" onClick={handleGenerate} disabled={busy || Boolean(job && ["QUEUED", "PROCESSING"].includes(job.status))}>
                             {busy || (job && ["QUEUED", "PROCESSING"].includes(job.status)) ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                            {isPhotoShoot ? "Generate photo shoot" : "Apply edit"}
+                            {engine === "puter" ? (isPhotoShoot ? "Experiment photo shoot" : "Experiment edit") : (isPhotoShoot ? "Generate photo shoot" : "Apply edit")}
                         </button>
-                        <span>{isPhotoShoot ? "Image + motion output" : "Reference-aware image output"}</span>
+                        <span>                            {engine === "puter" ? "Browser experiment / image output" : isPhotoShoot ? "Image + motion output" : "Reference-aware image output"}</span>
                     </div>
                     {error && <p className="studio-form-error">{error}</p>}
                 </div>
@@ -162,6 +218,7 @@ export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanel
                     ) : (
                         <div className="creative-workflow__empty"><Film size={24} /><span>Your result lands here.</span><small>Reference → model → scene → motion</small></div>
                     )}
+                    {engine === "puter" && puterImageUrl && <div className="creative-workflow__result-meta"><span><span className="studio-dot studio-dot--lime" /> PUTER / EXPERIMENTAL</span><span>Browser-only result</span></div>}
                     {job?.status === "FAILED" && <div className="creative-workflow__result-error">{job.errorMessage ?? "The configured provider could not complete this generation."}</div>}
                     {job?.resultVideoUrl && <div className="creative-workflow__result-meta"><span><span className="studio-dot studio-dot--lime" /> MP4 / READY</span><span>Photo shoot / 01</span></div>}
                 </div>
