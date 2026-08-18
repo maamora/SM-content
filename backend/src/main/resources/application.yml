@@ -34,7 +34,7 @@ spring:
 
 app:
   image:
-    provider: ${IMAGE_PROVIDER:a4f}
+    provider: ${IMAGE_PROVIDER:apiframe}
     fallback-provider: ${IMAGE_PROVIDER_FALLBACK:disabled}
 
   fal-reference-mode: ${FAL_REFERENCE_MODE:product-only}
@@ -93,20 +93,6 @@ app:
     guidance: ${DEAPI_GUIDANCE:7.5}
     poll-interval-ms: ${DEAPI_POLL_INTERVAL_MS:3000}
     timeout-ms: ${DEAPI_TIMEOUT_MS:180000}
-
-  a4f:
-    api-key: ${A4F_API_KEY:}
-    image-model: ${A4F_IMAGE_MODEL:provider-2/flux.1-schnell}
-    edit-model: ${A4F_EDIT_MODEL:provider-3/flux-kontext-pro}
-    base-url: ${A4F_BASE_URL:https://api.a4f.co/v1}
-    response-format: ${A4F_RESPONSE_FORMAT:b64_json}
-    timeout-ms: ${A4F_TIMEOUT_MS:120000}
-
-  huggingface:
-    api-key: ${HUGGINGFACE_API_KEY:}
-    image-model: ${HUGGINGFACE_IMAGE_MODEL:black-forest-labs/FLUX.1-schnell}
-    base-url: ${HUGGINGFACE_BASE_URL:https://router.huggingface.co/hf-inference/models}
-    timeout-ms: ${HUGGINGFACE_TIMEOUT_MS:180000}
 
   apiframe:
     api-key: ${APIFRAME_API_KEY:}

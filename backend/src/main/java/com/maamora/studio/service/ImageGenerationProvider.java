@@ -21,8 +21,6 @@ public class ImageGenerationProvider {
     private final DeapiImageService deapiImageService;
     private final CloudflareWorkersAIImageService cloudflareWorkersAIImageService;
     private final ApiFrameImageService apiFrameImageService;
-    private final A4fImageService a4fImageService;
-    private final HuggingFaceImageService huggingFaceImageService;
 
     @Value("${app.image.provider:disabled}")
     private String provider;
@@ -50,7 +48,7 @@ public class ImageGenerationProvider {
     public byte[] generateImage(String prompt, String aspectRatio, List<String> references) {
         String active = activeProvider();
         if (isDisabled(active)) {
-            throw new IllegalStateException("Image generation is disabled. Configure IMAGE_PROVIDER=huggingface, a4f, apiframe, deapi, openai, stability, fal, higgsfield, or disabled.");
+            throw new IllegalStateException("Image generation is disabled. Configure IMAGE_PROVIDER=apiframe, deapi, openai, stability, fal, higgsfield, or disabled.");
         }
         try {
             return service().generateImage(prompt, aspectRatio, references);
@@ -82,7 +80,6 @@ public class ImageGenerationProvider {
         return switch (selectedProvider) {
                 case "apiframe", "api-frame", "higgsfield", "fal", "fal.ai", "stability", "stability.ai", "openrouter", "open-router",
                     "openai", "deapi", "de-api", "cloudflare", "cloudflare-ai", "workers-ai" -> true;
-                case "huggingface", "hugging-face", "hf" -> false;
             default -> false;
         };
     }
@@ -125,12 +122,10 @@ public class ImageGenerationProvider {
             case "deapi", "de-api" -> deapiImageService;
             case "cloudflare", "cloudflare-ai", "workers-ai" -> cloudflareWorkersAIImageService;
             case "apiframe", "api-frame" -> apiFrameImageService;
-            case "a4f", "a4f.ai" -> a4fImageService;
-            case "huggingface", "hugging-face", "hf" -> huggingFaceImageService;
             case "disabled", "none" -> throw new IllegalStateException(
-                    "Image generation is disabled. Configure IMAGE_PROVIDER=huggingface, a4f, apiframe, deapi, openai, stability, fal, higgsfield, or disabled.");
+                    "Image generation is disabled. Configure IMAGE_PROVIDER=apiframe, deapi, openai, stability, fal, higgsfield, or disabled.");
             default -> throw new IllegalStateException(
-                    "Unsupported image provider: " + activeProvider() + ". Use huggingface, a4f, apiframe, deapi, openai, stability, fal, higgsfield, or disabled.");
+                    "Unsupported image provider: " + activeProvider() + ". Use apiframe, deapi, openai, stability, fal, higgsfield, or disabled.");
         };
     }
 }
