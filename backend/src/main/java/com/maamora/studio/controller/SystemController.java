@@ -29,11 +29,17 @@ public class SystemController {
     @Value("${app.caption.provider:gemini}")
     private String captionProvider;
 
+    @Value("${app.groq.api-key:}")
+    private String groqApiKey;
+
     @Value("${app.openrouter.api-key:}")
     private String openRouterApiKey;
 
     @Value("${app.openrouter.models:}")
     private String openRouterModels;
+
+    @Value("${app.openai.api-key:}")
+    private String openAiApiKey;
 
     @Value("${app.higgsfield.api-key-id:}")
     private String higgsfieldApiKeyId;
@@ -112,7 +118,11 @@ public class SystemController {
         boolean openRouterCaption = "openrouter".equalsIgnoreCase(captionProvider)
                 && configured(openRouterApiKey)
                 && configured(openRouterModels);
-        boolean captionGeneration = openRouterCaption || configured(geminiCaptionApiKey) || ollamaEnabled;
+        boolean groqCaption = "groq".equalsIgnoreCase(captionProvider) && configured(groqApiKey);
+        boolean geminiCaption = "gemini".equalsIgnoreCase(captionProvider) && configured(geminiCaptionApiKey);
+        boolean openAiCaption = "openai".equalsIgnoreCase(captionProvider) && configured(openAiApiKey);
+        boolean ollamaCaption = "ollama".equalsIgnoreCase(captionProvider) && ollamaEnabled;
+        boolean captionGeneration = groqCaption || openRouterCaption || geminiCaption || openAiCaption || ollamaCaption;
         boolean imageGeneration = imageGenerationProvider.isConfigured();
         boolean creativeEditing = imageGenerationProvider.isConfigured();
         boolean photoShootGeneration = imageGenerationProvider.supportsPhotoShoot();

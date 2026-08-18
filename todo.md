@@ -425,3 +425,169 @@ ApiFrame’s official documentation states that requests use https://api.apifram
 - [x] Define a shared inner-page shell with the landing page’s editorial canvas, type, color, border, and motion language.
 - [x] Redesign Studio, dashboard, onboarding, auth, and admin surfaces consistently.
 - [x] Verify representative desktop/mobile routes, interactions, and production build; save a checkpoint.
+
+
+## A4F image provider evaluation
+- [ ] Verify A4F’s official authentication, endpoints, image models, request schema, response lifecycle, and usage limits.
+- [ ] Verify A4F image editing and multi-reference support for STUDIO product-plus-model workflows.
+- [ ] Compare A4F with the existing ManagedImageService contract and ApiFrame integration.
+- [ ] Recommend integration, fallback, or rejection with exact environment configuration guidance.
+
+
+### A4F initial research notes — 2026-08-18
+A4F’s official docs describe an OpenAI-compatible API at `https://api.a4f.co/v1`, authenticated with `Authorization: Bearer <A4F_API_KEY>`. Image generation uses `POST /v1/images/generations` with required `model` and `prompt`, optional `n`, `size`, `quality`, `response_format`, `style`, and `user`, and returns a synchronous OpenAI-style `200` response containing temporary image URLs or base64 data. The documented image model ID must include an A4F provider prefix, and the model catalogue must be checked for actual image availability. The official usage endpoint exposes RPM/RPD limits, plan, whitelist, and model-specific usage. A4F’s free plan advertises 5 RPM and 300 RPD with limited model access; paid plans advertise higher model access and limits. A4F is therefore not an unlimited free provider, and its generated URLs are explicitly temporary.
+
+
+### A4F editing and routing findings — 2026-08-18
+A4F documents `POST /v1/images/edits` as a multipart/form-data endpoint requiring exactly one `image` file, one `prompt`, and a provider-prefixed editing model such as the example `provider-3/flux-kontext-pro`. The input file must be PNG, JPEG, GIF, or WEBP and under 4 MB. The documentation does not describe multiple image fields or a native two-reference product-plus-model edit request. A4F’s multimodal chat content can carry image URLs, but that is a different chat-completion workflow and is not documented as image synthesis/edit output. Image generation and edit results are synchronous OpenAI-style responses with temporary URLs or base64. A4F requires the application to choose provider prefixes explicitly and does not automatically fail over between providers; custom fallback must be implemented by STUDIO. A4F’s free tier is limited to 5 RPM and 300 RPD, while paid plans provide higher access but are not unlimited-free.
+
+
+## Integrate A4F product visual generation
+- [ ] Inspect the current managed image-service contract, provider selector, configuration, and product generation flow.
+- [ ] Implement A4F text-to-image generation with Bearer authentication, OpenAI-compatible response parsing, temporary URL download, and clear errors.
+- [ ] Add A4F configuration and product-generation documentation while preserving ApiFrame fallback behavior.
+- [ ] Add deterministic A4F adapter tests and run backend/frontend validation.
+- [ ] Commit and push the verified integration with exact Windows environment and pull steps.
+
+
+## Hosted free-tier image-provider alternatives
+- [ ] Research current hosted alternatives to A4F with real free-tier access and official limits.
+- [ ] Verify generation, single-reference editing, and multi-reference support for product visuals.
+- [ ] Compare reliability, temporary-output behavior, integration effort, and production suitability.
+- [ ] Recommend a primary/fallback strategy without self-hosting.
+
+
+### Hugging Face Inference Providers findings — 2026-08-18
+Hugging Face officially documents Inference Providers as a hosted API covering image generation and other modalities, with a free tier for experimentation. Its official image-editor guide demonstrates image-to-image editing through Qwen Image Edit and Black Forest Labs Flux Kontext, accepting an uploaded image plus a natural-language editing prompt. This makes Hugging Face a stronger functional match than A4F for single-reference product editing. The official pricing documentation must be used for the current exact credit amount because free credits can change; the page currently advertises a small monthly free allowance, not unlimited production usage. Multi-reference product-plus-model support is not established by the image-editor guide and should not be assumed without model-specific verification.
+
+
+Official sources for follow-up comparison:
+- https://huggingface.co/docs/inference-providers/pricing — official monthly free-credit and pay-as-you-go terms.
+- https://huggingface.co/docs/inference-providers/en/guides/image-editor — official hosted image-editor guide using Qwen Image Edit and Flux Kontext.
+- https://huggingface.co/models?pipeline_tag=image-to-image — official model catalogue filtered for image-to-image models, including FLUX.1-Kontext-dev and related models.
+- https://huggingface.co/models?other=diffusers%3AQwenImageEditPipeline — official catalogue filtered for Qwen Image Edit pipeline models.
+
+
+## Together AI provider evaluation
+- [ ] Verify Together AI image models, API schema, billing, limits, and current free-access status.
+- [ ] Verify image editing and reference-image support for product visuals.
+- [ ] Compare Together AI with STUDIO’s managed image-service contract.
+- [ ] Recommend integration or document why it should not be used for this workflow.
+
+
+## Puter.js provider evaluation
+- [ ] Verify Puter.js official image-generation API, supported models, execution model, and free-use terms.
+- [ ] Verify image editing, reference-image inputs, output storage, and browser/backend constraints.
+- [ ] Compare Puter.js with STUDIO’s backend-managed provider contract and security model.
+- [ ] Recommend safe use, limited demo use, or rejection for production product visuals.
+
+
+### Puter.js initial findings — 2026-08-18
+Puter’s official image-generation page presents Puter.js as a browser-oriented JavaScript API that exposes many image models without the application developer supplying provider API keys or running a server. The page explicitly promotes a **User-Pays model**, where users cover their own AI costs through Puter, rather than a conventional developer-owned free API quota. Official docs advertise access to multiple image models and no infrastructure setup, but this does not equal unlimited provider capacity or guaranteed free production usage. The current research still needs to verify image editing/reference-image inputs, user authentication requirements, output retention, commercial terms, and whether server-side use is supported before STUDIO could safely adopt it.
+
+Official sources:
+- https://developer.puter.com/image-generation/
+- https://docs.puter.com/AI/txt2img/
+- https://developer.puter.com/tutorials/free-unlimited-image-generation-api/
+- https://docs.puter.com/
+
+
+### Puter.js image-editing and security findings — 2026-08-18
+Puter’s official `puter.ai.txt2img()` documentation supports image-to-image through `input_images`, where inputs can be public URLs, data URIs, or raw base64. It documents multiple-image support for OpenAI, Gemini, and some xAI/Replicate models, but explicitly says Together supports only one input image and returns 400 for more than one. Puter’s output resolves to an HTMLImageElement whose `src` is a data URL, and it can optionally save files to the user’s Puter filesystem with `puter_output_path`.
+
+Puter websites must authenticate each user with a Puter.com account before using cloud services. The official security docs say browser apps get a per-user sandboxed app directory, key-value store, and AI access; centralized cross-user data requires a Puter Serverless Worker. This means Puter.js is not a drop-in backend provider for STUDIO’s existing Spring-managed jobs and Supabase persistence. It introduces a second user/account system and user-controlled storage boundary. Its User-Pays model may be attractive for a browser demo, but STUDIO cannot guarantee generation availability to users who have not authenticated with Puter or whose Puter usage is exhausted.
+
+
+## Isolated Puter.js browser experiment
+- [ ] Inspect the Studio frontend surface and existing asset/generation states.
+- [ ] Define explicit Puter sign-in, quota, generating, success, failure, and save-to-STUDIO states.
+- [ ] Add an optional browser-side product visual experiment without changing the backend provider path.
+- [ ] Validate build and responsive behavior, then push the isolated experiment with setup notes.
+
+
+## Expand Puter experimental visual layer
+- [ ] Trace every image-generation, editing, photo-shoot, variation, and creative-workflow entry point in the frontend.
+- [ ] Define one experimental Puter mode with explicit provider, sign-in, quota, unsupported-capability, loading, success, and failure states.
+- [ ] Wire Puter generation/editing into all appropriate visual workflow controls without changing the production backend route.
+- [ ] Validate the expanded workflow, responsive layout, and production build; commit and push the update.
+
+
+## Full Studio Puter experimental integration
+- [ ] Inventory all Studio visual-generation, editing, variation, batch, and export entry points and classify current coverage.
+- [ ] Create shared Puter browser utilities and explicit experimental capability states.
+- [ ] Wire Puter into every appropriate visual surface while preserving server-backed production actions.
+- [ ] Validate the full Studio UI, build, and backend isolation, then commit and push the integration.
+
+
+## Unified Puter Studio workflow
+- [ ] Remove visible Puter experiment, Studio Server, Optional Browser Experiment, and ApiFrame engine labels/selectors from Studio surfaces.
+- [ ] Make Puter.js the sole visible visual-generation path for direct generation, Photo Shoot, Edit Image, and batch visuals.
+- [ ] Preserve only necessary internal compatibility code and explicit Puter sign-in/quota/error states.
+- [ ] Validate all affected routes and production build, then commit and push.
+
+
+## No-balance visual generation fallback
+- [ ] Verify whether WebLLM supports image generation/editing or only browser-local text inference.
+- [ ] Compare browser-local and hosted alternatives that do not require Puter balance for STUDIO visuals.
+- [ ] Map a practical fallback for captions, product visuals, Photo Shoot, and Edit Image without misleading availability states.
+- [ ] Decide whether to implement a fallback or keep Puter as an explicitly balance-dependent option.
+
+
+### No-balance research notes — 2026-08-18
+WebLLM’s official site and repository describe it as an in-browser **language-model** inference engine using WebGPU; it provides OpenAI-compatible text/chat APIs and does not provide image-generation or image-editing models. It cannot replace Puter for STUDIO’s visual workflow. The closest browser-local direction is WebSD or other WebGPU diffusion projects, but these require downloading large model weights to each user’s browser, depend heavily on GPU/browser support, and are not a stable production path for product-plus-model imagery. Transformers.js can run supported models in-browser, but it is a runtime rather than a free hosted image API and does not guarantee that a suitable diffusion/editing model is available at acceptable performance.
+
+Hugging Face Inference Providers remains the most practical no-Puter-balance hosted experiment because its official platform offers monthly free credits and image generation/editing providers, but those credits are limited and can change. It is not unlimited and still requires a Hugging Face token for backend use.
+
+
+## No-balance WebLLM + Hugging Face fallback
+- [ ] Inspect current caption, prompt, and image-provider integration points.
+- [ ] Add WebLLM browser-local caption and prompt assistance with loading and WebGPU-unavailable states.
+- [ ] Add Hugging Face image generation and single-reference editing fallback without exposing tokens in the frontend.
+- [ ] Validate quota/unavailable states and production build, then commit and push.
+
+
+## Website error recovery
+- [ ] Inspect the attached error file, repository state, frontend build/runtime logs, and backend validation output.
+- [ ] Reproduce and isolate all current frontend, backend, dependency, and integration failures.
+- [ ] Apply targeted fixes without regressing the Studio visual workflows.
+- [ ] Run full frontend/backend validation and representative route checks.
+- [ ] Commit and push the corrected project with recovery steps.
+
+
+## Latest website error report recovery
+- [ ] Read the second attachment and inspect current repository/runtime state.
+- [ ] Reproduce and isolate every reported frontend/backend failure.
+- [ ] Apply targeted fixes while preserving existing Studio generation workflows.
+- [ ] Run frontend/backend validation and representative route checks.
+- [ ] Commit and push the corrected version with local recovery steps.
+
+
+### Latest website error report diagnosis — 2026-08-18
+The second attachment does not show an application compile or route error. `pnpm install --frozen-lockfile` completed, WebLLM resolved, and `pnpm build` compiled TypeScript and generated all 18 routes successfully. The failure occurred because a Next.js dev server with PID 15424 was already listening on port 3000; starting `pnpm dev` or `npm run dev` launched a second server, which exited with `Another next dev server is already running`. The `nm run dev` line was a PowerShell typo and should be `npm run dev` or `pnpm dev`. Recovery is to stop PID 15424, then start exactly one dev server.
+
+## Revert latest startup-warning commit
+- [ ] Confirm commit `1512123` is the latest published commit and `cdb34fc` is its parent.
+- [ ] Create and push a reversible revert commit for `1512123` without rewriting Git history.
+- [ ] Provide safe Windows pull steps for the restored state.
+
+## Revert WebLLM and Hugging Face fallback
+- [ ] Confirm commit `31bf433` is the next requested rollback target.
+- [ ] Create and push a reversible revert commit for `31bf433` without rewriting Git history.
+- [ ] Provide safe Windows pull steps for the restored state.
+
+## Fully free creative-generation architecture
+- [ ] Verify a no-paid-API architecture for captions, image generation, Photo Shoot, and image editing.
+- [ ] Evaluate browser-local and user-run open models against GPU, storage, browser, quality, and multi-reference requirements.
+- [ ] Distinguish fully free software from hosted services with limited free credits or user-paid balances.
+- [ ] Select and implement only a technically honest free path with explicit device-capability states.
+
+## RapidAPI caption-generation evaluation
+- [x] Verify RapidAPI pricing, free-plan quotas, and viable caption-generation API listings.
+- [x] Compare a selected RapidAPI caption endpoint with Gemini, Groq, and browser-local captions for STUDIO.
+- [x] Document exact RapidAPI account, subscription, key, environment-variable, and backend-adapter steps.
+- [ ] Implement a RapidAPI adapter only after selecting a specific caption or text-generation listing and verifying its contract, quota, privacy policy, and pricing.
+
+## Groq caption-provider activation
+- [x] Set Groq as the documented active caption provider without committing an API key.
+- [x] Verify configuration binding, error handling, and the Groq generation request through backend tests.
+- [x] Document secure Windows activation and a non-secret capability validation command.

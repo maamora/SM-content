@@ -124,7 +124,7 @@ public class CaptionGenerationService {
         if (!configured(apiKey)) {
             if (!ollamaEnabled) {
                 throw new IllegalStateException(
-                        "Caption generation is unavailable: configure GEMINI_CAPTION_API_KEY or GEMINI_API_KEY, select CAPTION_PROVIDER=openrouter with OPENROUTER_API_KEY, or enable Ollama locally.");
+                        "Caption generation is unavailable: configure GROQ_API_KEY with CAPTION_PROVIDER=groq, configure GEMINI_CAPTION_API_KEY with CAPTION_PROVIDER=gemini, or enable Ollama locally.");
             }
             return generateWithOllama(post, brand, language);
         }

@@ -1,6 +1,6 @@
 # STUDIO local development guide
 
-> Studio workflow note: the authenticated Studio page submits the selected product, template, prompt, and references through the managed image provider. After a visual is created, it automatically requests captions and keeps the visual visible if Gemini is temporarily unavailable. Configure a real fallback provider before expecting failover from Cloudflare capacity errors.
+> Studio workflow note: the authenticated Studio page submits the selected product, template, prompt, and references through the managed image provider. After a visual is created, it automatically requests captions and keeps the visual visible if the active caption provider is temporarily unavailable. Configure a real fallback provider before expecting failover from provider rate or capacity limits.
 
 
 This guide explains how to run the merged STUDIO application locally. The repository contains a **Next.js 16 frontend**, a **Spring Boot 3.3 backend**, and a **PostgreSQL database**. The browser talks to Spring Boot over HTTP; Spring Boot owns authentication, authorization, persistence, product workflows, brand settings, posts, templates, uploads, and the integration boundary for future AI and publishing providers.
@@ -147,12 +147,18 @@ REPLICATE_MAX_REFERENCES=10
 # DEAPI_POLL_INTERVAL_MS=3000
 # DEAPI_TIMEOUT_MS=180000
 
-# Gemini is the active caption provider. Keep caption and video keys separate.
-CAPTION_PROVIDER=gemini
-GEMINI_API_KEY=
-GEMINI_CAPTION_API_KEY=
-GEMINI_MODEL=gemini-2.5-flash
-GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
+# Groq is the active caption provider. Create a key at https://console.groq.com/keys.
+# Keep this value in backend/.env only; never expose it to the frontend.
+CAPTION_PROVIDER=groq
+GROQ_API_KEY=your-groq-key
+GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_BASE_URL=https://api.groq.com/openai/v1
+
+# Optional Gemini caption alternative. Select it with CAPTION_PROVIDER=gemini.
+# GEMINI_API_KEY=
+# GEMINI_CAPTION_API_KEY=
+# GEMINI_MODEL=gemini-2.5-flash
+# GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
 # Optional video-only settings:
 # GEMINI_VIDEO_API_KEY=
 # GEMINI_VIDEO_MODEL=veo-3.1-generate-preview
@@ -207,16 +213,16 @@ contains that key more than once. Dotenv refuses to merge duplicate keys, so ope
 ```dotenv
 IMAGE_PROVIDER=replicate
 IMAGE_PROVIDER_FALLBACK=disabled
-CAPTION_PROVIDER=gemini
+CAPTION_PROVIDER=groq
 REPLICATE_MODEL=black-forest-labs/flux-2-dev
-GEMINI_MODEL=gemini-2.5-flash
+GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
 
 You can locate all provider entries without displaying secret values with:
 
 ```powershell
-Select-String -Path .\.env -Pattern '^(IMAGE_PROVIDER|CAPTION_PROVIDER|GEMINI_API_KEY|GEMINI_CAPTION_API_KEY|GEMINI_VIDEO_API_KEY|OPENROUTER_IMAGE_MODEL|GROQ_MODEL)='
+Select-String -Path .\.env -Pattern '^(IMAGE_PROVIDER|CAPTION_PROVIDER|GROQ_API_KEY|GROQ_MODEL|GEMINI_API_KEY|GEMINI_CAPTION_API_KEY|GEMINI_VIDEO_API_KEY|OPENROUTER_IMAGE_MODEL)='
 ```
 
 Alternatively, use the committed Windows helper. It performs a local preflight without printing secret values, detects duplicate keys such as
@@ -249,9 +255,9 @@ DB_SSL_MODE=require
 
 Do not add `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, or
 `SPRING_DATASOURCE_PASSWORD`; STUDIO already derives its datasource from the
-six `DB_*` variables. Keep exactly one entry for every key, including `IMAGE_PROVIDER`, `IMAGE_PROVIDER_FALLBACK`, `CAPTION_PROVIDER`, and the Replicate/Gemini provider variables. Duplicate keys are rejected before Spring Boot initializes.
+six `DB_*` variables. Keep exactly one entry for every key, including `IMAGE_PROVIDER`, `IMAGE_PROVIDER_FALLBACK`, `CAPTION_PROVIDER`, and the selected image/caption provider variables. Duplicate keys are rejected before Spring Boot initializes.
 
-The API should become available at `http://localhost:8080`. Cloudflare Workers AI FLUX.2 [dev] uses a multipart inference request and supports up to four `input_image_N` references, each resized below 512px before submission. Product-plus-model shoots send the product and model references together. Gemini captions use the GenerateContent endpoint and validate `candidates[].content.parts[].text`; blocked, malformed, or empty responses are treated as provider failures rather than returned to the frontend as blank captions.
+The API should become available at `http://localhost:8080`. Cloudflare Workers AI FLUX.2 [dev] uses a multipart inference request and supports up to four `input_image_N` references, each resized below 512px before submission. Product-plus-model shoots send the product and model references together. Groq captions use the OpenAI-compatible `/chat/completions` endpoint and validate a non-empty `choices[0].message.content`; rate-limited, malformed, or empty responses are treated as provider failures rather than returned to the frontend as blank captions.
 
 The backend applies missing JPA schema objects with `ddl-auto: update`; this preserves existing rows while adding schema changes. Never use `create` or `create-drop` against a database containing real data.
 

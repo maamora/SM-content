@@ -70,7 +70,7 @@ app:
     api-secret: ${CLOUDINARY_API_SECRET:placeholder}
 
   caption:
-    provider: ${CAPTION_PROVIDER:gemini}
+    provider: ${CAPTION_PROVIDER:groq}
 
   cloudflare:
     account-id: ${CLOUDFLARE_ACCOUNT_ID:}
