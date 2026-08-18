@@ -418,3 +418,10 @@ ApiFrame’s official documentation states that requests use https://api.apifram
 - [ ] Inspect current branch, remotes, and diff before committing.
 - [ ] Commit the verified removal of Replicate and ApiFrame activation.
 - [ ] Push the commit to the linked repository main branch and provide exact Windows pull steps.
+
+
+## Align inner pages with STUDIO landing page
+- [x] Inspect authenticated routes, shared layouts, and landing-page tokens.
+- [x] Define a shared inner-page shell with the landing page’s editorial canvas, type, color, border, and motion language.
+- [x] Redesign Studio, dashboard, onboarding, auth, and admin surfaces consistently.
+- [x] Verify representative desktop/mobile routes, interactions, and production build; save a checkpoint.
