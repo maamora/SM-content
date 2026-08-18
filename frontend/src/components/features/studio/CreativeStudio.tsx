@@ -19,6 +19,7 @@ import { listTemplates, type Template } from "@/lib/api/templates";
 import { generateImage, generateCaptions, editCaption, approvePost, exportPost, type Post } from "@/lib/api/posts";
 import { Product3DModel } from "@/components/features/products/Product3DModel";
 import { CreativeWorkflowPanel } from "./CreativeWorkflowPanel";
+import { PuterProductVisualLab } from "./PuterProductVisualLab";
 
 interface Product {
     id: string;
@@ -291,6 +292,8 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
             )}
 
             <CreativeWorkflowPanel />
+
+            <PuterProductVisualLab product={selectedProduct} />
 
             <div className="studio-creative-grid">
 
