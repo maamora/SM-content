@@ -118,6 +118,21 @@
 - [ ] Deliver the Google OAuth setup guide and test results.
 
 
+## Image-generation capability evaluation
+- [ ] Confirm whether image-generation capabilities will be used only for development assets or need a production runtime integration for end users.
+- [ ] Evaluate the implementation boundary so generated development assets are never misrepresented as an unlimited in-app image API.
+- [ ] Document the approved approach, provider requirements, and remaining configuration steps.
+
+## Authenticated visual-generation runtime
+- [ ] Verify the production runtime architecture for Generate Visual, Photo Shoot, and Edit Image against the no-self-hosting constraint.
+- [ ] Confirm the authenticated API, provider, storage, and error-state behavior for each visual workflow.
+- [ ] Implement and validate only the selected runtime path, then document its configuration and non-negotiable provider limits.
+
+## GitHub image-generation candidate evaluation
+- [x] Inspect the user-supplied image-generation repositories and topic lists for source availability, licensing, and maintained runtime code.
+- [x] Verify whether representative candidates support STUDIO’s text-to-image, multi-reference Photo Shoot, and Edit Image workflows without an undisclosed GPU service or paid provider.
+- [ ] Recommend only an architecture that can be deployed and described honestly under the project constraints.
+
 ## Live caption and image generation validation
 - [ ] Confirm the updated backend is running with the corrected JWT_SECRET and provider capabilities.
 - [ ] Execute a disposable authenticated caption-generation request using Gemini.
