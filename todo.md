@@ -133,6 +133,10 @@
 - [x] Verify whether representative candidates support STUDIO’s text-to-image, multi-reference Photo Shoot, and Edit Image workflows without an undisclosed GPU service or paid provider.
 - [ ] Recommend only an architecture that can be deployed and described honestly under the project constraints.
 
+## Windows frontend dependency approval
+- [x] Remove unused browser-inference dependencies that introduced unnecessary pnpm build-script approval prompts.
+- [x] Re-run the frozen-lockfile install and production validation after the dependency cleanup.
+
 ## Live caption and image generation validation
 - [ ] Confirm the updated backend is running with the corrected JWT_SECRET and provider capabilities.
 - [ ] Execute a disposable authenticated caption-generation request using Gemini.
