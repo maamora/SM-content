@@ -218,7 +218,15 @@ export function ProductForm({ onCreated, product, onSaved, onCancel }: ProductFo
                                     ) : (
                                         <label
                                             htmlFor={`product-image-${slot}`}
-                                            className={`flex h-24 w-full cursor-pointer flex-col items-center justify-center gap-1 border border-dashed border-[#bdbdb4] transition-colors hover:border-[var(--studio-lime)] hover:bg-[rgba(185,255,67,.12)] ${isUploading ? "pointer-events-none opacity-60" : ""}`}
+                                            // Inline style, not just the flex/items-center/justify-center
+                                            // Tailwind classes: this label lives inside .studio-form-grid,
+                                            // and the global ".studio-form-grid label { display:grid }"
+                                            // rule (higher CSS specificity than a single utility class)
+                                            // was silently overriding the flex centering, leaving the
+                                            // upload icon + "Photo N" text pinned to the top-left instead
+                                            // of centered in the dropzone.
+                                            style={{ display: "flex" }}
+                                            className={`h-24 w-full cursor-pointer flex-col items-center justify-center gap-1 border border-dashed border-[#bdbdb4] transition-colors hover:border-[var(--studio-lime)] hover:bg-[rgba(185,255,67,.12)] ${isUploading ? "pointer-events-none opacity-60" : ""}`}
                                         >
                                             {isUploading ? (
                                                 <Loader2 className="h-4 w-4 animate-spin text-[#5f762a]" />

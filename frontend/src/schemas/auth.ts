@@ -9,6 +9,8 @@ export const RegisterSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters").max(100),
     email: z.string().email("Enter a valid email"),
     password: z.string().min(8, "Password must be at least 8 characters"),
+    brandName: z.string().min(2, "Brand name must be at least 2 characters").max(100),
+    logoUrl: z.string().optional(),
 });
 
 export type LoginInput = z.infer<typeof LoginSchema>;

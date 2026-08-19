@@ -54,13 +54,35 @@ function Notice({ title, detail, action }: { title: string; detail: string; acti
     return <div className="studio-unavailable"><span className="studio-kicker studio-kicker--dark">BACKEND SIGNAL</span><h3>{title}</h3><p>{detail}</p>{action}</div>;
 }
 
-function WorkspaceSidebar({ active }: { active: WorkspaceMode }) {
-    return <aside className="studio-workspace-sidebar"><div className="studio-workspace-sidebar__brand"><StudioMark compact /><span>WORKSPACE / LIVE</span></div><nav>{workspaceNav.map(([key, label, Icon]) => <Link key={key} href={`/dashboard/${key}`} className={active === key ? "is-active" : ""}><Icon size={16} />{label}</Link>)}</nav><div className="studio-workspace-sidebar__bottom"><Link href="/contact"><CircleHelp size={15} />Need a hand?</Link><Link href="/">← Back to site</Link></div></aside>;
+// Shows the signed-in user's own brand (logo + name) rather than the generic
+// STUDIO app mark, since each account now owns its own workspace/brand. The
+// STUDIO mark stays too (small, above) as the app's own identity — this is
+// the tenant's identity, visible on every workspace page including
+// Products and Studio (generation), which is the whole point of collecting
+// it at registration.
+function WorkspaceBrand({ brand }: { brand: BrandSettings | null }) {
+    const initial = brand?.name?.trim()?.[0]?.toUpperCase() ?? "?";
+    return (
+        <div className="studio-workspace-sidebar__tenant">
+            {brand?.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={brand.logoUrl} alt={brand.name} className="studio-workspace-sidebar__tenant-logo" />
+            ) : (
+                <span className="studio-avatar">{initial}</span>
+            )}
+            <span className="studio-workspace-sidebar__tenant-name">{brand?.name || "Loading workspace…"}</span>
+        </div>
+    );
+}
+
+function WorkspaceSidebar({ active, brand }: { active: WorkspaceMode; brand: BrandSettings | null }) {
+    return <aside className="studio-workspace-sidebar"><div className="studio-workspace-sidebar__brand"><StudioMark compact /><span>WORKSPACE / LIVE</span></div><WorkspaceBrand brand={brand} /><nav>{workspaceNav.map(([key, label, Icon]) => <Link key={key} href={`/dashboard/${key}`} className={active === key ? "is-active" : ""}><Icon size={16} />{label}</Link>)}</nav><div className="studio-workspace-sidebar__bottom"><Link href="/contact"><CircleHelp size={15} />Need a hand?</Link><Link href="/">← Back to site</Link></div></aside>;
 }
 
 function useLiveWorkspace() {
     const [products, setProducts] = useState<Product[]>([]);
     const [posts, setPosts] = useState<Post[]>([]);
+    const [brand, setBrand] = useState<BrandSettings | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const reload = useCallback(async () => {
@@ -71,7 +93,13 @@ function useLiveWorkspace() {
     }, []);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial fetch intentionally hydrates this client surface.
     useEffect(() => { void reload(); }, [reload]);
-    return { products, posts, loading, error, reload };
+    // Loaded separately from products/posts (its own endpoint, doesn't block
+    // the rest of the workspace if it's briefly unavailable) and only once —
+    // the sidebar doesn't need to refetch it on every reload() the way
+    // products/posts do.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial fetch intentionally hydrates the sidebar's brand identity.
+    useEffect(() => { getBrand().then(setBrand).catch(() => {}); }, []);
+    return { products, posts, brand, loading, error, reload };
 }
 
 function Stats({ products, posts }: { products: Product[]; posts: Post[] }) {
@@ -90,10 +118,15 @@ function BrandSurface() {
     const [brand, setBrand] = useState<BrandSettings | null>(null);
     const [draft, setDraft] = useState<BrandSettingsInput>({ name: "", logoUrl: "", primaryColor: "#B9FF43", secondaryColor: "#11110F", fontFamily: "Space Grotesk", toneGuidelines: "" });
     const [status, setStatus] = useState("Loading brand kit…"); const [saving, setSaving] = useState(false);
+    const [copied, setCopied] = useState(false);
     useEffect(() => { getBrand().then((value) => { setBrand(value); setDraft({ name: value.name ?? "", logoUrl: value.logoUrl ?? "", primaryColor: value.primaryColor ?? "", secondaryColor: value.secondaryColor ?? "", fontFamily: value.fontFamily ?? "", toneGuidelines: value.toneGuidelines ?? "" }); setStatus(""); }).catch((err) => setStatus(err instanceof Error ? err.message : "Unable to load brand kit")); }, []);
     const save = async () => { setSaving(true); setStatus(""); try { const value = await updateBrand(draft); setBrand(value); setStatus("Brand settings saved."); } catch (err) { setStatus(err instanceof Error ? err.message : "Unable to save brand kit"); } finally { setSaving(false); } };
+    const copyCode = async () => {
+        if (!brand?.joinCode) return;
+        try { await navigator.clipboard.writeText(brand.joinCode); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* clipboard unavailable — code is still selectable/visible */ }
+    };
     if (!brand && status === "Loading brand kit…") return <div className="studio-loading"><Loader2 className="studio-spin" size={18} /> {status}</div>;
-    return <div className="studio-live-columns"><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">BRAND SETTINGS</span><h2>{brand?.name || "Your brand"}</h2></div><span className="studio-chip">LIVE API</span></div><div className="studio-form-grid">{([["name", "Brand name"], ["logoUrl", "Logo URL"], ["primaryColor", "Primary color"], ["secondaryColor", "Secondary color"], ["fontFamily", "Font family"]] as const).map(([key, label]) => <label key={key}>{label}<input value={draft[key] ?? ""} onChange={(event) => setDraft({ ...draft, [key]: event.target.value })} /></label>)}<label className="studio-form-grid__wide">Tone guidelines<textarea rows={5} value={draft.toneGuidelines ?? ""} onChange={(event) => setDraft({ ...draft, toneGuidelines: event.target.value })} /></label></div>{status && <p className="studio-inline-notice">{status}</p>}<button className="studio-button studio-button--dark" disabled={saving} onClick={() => void save()}>{saving ? <Loader2 className="studio-spin" size={15} /> : <Check size={15} />} Save brand kit</button></section><section className="studio-workspace-panel studio-workspace-panel--accent"><span className="studio-kicker studio-kicker--dark">STUDIO RULE</span><h2>Keep the source of truth close.</h2><p>Every generation can read these values from the shared brand endpoint.</p><div className="studio-color-pair"><span style={{ background: draft.primaryColor || "#B9FF43" }} /><span style={{ background: draft.secondaryColor || "#11110F" }} /></div></section></div>;
+    return <div className="studio-live-columns"><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">BRAND SETTINGS</span><h2>{brand?.name || "Your brand"}</h2></div><span className="studio-chip">LIVE API</span></div><div className="studio-form-grid">{([["name", "Brand name"], ["logoUrl", "Logo URL"], ["primaryColor", "Primary color"], ["secondaryColor", "Secondary color"], ["fontFamily", "Font family"]] as const).map(([key, label]) => <label key={key}>{label}<input value={draft[key] ?? ""} onChange={(event) => setDraft({ ...draft, [key]: event.target.value })} /></label>)}<label className="studio-form-grid__wide">Tone guidelines<textarea rows={5} value={draft.toneGuidelines ?? ""} onChange={(event) => setDraft({ ...draft, toneGuidelines: event.target.value })} /></label></div>{status && <p className="studio-inline-notice">{status}</p>}<button className="studio-button studio-button--dark" disabled={saving} onClick={() => void save()}>{saving ? <Loader2 className="studio-spin" size={15} /> : <Check size={15} />} Save brand kit</button></section><section className="studio-workspace-panel studio-workspace-panel--accent"><span className="studio-kicker studio-kicker--dark">INVITE TEAMMATES</span><h2>Bring your team into this workspace.</h2><p>Share this code — teammates enter it under &quot;Join with a code&quot; on the register page to land in this exact brand instead of creating their own.</p>{brand?.joinCode && <div className="flex items-center gap-2 mt-3"><span className="studio-chip studio-chip--lime" style={{ fontSize: "13px", padding: "8px 12px", letterSpacing: "0.15em" }}>{brand.joinCode}</span><button className="studio-text-button" onClick={() => void copyCode()}>{copied ? "Copied!" : "Copy"}</button></div>}<div className="studio-color-pair"><span style={{ background: draft.primaryColor || "#B9FF43" }} /><span style={{ background: draft.secondaryColor || "#11110F" }} /></div></section></div>;
 }
 
 function PostsSurface({ posts, refresh }: { posts: Post[]; refresh: () => void }) {
@@ -126,8 +159,8 @@ function Surface({ mode, products, posts, refresh }: { mode: WorkspaceMode; prod
 
 export function WorkspacePage({ mode }: { mode: WorkspaceMode }) {
     const [label, title, description, Icon] = workspaceData[mode];
-    const { products, posts, loading, error, reload } = useLiveWorkspace();
-    return <main className="studio-app"><WorkspaceSidebar active={mode} /><div className="studio-workspace-main"><header className="studio-workspace-topbar"><div><span className="studio-kicker studio-kicker--dark">WORKSPACE / {label.toUpperCase()}</span><h1>{title}</h1><p>{description}</p></div><div className="studio-workspace-actions"><button className="studio-icon-button" aria-label="Search"><Search size={17} /></button><Link href="/dashboard/studio" className="studio-button studio-button--dark"><Plus size={15} /> New direction</Link></div></header><section className="studio-workspace-content"><div className="studio-command-row"><div className="studio-route-title"><Icon size={20} /><span>{label}</span></div><label className="studio-search"><Search size={15} /><input placeholder={`Search ${label.toLowerCase()}`} /></label></div>{error && <div className="studio-form-error"><strong>Live data unavailable.</strong> {error} <button onClick={() => void reload()}>Retry</button></div>}{loading ? <div className="studio-loading"><Loader2 className="studio-spin" size={18} /> Loading live workspace data…</div> : <Surface mode={mode} products={products} posts={posts} refresh={() => void reload()} />}</section></div></main>;
+    const { products, posts, brand, loading, error, reload } = useLiveWorkspace();
+    return <main className="studio-app"><WorkspaceSidebar active={mode} brand={brand} /><div className="studio-workspace-main"><header className="studio-workspace-topbar"><div><span className="studio-kicker studio-kicker--dark">WORKSPACE / {label.toUpperCase()}</span><h1>{title}</h1><p>{description}</p></div><div className="studio-workspace-actions"><button className="studio-icon-button" aria-label="Search"><Search size={17} /></button><Link href="/dashboard/studio" className="studio-button studio-button--dark"><Plus size={15} /> New direction</Link></div></header><section className="studio-workspace-content"><div className="studio-command-row"><div className="studio-route-title"><Icon size={20} /><span>{label}</span></div><label className="studio-search"><Search size={15} /><input placeholder={`Search ${label.toLowerCase()}`} /></label></div>{error && <div className="studio-form-error"><strong>Live data unavailable.</strong> {error} <button onClick={() => void reload()}>Retry</button></div>}{loading ? <div className="studio-loading"><Loader2 className="studio-spin" size={18} /> Loading live workspace data…</div> : <Surface mode={mode} products={products} posts={posts} refresh={() => void reload()} />}</section></div></main>;
 }
 
 function AdminSurface({ mode, products, posts, templates }: { mode: AdminMode; products: Product[]; posts: Post[]; templates: Template[] }) {

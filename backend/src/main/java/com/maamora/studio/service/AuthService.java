@@ -23,14 +23,34 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    /** Every new account joins the single shared Maamora workspace — nobody creates their own brand anymore. */
+    /**
+     * Every new account either creates its own brand workspace (name + logo
+     * set at signup) or joins an existing one via that brand's join code —
+     * never both, never neither. See BrandSettingsService for why brand
+     * names themselves aren't unique/reserved.
+     */
     @Transactional
     public AuthResponse register(RegisterRequest request) {
+        // Honeypot: a real user never fills this in. Reject with the exact
+        // same error a bot would get from a plausible-looking failure
+        // elsewhere, so there's no observable difference that would teach it
+        // to leave the field alone next time.
+        if (request.getWebsite() != null && !request.getWebsite().isBlank()) {
+            throw new UnauthorizedException("Registration failed. Please try again.");
+        }
+
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new UnauthorizedException("An account with this email already exists.");
         }
 
-        BrandSettings brand = brandSettingsService.getSharedBrand();
+        boolean joining = request.getJoinCode() != null && !request.getJoinCode().isBlank();
+        if (!joining && (request.getBrandName() == null || request.getBrandName().isBlank())) {
+            throw new UnauthorizedException("Enter a brand name, or a workspace code to join an existing brand.");
+        }
+
+        BrandSettings brand = joining
+                ? brandSettingsService.joinExisting(request.getJoinCode())
+                : brandSettingsService.createForNewUser(request.getBrandName(), request.getLogoUrl());
 
         User user = User.builder()
                 .name(request.getName())

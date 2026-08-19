@@ -22,6 +22,13 @@ public class BrandSettings {
     @Column(nullable = false)
     private String name;
 
+    // Not unique at the DB level on purpose — display names are NOT exclusive
+    // (two unrelated brands can both be called "Amazon" with zero conflict,
+    // same as Slack/Discord workspace names). The join code below is the
+    // actual unique identity teammates use to reach a specific workspace.
+    @Column(unique = true)
+    private String joinCode;
+
     private String logoUrl;
     private String primaryColor;
     private String secondaryColor;

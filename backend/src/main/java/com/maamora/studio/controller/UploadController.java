@@ -23,13 +23,36 @@ public class UploadController {
 
     @PostMapping("/image")
     public ApiResponse<UploadResponse> uploadImage(@RequestParam("file") MultipartFile file) {
+        return uploadTo(file, "products/");
+    }
+
+    @DeleteMapping("/image")
+    public ApiResponse<Void> deleteImage(@RequestParam("url") String url) {
+        storageService.delete(url);
+        return ApiResponse.ok(null);
+    }
+
+    /**
+     * Public (permitAll — see SecurityConfig) logo upload used on the
+     * registration form: a brand new user has no JWT yet, so this can't sit
+     * behind the same auth as {@link #uploadImage}. Scoped to its own
+     * "logos/" folder and its own endpoint rather than opening up
+     * /api/uploads/image entirely, to keep the unauthenticated surface as
+     * small as possible.
+     */
+    @PostMapping("/logo")
+    public ApiResponse<UploadResponse> uploadLogo(@RequestParam("file") MultipartFile file) {
+        return uploadTo(file, "logos/");
+    }
+
+    private ApiResponse<UploadResponse> uploadTo(MultipartFile file, String folder) {
         if (file.isEmpty()) {
             return ApiResponse.error("No file provided.");
         }
 
         try {
             String extension = extensionOf(file.getOriginalFilename());
-            String path = "products/" + UUID.randomUUID() + extension;
+            String path = folder + UUID.randomUUID() + extension;
             String url = storageService.upload(file.getBytes(), path, file.getContentType());
             return ApiResponse.ok(new UploadResponse(url));
         } catch (IOException e) {
@@ -41,12 +64,6 @@ public class UploadController {
             // wrap, but with a less specific message than we can give here.
             return ApiResponse.error("Image upload failed: " + e.getMessage());
         }
-    }
-
-    @DeleteMapping("/image")
-    public ApiResponse<Void> deleteImage(@RequestParam("url") String url) {
-        storageService.delete(url);
-        return ApiResponse.ok(null);
     }
 
     private String extensionOf(String filename) {
