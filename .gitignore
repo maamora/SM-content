@@ -40,3 +40,6 @@ backend/PERSISTENCE.md
 .agent/
 .clinerules
 .cursorrules
+
+# ── Package Manager ─────────────────────────────────────────────────────────────
+.pnpm-store/

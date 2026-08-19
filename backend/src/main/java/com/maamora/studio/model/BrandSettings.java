@@ -1,5 +1,6 @@
 package com.maamora.studio.model;
 
+import com.maamora.studio.model.enums.AccountType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,6 +29,11 @@ public class BrandSettings {
     // actual unique identity teammates use to reach a specific workspace.
     @Column(unique = true)
     private String joinCode;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private AccountType accountType = AccountType.BUSINESS;
 
     private String logoUrl;
     private String primaryColor;
