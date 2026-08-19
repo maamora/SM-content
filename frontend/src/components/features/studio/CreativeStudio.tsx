@@ -609,11 +609,12 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                     </p>
                                 </div>
                                 <div className="studio-creative-card__body">
-                                    <div className="studio-caption-tabs">
+                                    <div className="studio-caption-tabs" role="tablist" aria-label="Caption language">
                                         {LANGS.map(lang => (
                                             <button
                                                 key={lang.id}
                                                 type="button"
+                                                role="tab"
                                                 aria-selected={activeCaptionLang === lang.id}
                                                 onClick={() => handleSelectCaptionLanguage(lang.id)}
                                                 className={`studio-caption-tab ${activeCaptionLang === lang.id

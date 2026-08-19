@@ -616,3 +616,29 @@ The second attachment does not show an application compile or route error. `pnpm
 - [x] Trace the reported post and caption workflow failures: no persisted post can exist while the preceding Gemini visual request fails, so captions correctly remain unavailable rather than targeting a non-existent post.
 - [x] Run focused Gemini adapter and complete backend regression tests before publishing the corrected workflow.
 - [ ] Perform one authenticated live visual generation, post creation, and Groq caption request after the local update is pulled.
+
+## No-paid-API creative-generation architecture
+- [x] Identify maintained open-source implementations for local text-to-image, image editing, product-plus-model composition, and captions.
+- [x] Verify each candidate’s license, model size, hardware requirements, active maintenance, input support, and server integration contract.
+- [x] Evaluate whether the existing Java/Spring Boot deployment can run a selected local model without a paid API, GPU host, or always-on self-hosted runtime.
+- [x] Separate genuinely local no-cost approaches from hosted free tiers, public endpoints, and user-funded providers.
+- [ ] Select an implementation path after reconciling the no-self-hosting requirement with the required local model runtime.
+
+## Browser-local creative path
+- [ ] Verify current browser-local model-library capabilities and supported-device requirements for captions and image generation.
+- [ ] Add a WebGPU capability gate and clear no-key local-generation status to the Studio UI.
+- [ ] Implement browser-local caption generation with model-download progress, cancellation, and explicit fallback behavior.
+- [ ] Implement only viable browser-local visual generation; present explicit unavailable states for Photo Shoot and editing if their multi-reference/image-to-image path is unsupported.
+- [ ] Validate production build and document browser, memory, network, privacy, and quality boundaries before publishing.
+
+### Concrete implementation tasks
+- [x] Verify the web-txt2img export surface and client-only loading pattern; do not integrate it as a working Studio engine because its SD-Turbo adapter is explicitly a scaffold with a placeholder ONNX pipeline.
+- [ ] Create shared browser-local WebGPU detection, progress, cancellation, and error utilities.
+- [ ] Integrate WebLLM for captions without sending product, image, or prompt data to a provider API.
+- [ ] Evaluate an alternative maintained browser-local visual engine; leave standard visual generation unavailable if no production-ready no-key library meets the browser-only requirement.
+- [ ] Replace Photo Shoot and Edit Image execution controls with explicit no-key browser-local capability states when multi-reference editing cannot be supported.
+
+## Puter-like free library alternatives
+- [x] Find maintained browser libraries, GitHub projects, and downloadable runtimes that offer visual generation, image editing, Photo Shoot composition, or captions without a paid provider balance.
+- [x] Verify whether each candidate is truly free in production, rather than a demo endpoint, free tier, user-funded account, or a self-hosted model runtime.
+- [x] Recommend only candidates that match STUDIO’s requested workflow coverage and deployment constraints; no candidate currently covers all required workflows without either hosted provider credentials/balance or a local runtime.

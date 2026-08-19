@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 /* STUDIO editorial refresh: batch work is presented as a quiet production board with lime controls. */
 import { Layers, Loader2 } from "lucide-react";
 import { type Product } from "@/lib/api/products";
 import { listTemplates, type Template } from "@/lib/api/templates";
-import { generateImage, type Post } from "@/lib/api/posts";
+import { type Post } from "@/lib/api/posts";
+import { createBatch, getBatch, type BatchJob } from "@/lib/api/batches";
 
 interface BatchStudioProps {
     products: Product[];
@@ -18,7 +19,10 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
 
     const [isStartingBatch, setIsStartingBatch] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [statusMsg, setStatusMsg] = useState<string | null>(null);
     const [generatedPosts, setGeneratedPosts] = useState<Array<Post>>([]);
+    const [activeBatch, setActiveBatch] = useState<BatchJob | null>(null);
+    const batchPollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const approvedProducts = products
         .filter(p => p.status === "APPROVED")
@@ -39,6 +43,10 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
         }
     }, [templatesForFormat, selectedTemplateId]);
 
+    useEffect(() => () => {
+        if (batchPollTimer.current) clearTimeout(batchPollTimer.current);
+    }, []);
+
     const toggleProduct = (id: string) => {
         const newSet = new Set(selectedProducts);
         if (newSet.has(id)) newSet.delete(id);
@@ -46,25 +54,46 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
         setSelectedProducts(newSet);
     };
 
+    const pollBatch = async (batchId: string) => {
+        try {
+            const batch = await getBatch(batchId);
+            setActiveBatch(batch);
+            setGeneratedPosts(batch.posts);
+
+            if (batch.status === "PROCESSING") {
+                batchPollTimer.current = setTimeout(() => void pollBatch(batchId), 1500);
+                return;
+            }
+
+            onBatchChange?.();
+            if (batch.status === "DONE") {
+                setStatusMsg("Batch visuals and multilingual captions are ready.");
+            } else {
+                setErrorMsg(batch.posts.length > 0
+                    ? "Batch processing completed with one or more failures. The completed visuals remain available below."
+                    : "Batch processing failed before any visual could be completed. Review the provider configuration and try again.");
+            }
+        } catch (error) {
+            setErrorMsg(error instanceof Error ? error.message : "Unable to retrieve batch progress.");
+        }
+    };
+
     const handleStartBatch = async () => {
         if (selectedProducts.size === 0 || !selectedTemplateId) return;
         setIsStartingBatch(true);
         setErrorMsg(null);
+        setStatusMsg(null);
         setGeneratedPosts([]);
+        setActiveBatch(null);
         try {
             const chosen = approvedProducts.filter((product) => selectedProducts.has(product.id));
-            const outputs: Post[] = [];
-            for (const product of chosen) {
-                const post = await generateImage({
-                    productId: product.id,
-                    templateId: selectedTemplateId,
-                    mood: "Cohesive premium campaign with refined editorial lighting and commercial texture.",
-                });
-                outputs.push(post);
-                setGeneratedPosts([...outputs]);
-                onBatchChange?.();
-            }
-            setErrorMsg("Batch visuals are ready. Generate captions from each post in the Atelier Creative workflow.");
+            const batch = await createBatch({
+                productIds: chosen.map((product) => product.id),
+                templateId: selectedTemplateId,
+            });
+            setActiveBatch(batch);
+            setStatusMsg("Batch started. STUDIO is generating visuals and multilingual captions in the background.");
+            void pollBatch(batch.id);
         } catch (err) {
             setErrorMsg(err instanceof Error ? err.message : "Failed to start batch");
         } finally {
@@ -91,15 +120,27 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                     {errorMsg}
                 </div>
             )}
+            {statusMsg && <p className="studio-inline-notice">{statusMsg}</p>}
 
-            {generatedPosts.length > 0 ? (
+            {activeBatch?.status === "PROCESSING" ? (
+                <div className="studio-creative-card p-6" aria-live="polite">
+                    <div className="flex items-start gap-4">
+                        <div className="studio-creative-status__icon"><Loader2 className="h-5 w-5 animate-spin" /></div>
+                        <div>
+                            <p className="studio-kicker">BATCH IN PROGRESS</p>
+                            <h3 className="mt-2 font-serif text-2xl font-normal text-[var(--studio-ink)]">Creating your campaign set</h3>
+                            <p className="mt-2 max-w-lg text-xs leading-6 text-[#777870]">Each approved product is generated and captioned by the server workflow. Keep this page open while STUDIO refreshes the completed set.</p>
+                        </div>
+                    </div>
+                </div>
+            ) : generatedPosts.length > 0 ? (
                 <div className="studio-creative-card space-y-6 p-6">
                     <div className="flex items-center justify-between gap-4">
                         <div>
                             <p className="studio-kicker">VISUELS GÉNÉRÉS</p>
                             <h3 className="font-serif text-2xl font-normal text-[var(--studio-ink)]">Batch visuel</h3>
                         </div>
-                        <button type="button" className="studio-text-button" onClick={() => setGeneratedPosts([])}>Nouveau lot</button>
+                        <button type="button" className="studio-text-button" onClick={() => { setGeneratedPosts([]); setActiveBatch(null); setStatusMsg(null); }}>Nouveau lot</button>
                     </div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {generatedPosts.map((output) => (
