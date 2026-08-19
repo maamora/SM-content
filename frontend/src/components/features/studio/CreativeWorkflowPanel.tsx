@@ -1,6 +1,6 @@
 "use client";
 
-/* STUDIO editorial workflow: one quiet visual desk for image edits and photo-shoot frames. */
+/* STUDIO editorial workflow: one quiet visual desk for image edits and photo-shoot frames, with honest capability states. */
 /* eslint-disable @next/next/no-img-element */
 
 import { useMemo, useState } from "react";
@@ -9,6 +9,7 @@ import { createCreativeJob, getCreativeJob, uploadCreativeReference } from "@/li
 
 type CreativeWorkflowPanelProps = {
     compact?: boolean;
+    imageGenerationAvailable?: boolean;
 };
 
 type CreativeType = "PHOTO_SHOOT" | "EDIT_IMAGE";
@@ -42,7 +43,7 @@ function ReferenceTile({
     );
 }
 
-export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanelProps) {
+export function CreativeWorkflowPanel({ compact = false, imageGenerationAvailable = true }: CreativeWorkflowPanelProps) {
     const [type, setType] = useState<CreativeType>("PHOTO_SHOOT");
     const [prompt, setPrompt] = useState(PROMPTS.PHOTO_SHOOT);
     const [productFile, setProductFile] = useState<File | null>(null);
@@ -75,6 +76,10 @@ export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanel
     }
 
     async function handleGenerate() {
+        if (!imageGenerationAvailable) {
+            setError("La génération d’images n’est pas configurée. Ajoutez une clé Gemini valide au backend pour activer les photo shoots et les retouches.");
+            return;
+        }
         if (!hasRequiredReferences) {
             setError(isPhotoShoot ? "Add both a product image and a model image." : "Add a product image to edit.");
             return;
@@ -127,11 +132,11 @@ export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanel
                         <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={5} placeholder="Describe the scene, motion, lighting, and what must stay true..." />
                     </label>
                     <div className="creative-workflow__actions">
-                        <button type="button" className="studio-button studio-button--dark" onClick={handleGenerate} disabled={busy}>
+                        <button type="button" className="studio-button studio-button--dark" onClick={handleGenerate} disabled={busy || !imageGenerationAvailable}>
                             {busy ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                            {busy ? "Generating visual..." : isPhotoShoot ? "Generate photo shoot" : "Apply image edit"}
+                            {busy ? "Generating visual..." : !imageGenerationAvailable ? "Visual generation unavailable" : isPhotoShoot ? "Generate photo shoot" : "Apply image edit"}
                         </button>
-                        <span>Gemini image output · server generation</span>
+                        <span>{imageGenerationAvailable ? "Image output is ready when you are." : "Configure image generation to activate this workflow."}</span>
                     </div>
                     {error && <p className="studio-form-error">{error}</p>}
                 </div>

@@ -1,6 +1,6 @@
 "use client";
 
-/* STUDIO editorial refresh: a graphite-and-paper composition desk with lime signal accents. */
+/* STUDIO editorial refresh: a graphite-and-paper composition desk with lime signal accents and capability-honest creative controls. */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
     Sparkles,
@@ -19,6 +19,8 @@ import { listTemplates, type Template } from "@/lib/api/templates";
 import { generateImage, generateCaptions, editCaption, approvePost, exportPost, type Post } from "@/lib/api/posts";
 import { Product3DModel } from "@/components/features/products/Product3DModel";
 import { CreativeWorkflowPanel } from "./CreativeWorkflowPanel";
+import { getSystemCapabilities, type SystemCapabilities } from "@/lib/api/system";
+import { generateLocalCaption } from "@/lib/local-caption";
 
 interface Product {
     id: string;
@@ -75,10 +77,14 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const [isApproving, setIsApproving] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [capabilities, setCapabilities] = useState<SystemCapabilities | null>(null);
 
     const [activeCaptionLang, setActiveCaptionLang] = useState<CaptionLang>("darija");
     const [draftCaption, setDraftCaption] = useState<string>("");
     const [copiedLang, setCopiedLang] = useState<string | null>(null);
+    const [localCaptions, setLocalCaptions] = useState<Partial<Record<CaptionLang, string>>>({});
+    const [isGeneratingLocalCaption, setIsGeneratingLocalCaption] = useState(false);
+    const [localCaptionProgress, setLocalCaptionProgress] = useState<{ progress: number; detail: string } | null>(null);
 
     const [productQuery, setProductQuery] = useState("");
     const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
@@ -86,6 +92,8 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
 
     const approvedProducts = useMemo(() => products.filter((p) => p.status === "APPROVED"), [products]);
     const pendingCount = products.length - approvedProducts.length;
+    const imageGenerationUnavailable = capabilities !== null && !capabilities.imageGeneration;
+    const serverCaptionGenerationUnavailable = capabilities !== null && !capabilities.captionGeneration;
 
     const selectedProduct = approvedProducts.find((p) => p.id === selectedProductId) || approvedProducts[0];
 
@@ -126,6 +134,14 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     }, []);
 
     useEffect(() => {
+        getSystemCapabilities().then(setCapabilities).catch(() => {
+            // Do not block a healthy server workflow merely because this
+            // informational capability check is temporarily unavailable.
+            setCapabilities(null);
+        });
+    }, []);
+
+    useEffect(() => {
         if (approvedProducts.length > 0 && !approvedProducts.some((p) => p.id === selectedProductId)) {
             // eslint-disable-next-line react-hooks/set-state-in-effect -- default-select the first approved product
             setSelectedProductId(approvedProducts[0].id);
@@ -158,15 +174,20 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
         // eslint-disable-next-line react-hooks/set-state-in-effect -- stale post must be cleared when its inputs change
         setPost(null);
         setGeneratedImageSrc(null);
+        setLocalCaptions({});
     }, [selectedProductId, selectedTemplateId, promoText, accentColor, badgeText]);
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- sync the editable draft from the loaded post/language
-        setDraftCaption(post ? captionFor(post, activeCaptionLang) ?? "" : "");
-    }, [post, activeCaptionLang]);
+        setDraftCaption(post ? captionFor(post, activeCaptionLang) ?? localCaptions[activeCaptionLang] ?? "" : localCaptions[activeCaptionLang] ?? "");
+    }, [post, activeCaptionLang, localCaptions]);
 
     const handleGenerateImage = async () => {
         if (!selectedProduct || !selectedTemplateId) return;
+        if (imageGenerationUnavailable) {
+            setErrorMsg("La génération d’images n’est pas configurée. Ajoutez une clé Gemini valide au backend pour activer les visuels, les photo shoots et les retouches.");
+            return;
+        }
         setErrorMsg(null);
         setIsGeneratingImage(true);
         try {
@@ -190,9 +211,6 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
 
     const handleSelectCaptionLanguage = (lang: CaptionLang) => {
         setActiveCaptionLang(lang);
-        if (!post) {
-            setErrorMsg("Generate a visual first. Caption choices become active as soon as Gemini creates the Studio post.");
-        }
     };
 
     const handleGenerateCaptions = async () => {
@@ -207,6 +225,34 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
             setErrorMsg(err instanceof Error ? err.message : "Failed to generate captions");
         } finally {
             setIsGeneratingCaptions(false);
+        }
+    };
+
+    const handleGenerateLocalCaption = async () => {
+        if (!selectedProduct) {
+            setErrorMsg("Sélectionnez un produit approuvé avant de rédiger une légende.");
+            return;
+        }
+
+        setErrorMsg(null);
+        setIsGeneratingLocalCaption(true);
+        setLocalCaptionProgress({ progress: 0, detail: "Préparation de la rédaction locale…" });
+        try {
+            const caption = await generateLocalCaption({
+                productName: selectedProduct.name,
+                productDescription: selectedProduct.description,
+                offer: promoText,
+                badge: badgeText,
+                language: activeCaptionLang,
+                onProgress: (progress, detail) => setLocalCaptionProgress({ progress, detail }),
+            });
+            setLocalCaptions((current) => ({ ...current, [activeCaptionLang]: caption }));
+            setDraftCaption(caption);
+        } catch (err) {
+            setErrorMsg(err instanceof Error ? err.message : "Impossible de générer une légende locale.");
+        } finally {
+            setIsGeneratingLocalCaption(false);
+            setLocalCaptionProgress(null);
         }
     };
 
@@ -297,7 +343,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                 </div>
             )}
 
-            <CreativeWorkflowPanel />
+            <CreativeWorkflowPanel imageGenerationAvailable={!imageGenerationUnavailable} />
 
             <div className="studio-creative-grid">
 
@@ -477,7 +523,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
 
                             <button
                                 onClick={handleGenerateImage}
-                                disabled={isGeneratingImage || !selectedProduct || !selectedTemplateId}
+                                disabled={isGeneratingImage || !selectedProduct || !selectedTemplateId || imageGenerationUnavailable}
                                 className="studio-button studio-button--lime studio-button--large w-full disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {isGeneratingImage ? (
@@ -485,8 +531,13 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                 ) : (
                                     <Sparkles className="h-3.5 w-3.5" />
                                 )}
-                                {isGeneratingImage ? "Rendu Gemini en cours..." : generatedImageSrc ? "Régénérer le visuel" : "Générer le visuel"}
+                                {isGeneratingImage ? "Rendu du visuel en cours..." : imageGenerationUnavailable ? "Génération visuelle indisponible" : generatedImageSrc ? "Régénérer le visuel" : "Générer le visuel"}
                             </button>
+                            {imageGenerationUnavailable && (
+                                <p className="text-[10px] font-medium leading-relaxed text-[#777870]">
+                                    Ajoutez une clé Gemini valide au backend pour activer la création d’images, les photo shoots et les retouches. Aucun package navigateur ne peut remplacer cette étape sans télécharger un très grand modèle sur l’appareil.
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -500,7 +551,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                         <div className={`studio-creative-preview bg-gradient-to-br ${mood.bg}`}>
                             <p className="absolute left-4 top-4 z-10 flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-[#777870]">
                                 <Eye className="h-3 w-3" style={{ color: mood.accent }} />
-                                {generatedImageSrc ? "Visuel Gemini généré" : post?.imageUrl ? "Visuel rendu" : "Aperçu en direct"}
+                                {generatedImageSrc ? "Visuel généré" : post?.imageUrl ? "Visuel rendu" : "Aperçu en direct"}
                             </p>
 
                             {generatedImageSrc ? (
@@ -581,8 +632,8 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                             value={draftCaption}
                                             onChange={(e) => setDraftCaption(e.target.value)}
                                             onBlur={handleSaveCaption}
-                                            disabled={!post}
-                                            placeholder={post ? "Aucune légende générée pour cette langue." : "Générez d'abord un visuel."}
+                                            disabled={!post && !localCaptions[activeCaptionLang]}
+                                            placeholder={post ? "Aucune légende générée pour cette langue." : "Rédigez une légende locale ou créez d’abord un visuel."}
                                             className="min-h-[190px] w-full resize-none border border-[#bdbdb4] bg-[#faf9f4] p-3.5 text-xs font-sans leading-relaxed tracking-wide text-[var(--studio-ink)] outline-none focus:border-[var(--studio-lime)] disabled:opacity-50"
                                         />
 
@@ -610,7 +661,9 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                     <p className="mt-2 text-[10px] font-medium text-[#777870]" aria-live="polite">
                                         {post
                                             ? `Langue sélectionnée : ${LANGS.find((lang) => lang.id === activeCaptionLang)?.label}. Cliquez sur une langue pour appliquer sa légende générée dans l’éditeur.`
-                                            : "Générez un visuel pour activer les légendes."}
+                                            : localCaptions[activeCaptionLang]
+                                                ? "Brouillon rédigé sur cet appareil. Relisez-le avant publication."
+                                                : "Rédigez une légende à partir du produit sélectionné, sans clé API."}
                                     </p>
 
                                     <button
@@ -621,6 +674,22 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                         <RefreshCw className={`h-3.5 w-3.5 ${isGeneratingCaptions ? "animate-spin" : ""}`} />
                                         {isGeneratingCaptions ? "Génération..." : "Générer toutes les légendes"}
                                     </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleGenerateLocalCaption}
+                                        disabled={isGeneratingLocalCaption || !selectedProduct}
+                                        className="studio-button studio-button--paper mt-2 h-9 w-full text-[11px] disabled:opacity-40"
+                                    >
+                                        <Sparkles className={`h-3.5 w-3.5 ${isGeneratingLocalCaption ? "animate-pulse" : ""}`} />
+                                        {isGeneratingLocalCaption
+                                            ? localCaptionProgress ? `${localCaptionProgress.progress}% · ${localCaptionProgress.detail}` : "Préparation…"
+                                            : "Rédiger la légende sur cet appareil"}
+                                    </button>
+                                    {serverCaptionGenerationUnavailable && (
+                                        <p className="mt-2 text-[10px] font-medium leading-relaxed text-[#777870]">
+                                            La génération de toutes les langues n’est pas configurée. La rédaction locale reste disponible pour la langue sélectionnée.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
