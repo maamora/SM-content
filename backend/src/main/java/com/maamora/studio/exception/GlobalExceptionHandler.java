@@ -9,8 +9,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
@@ -49,6 +51,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(ApiResponse.error(message));
     }
 
+    @ExceptionHandler({ IllegalArgumentException.class, IllegalStateException.class })
+    public ResponseEntity<ApiResponse<Object>> handleInvalidRequest(RuntimeException ex) {
+        String message = ex.getMessage();
+        return ResponseEntity.badRequest().body(ApiResponse.error(
+                message == null || message.isBlank() ? "The request could not be completed." : message));
+    }
+
     @ExceptionHandler({ CaptionGenerationException.class, ExportProcessingException.class,
             BatchProcessingException.class })
     public ResponseEntity<ApiResponse<Object>> handleDomainProcessingException(RuntimeException ex) {
@@ -57,6 +66,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGeneric(Exception ex) {
+        log.error("Unhandled API exception", ex);
         return ResponseEntity.internalServerError().body(ApiResponse.error("Unexpected server error."));
     }
 }

@@ -11,13 +11,13 @@ import com.maamora.studio.model.enums.BatchStatus;
 import com.maamora.studio.repository.BatchJobRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -41,7 +41,8 @@ public class BatchJobService {
     private final BatchJobRepository batchJobRepository;
     private final BrandSettingsService brandSettingsService;
     private final PostService postService;
-    private final Executor executor = Executors.newFixedThreadPool(MAX_CONCURRENT);
+    @Qualifier("creativeTaskExecutor")
+    private final Executor executor;
 
     public BatchJob create(String userId, BatchCreateRequest request) {
         BrandSettings brand = brandSettingsService.getForUser(userId);

@@ -1,26 +1,21 @@
-/* STUDIO creative workflow: graphite workbench, signal lime actions, and media-first states. */
 "use client";
 
-/* Dynamic Cloudinary or local-storage URLs are intentionally rendered as raw media in this authenticated workflow. */
+/* STUDIO editorial workflow: one quiet visual desk for image edits and photo-shoot frames. */
 /* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useMemo, useState } from "react";
-import { Film, ImagePlus, Loader2, Sparkles, Upload, WandSparkles } from "lucide-react";
-import {
-    createCreativeJob,
-    getCreativeJob,
-    uploadCreativeReference,
-    type CreativeJob,
-    type CreativeJobType,
-} from "@/lib/api/creative";
+import { useMemo, useState } from "react";
+import { ImagePlus, Loader2, Sparkles, Upload, WandSparkles } from "lucide-react";
+import { createCreativeJob, getCreativeJob, uploadCreativeReference } from "@/lib/api/creative";
 
 type CreativeWorkflowPanelProps = {
     compact?: boolean;
 };
 
+type CreativeType = "PHOTO_SHOOT" | "EDIT_IMAGE";
+
 const PROMPTS = {
-    EDIT_IMAGE: "Keep the product exactly recognizable. Change the background to a warm daylight studio with soft editorial shadows and a quiet cream palette.",
-    PHOTO_SHOOT: "Create a running campaign frame with the model in motion, the product clearly visible, a muted olive set, directional daylight, and a premium sports-fashion editorial finish.",
+    EDIT_IMAGE: "Keep the product exactly recognizable. Change the background to a warm daylight studio with soft editorial shadows and a quiet cream palette. Preserve the packaging, label, materials, and colors.",
+    PHOTO_SHOOT: "Create a premium campaign frame with the model and product in the same scene. Keep the product clearly visible and recognizable, preserve the model's identity, use a muted olive set, directional daylight, realistic editorial texture, and a refined commercial finish.",
 };
 
 function ReferenceTile({
@@ -48,71 +43,58 @@ function ReferenceTile({
 }
 
 export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanelProps) {
-    const [type, setType] = useState<CreativeJobType>("PHOTO_SHOOT");
+    const [type, setType] = useState<CreativeType>("PHOTO_SHOOT");
     const [prompt, setPrompt] = useState(PROMPTS.PHOTO_SHOOT);
     const [productFile, setProductFile] = useState<File | null>(null);
     const [modelFile, setModelFile] = useState<File | null>(null);
     const [productUrl, setProductUrl] = useState<string | null>(null);
     const [modelUrl, setModelUrl] = useState<string | null>(null);
-    const [job, setJob] = useState<CreativeJob | null>(null);
+    const [resultImageUrl, setResultImageUrl] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const isPhotoShoot = type === "PHOTO_SHOOT";
-    const hasRequiredReferences = Boolean(isPhotoShoot ? productFile && modelFile : productFile || modelFile);
-    const activeImageUrl = job?.resultImageUrl ?? productUrl ?? null;
-
-    useEffect(() => {
-        if (!job || !["QUEUED", "PROCESSING"].includes(job.status)) return;
-        const timer = window.setInterval(async () => {
-            try {
-                setJob(await getCreativeJob(job.id));
-            } catch (pollError) {
-                setError(pollError instanceof Error ? pollError.message : "Could not refresh creative job.");
-            }
-        }, 2500);
-        return () => window.clearInterval(timer);
-    }, [job]);
-
+    const hasRequiredReferences = Boolean(isPhotoShoot ? productFile && modelFile : productFile);
+    const activeImageUrl = resultImageUrl ?? productUrl ?? null;
     const statusLabel = useMemo(() => {
-        if (!job) return "Ready for a direction";
-        if (job.status === "QUEUED") return "Queued for the model";
-        if (job.status === "PROCESSING") return "Model running";
-        if (job.status === "FAILED") return "Generation unavailable";
-        return job.resultVideoUrl ? "Motion ready" : "Image ready";
-    }, [job]);
+        if (resultImageUrl) return isPhotoShoot ? "Photo shoot ready" : "Edit ready";
+        return isPhotoShoot ? "Ready for a photo shoot direction" : "Ready for an image edit";
+    }, [isPhotoShoot, resultImageUrl]);
+
+    async function waitForCreativeJob(jobId: string) {
+        for (let attempt = 0; attempt < 72; attempt += 1) {
+            await new Promise((resolve) => window.setTimeout(resolve, 2500));
+            const job = await getCreativeJob(jobId);
+            if (job.status === "COMPLETED") {
+                if (!job.resultImageUrl) throw new Error("Gemini completed without an image result.");
+                return job.resultImageUrl;
+            }
+            if (job.status === "FAILED") throw new Error(job.errorMessage || "Gemini could not generate this visual.");
+        }
+        throw new Error("Visual generation timed out. Please try again.");
+    }
 
     async function handleGenerate() {
         if (!hasRequiredReferences) {
-            setError(isPhotoShoot ? "Add both a product image and a model image." : "Add at least one reference image.");
+            setError(isPhotoShoot ? "Add both a product image and a model image." : "Add a product image to edit.");
             return;
         }
         setBusy(true);
         setError(null);
+        setResultImageUrl(null);
         try {
-            let nextProductUrl = productUrl;
-            let nextModelUrl = modelUrl;
-            if (productFile && !nextProductUrl) {
-                const result = await uploadCreativeReference(productFile);
-                nextProductUrl = result.url;
-                setProductUrl(nextProductUrl);
-            }
-            if (modelFile && !nextModelUrl) {
-                const result = await uploadCreativeReference(modelFile);
-                nextModelUrl = result.url;
-                setModelUrl(nextModelUrl);
-            }
-            const created = await createCreativeJob({
+            const product = await uploadCreativeReference(productFile!);
+            const model = isPhotoShoot && modelFile ? await uploadCreativeReference(modelFile) : null;
+            const job = await createCreativeJob({
                 type,
-                prompt,
-                aspectRatio: "16:9",
-                productImageUrl: nextProductUrl ?? undefined,
-                modelImageUrl: nextModelUrl ?? undefined,
-                generateVideo: isPhotoShoot,
+                prompt: prompt.trim(),
+                aspectRatio: isPhotoShoot ? "16:9" : "1:1",
+                productImageUrl: product.url,
+                modelImageUrl: model?.url,
             });
-            setJob(created);
+            setResultImageUrl(await waitForCreativeJob(job.id));
         } catch (generateError) {
-            setError(generateError instanceof Error ? generateError.message : "Creative generation failed.");
+            setError(generateError instanceof Error ? generateError.message : "Visual generation failed.");
         } finally {
             setBusy(false);
         }
@@ -130,40 +112,37 @@ export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanel
             </div>
 
             <div className="creative-workflow__modebar">
-                <button type="button" className={type === "PHOTO_SHOOT" ? "is-active" : ""} onClick={() => { setType("PHOTO_SHOOT"); setPrompt(PROMPTS.PHOTO_SHOOT); setJob(null); setError(null); }}><WandSparkles size={15} /> Photo shoot</button>
-                <button type="button" className={type === "EDIT_IMAGE" ? "is-active" : ""} onClick={() => { setType("EDIT_IMAGE"); setPrompt(PROMPTS.EDIT_IMAGE); setJob(null); setError(null); }}><ImagePlus size={15} /> Edit an image</button>
+                <button type="button" className={type === "PHOTO_SHOOT" ? "is-active" : ""} onClick={() => { setType("PHOTO_SHOOT"); setPrompt(PROMPTS.PHOTO_SHOOT); setResultImageUrl(null); setError(null); }}><WandSparkles size={15} /> Photo shoot</button>
+                <button type="button" className={type === "EDIT_IMAGE" ? "is-active" : ""} onClick={() => { setType("EDIT_IMAGE"); setPrompt(PROMPTS.EDIT_IMAGE); setResultImageUrl(null); setError(null); }}><ImagePlus size={15} /> Edit an image</button>
             </div>
 
             <div className="creative-workflow__grid">
                 <div className="creative-workflow__inputs">
                     <div className="creative-workflow__references">
-                        <ReferenceTile label="01 / PRODUCT" file={productFile} url={productUrl} onChange={(file) => { setProductFile(file); setProductUrl(null); }} />
-                        {isPhotoShoot && <ReferenceTile label="02 / MODEL" file={modelFile} url={modelUrl} onChange={(file) => { setModelFile(file); setModelUrl(null); }} />}
+                        <ReferenceTile label="01 / PRODUCT" file={productFile} url={productUrl} onChange={(file) => { setProductFile(file); setProductUrl(URL.createObjectURL(file)); setResultImageUrl(null); }} />
+                        {isPhotoShoot && <ReferenceTile label="02 / MODEL" file={modelFile} url={modelUrl} onChange={(file) => { setModelFile(file); setModelUrl(URL.createObjectURL(file)); setResultImageUrl(null); }} />}
                     </div>
                     <label className="creative-workflow__prompt">
                         <span>SCENARIO / PROMPT</span>
                         <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={5} placeholder="Describe the scene, motion, lighting, and what must stay true..." />
                     </label>
                     <div className="creative-workflow__actions">
-                        <button type="button" className="studio-button studio-button--dark" onClick={handleGenerate} disabled={busy || Boolean(job && ["QUEUED", "PROCESSING"].includes(job.status))}>
-                            {busy || (job && ["QUEUED", "PROCESSING"].includes(job.status)) ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                            {isPhotoShoot ? "Generate photo shoot" : "Apply edit"}
+                        <button type="button" className="studio-button studio-button--dark" onClick={handleGenerate} disabled={busy}>
+                            {busy ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                            {busy ? "Generating visual..." : isPhotoShoot ? "Generate photo shoot" : "Apply image edit"}
                         </button>
-                        <span>{isPhotoShoot ? "Image + motion output" : "Reference-aware image output"}</span>
+                        <span>Gemini image output · server generation</span>
                     </div>
                     {error && <p className="studio-form-error">{error}</p>}
                 </div>
 
                 <div className="creative-workflow__result">
-                    {job?.resultVideoUrl ? (
-                        <video src={job.resultVideoUrl} controls playsInline className="creative-workflow__media" />
-                    ) : activeImageUrl ? (
+                    {activeImageUrl ? (
                         <img src={activeImageUrl} alt="Generated creative result" className="creative-workflow__media" />
                     ) : (
-                        <div className="creative-workflow__empty"><Film size={24} /><span>Your result lands here.</span><small>Reference → model → scene → motion</small></div>
+                        <div className="creative-workflow__empty"><Sparkles size={24} /><span>Your result lands here.</span><small>Reference → direction → visual</small></div>
                     )}
-                    {job?.status === "FAILED" && <div className="creative-workflow__result-error">{job.errorMessage ?? "The configured provider could not complete this generation."}</div>}
-                    {job?.resultVideoUrl && <div className="creative-workflow__result-meta"><span><span className="studio-dot studio-dot--lime" /> MP4 / READY</span><span>Photo shoot / 01</span></div>}
+                    {resultImageUrl && <div className="creative-workflow__result-meta"><span><span className="studio-dot studio-dot--lime" /> VISUAL READY</span><span>{isPhotoShoot ? "Photo shoot frame" : "Edited image"}</span></div>}
                 </div>
             </div>
         </section>

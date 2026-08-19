@@ -6,6 +6,7 @@ import com.maamora.studio.model.enums.CreativeJobType;
 import com.maamora.studio.repository.CreativeJobRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -18,8 +19,13 @@ import java.util.List;
 public class CreativeJobProcessor {
 
     private final CreativeJobRepository creativeJobRepository;
-    private final HiggsfieldImageService higgsfieldImageService;
+    private final ImageGenerationProvider imageGenerationProvider;
+    private final VideoGenerationService videoGenerationService;
     private final StorageService storageService;
+    private final ReferenceCompositeService referenceCompositeService;
+
+    @Value("${app.image.fal-reference-mode:product-only}")
+    private String falReferenceMode;
 
     @Async("creativeTaskExecutor")
     public void processAsync(String jobId) {
@@ -35,16 +41,37 @@ public class CreativeJobProcessor {
             if (job.getModelImageUrl() != null) references.add(job.getModelImageUrl());
 
             String prompt = buildPrompt(job);
-            byte[] image = higgsfieldImageService.generateImage(prompt, job.getAspectRatio(), references);
+            if ("fal".equals(imageGenerationProvider.activeProvider())
+                    || "fal.ai".equals(imageGenerationProvider.activeProvider())) {
+                if (references.size() > 1) {
+                    if ("product-only".equalsIgnoreCase(falReferenceMode)
+                            || "single-reference".equalsIgnoreCase(falReferenceMode)) {
+                        references = List.of(job.getProductImageUrl());
+                        prompt += " Use the supplied product reference as the only image input. "
+                                + "The uploaded model reference is intentionally not used because this provider accepts one reference image. "
+                                + "Create a natural, commercially appropriate human fashion model with realistic anatomy and styling that complements the product; "
+                                + "do not claim to reproduce the uploaded model's identity.";
+                    } else {
+                        byte[] referenceBoard = referenceCompositeService.compose(
+                                job.getModelImageUrl(), job.getProductImageUrl());
+                        String referenceBoardUrl = storageService.upload(
+                                referenceBoard, "creative/" + job.getId() + "-reference-board.png", "image/png");
+                        references = List.of(referenceBoardUrl);
+                        prompt += " The supplied reference board contains two labeled panels: use the model panel for identity and anatomy, and the product panel for exact product shape, color, material, and branding.";
+                    }
+                }
+            }
+
+            byte[] image = imageGenerationProvider.generateImage(prompt, job.getAspectRatio(), references);
             String imageUrl = storageService.upload(image, "creative/" + job.getId() + ".png", "image/png");
             job.setResultImageUrl(imageUrl);
 
             if (job.getType() == CreativeJobType.PHOTO_SHOOT_VIDEO) {
-                if (!higgsfieldImageService.isVideoConfigured()) {
+                if (!videoGenerationService.isConfigured()) {
                     throw new IllegalStateException(
-                            "Video generation is unavailable. Configure HIGGSFIELD_VIDEO_MODEL and video access.");
+                            "Video generation is unavailable. Configure Gemini/Veo with billing and model access.");
                 }
-                byte[] video = higgsfieldImageService.generateVideo(imageUrl, prompt, job.getAspectRatio());
+                byte[] video = videoGenerationService.generateVideo(imageUrl, prompt, job.getAspectRatio());
                 String videoUrl = storageService.upload(video, "creative/" + job.getId() + ".mp4", "video/mp4");
                 job.setResultVideoUrl(videoUrl);
             }

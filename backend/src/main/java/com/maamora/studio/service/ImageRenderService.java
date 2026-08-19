@@ -41,7 +41,7 @@ public class ImageRenderService {
     @Value("${STABILITY_API_KEY:}")
     private String apiKey;
 
-    private final HiggsfieldImageService higgsfieldImageService;
+    private final ImageGenerationProvider imageGenerationProvider;
 
     // Logo loaded from the classpath (placed in
     // src/main/resources/static/maamora-logo.png)
@@ -49,8 +49,8 @@ public class ImageRenderService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public ImageRenderService(HiggsfieldImageService higgsfieldImageService) {
-        this.higgsfieldImageService = higgsfieldImageService;
+    public ImageRenderService(ImageGenerationProvider imageGenerationProvider) {
+        this.imageGenerationProvider = imageGenerationProvider;
     }
 
     // -----------------------------------------------------------------------
@@ -74,31 +74,27 @@ public class ImageRenderService {
         int width = isSquare ? 1024 : 768;
         int height = isSquare ? 1024 : 1344;
 
-        // Higgsfield provides the higher-end editorial generation path. For
-        // products with a supplied photo, keep Stability img2img first when it
-        // is available because the currently implemented Higgsfield payload is
-        // text-only and must not silently replace a real product with an
-        // invented look. Its API is asynchronous, but the adapter polls to
-        // preserve STUDIO's existing synchronous endpoint.
+        // The configured managed provider is the source of truth for the Studio
+        // generation workflow. The previous condition bypassed Cloudflare,
+        // DeAPI, and other providers whenever a product image and a Stability
+        // key were present, so the UI could appear configured while calling the
+        // legacy Stability-only path.
         boolean hasProductImage = product.getImageUrl() != null && !product.getImageUrl().isBlank();
-        boolean stabilityConfigured = apiKey != null && !apiKey.isBlank();
-        if (higgsfieldImageService.isConfigured() && (!hasProductImage || !stabilityConfigured)) {
+        if (imageGenerationProvider.isConfigured()) {
             try {
                 String prompt = buildPrompt(product.getName(), product.getDescription(), product.getSellingPoint(),
                         badgeText, promoText, accentColor, mood);
-                byte[] aiPng = higgsfieldImageService.generateImage(prompt, isSquare ? "1:1" : "9:16");
+                List<String> references = hasProductImage ? List.of(product.getImageUrl()) : List.of();
+                byte[] aiPng = imageGenerationProvider.generateImage(prompt, isSquare ? "1:1" : "9:16", references);
                 return compositeOverlays(aiPng, badgeText, promoText, accentColor, mood);
             } catch (Exception e) {
-                log.warn("Higgsfield image generation failed; falling back to Stability/local rendering: {}",
-                        e.getMessage());
+                log.error("Managed image generation failed: {}", e.getMessage(), e);
+                throw new IllegalStateException("Visual generation failed: " + e.getMessage(), e);
             }
         }
 
-        // No Stability AI key configured: skip the paid AI generation step
-        // entirely and composite the same logo/text overlays directly onto
-        // the product's own photo (or a plain brand-colour canvas if it has
-        // none). This keeps image generation fully functional without
-        // requiring a paid third-party API key.
+        // No managed image provider is configured: keep a deterministic
+        // product-photo/canvas fallback instead of failing the whole post flow.
         if (apiKey == null || apiKey.isEmpty()) {
             byte[] plainBase = buildPlainBase(product.getImageUrl(), width, height);
             return compositeOverlays(plainBase, badgeText, promoText, accentColor, mood);

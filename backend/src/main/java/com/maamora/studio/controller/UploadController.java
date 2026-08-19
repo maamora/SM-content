@@ -31,6 +31,11 @@ public class UploadController {
         return upload(file, "creative/references");
     }
 
+    @PostMapping("/creative-output")
+    public ApiResponse<UploadResponse> uploadCreativeOutput(@RequestParam("file") MultipartFile file) {
+        return upload(file, "creative/outputs");
+    }
+
     @DeleteMapping("/image")
     public ApiResponse<Void> deleteImage(@RequestParam("url") String url) {
         storageService.delete(url);

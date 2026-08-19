@@ -1,8 +1,11 @@
 package com.maamora.studio.controller;
 
 import com.maamora.studio.dto.response.ApiResponse;
+import com.maamora.studio.dto.response.HiggsfieldDiagnosticsResponse;
 import com.maamora.studio.dto.response.SystemCapabilitiesResponse;
 import org.springframework.beans.factory.annotation.Value;
+import com.maamora.studio.service.ImageGenerationProvider;
+import com.maamora.studio.service.VideoGenerationService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,11 +14,32 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/system")
 public class SystemController {
 
-    @Value("${app.gemini.api-key:}")
-    private String geminiApiKey;
+    private final ImageGenerationProvider imageGenerationProvider;
+    private final VideoGenerationService videoGenerationService;
 
-    @Value("${STABILITY_API_KEY:}")
-    private String stabilityApiKey;
+    public SystemController(ImageGenerationProvider imageGenerationProvider,
+                            VideoGenerationService videoGenerationService) {
+        this.imageGenerationProvider = imageGenerationProvider;
+        this.videoGenerationService = videoGenerationService;
+    }
+
+    @Value("${app.gemini.caption-api-key:}")
+    private String geminiCaptionApiKey;
+
+    @Value("${app.caption.provider:gemini}")
+    private String captionProvider;
+
+    @Value("${app.groq.api-key:}")
+    private String groqApiKey;
+
+    @Value("${app.openrouter.api-key:}")
+    private String openRouterApiKey;
+
+    @Value("${app.openrouter.models:}")
+    private String openRouterModels;
+
+    @Value("${app.openai.api-key:}")
+    private String openAiApiKey;
 
     @Value("${app.higgsfield.api-key-id:}")
     private String higgsfieldApiKeyId;
@@ -25,6 +49,15 @@ public class SystemController {
 
     @Value("${app.higgsfield.video-model:}")
     private String higgsfieldVideoModel;
+
+    @Value("${app.higgsfield.base-url:https://platform.higgsfield.ai}")
+    private String higgsfieldBaseUrl;
+
+    @Value("${app.higgsfield.model:flux-pro/kontext/max/text-to-image}")
+    private String higgsfieldModel;
+
+    @Value("${app.higgsfield.reference-model:flux-pro/kontext/max/image-to-image}")
+    private String higgsfieldReferenceModel;
 
     @Value("${app.ollama.enabled:false}")
     private boolean ollamaEnabled;
@@ -62,15 +95,38 @@ public class SystemController {
     @Value("${X_CLIENT_SECRET:}")
     private String xClientSecret;
 
+    @GetMapping("/higgsfield")
+    public ApiResponse<HiggsfieldDiagnosticsResponse> higgsfieldDiagnostics() {
+        return ApiResponse.ok(new HiggsfieldDiagnosticsResponse(
+                configured(higgsfieldApiKeyId),
+                configured(higgsfieldApiKeySecret),
+                length(higgsfieldApiKeyId),
+                length(higgsfieldApiKeySecret),
+                containsWhitespace(higgsfieldApiKeyId),
+                containsWhitespace(higgsfieldApiKeySecret),
+                contains(higgsfieldApiKeyId, ':'),
+                contains(higgsfieldApiKeySecret, ':'),
+                higgsfieldBaseUrl,
+                higgsfieldModel,
+                higgsfieldReferenceModel,
+                "Key"
+        ));
+    }
+
     @GetMapping("/capabilities")
     public ApiResponse<SystemCapabilitiesResponse> capabilities() {
-        boolean captionGeneration = configured(geminiApiKey) || ollamaEnabled;
-        boolean imageGeneration = configured(stabilityApiKey)
-                || configured(higgsfieldApiKeyId) && configured(higgsfieldApiKeySecret);
-        boolean creativeEditing = configured(higgsfieldApiKeyId)
-                && configured(higgsfieldApiKeySecret);
-        boolean photoShootGeneration = creativeEditing;
-        boolean videoGeneration = creativeEditing && configured(higgsfieldVideoModel);
+        boolean openRouterCaption = "openrouter".equalsIgnoreCase(captionProvider)
+                && configured(openRouterApiKey)
+                && configured(openRouterModels);
+        boolean groqCaption = "groq".equalsIgnoreCase(captionProvider) && configured(groqApiKey);
+        boolean geminiCaption = "gemini".equalsIgnoreCase(captionProvider) && configured(geminiCaptionApiKey);
+        boolean openAiCaption = "openai".equalsIgnoreCase(captionProvider) && configured(openAiApiKey);
+        boolean ollamaCaption = "ollama".equalsIgnoreCase(captionProvider) && ollamaEnabled;
+        boolean captionGeneration = groqCaption || openRouterCaption || geminiCaption || openAiCaption || ollamaCaption;
+        boolean imageGeneration = imageGenerationProvider.isConfigured();
+        boolean creativeEditing = imageGenerationProvider.isConfigured();
+        boolean photoShootGeneration = imageGenerationProvider.supportsPhotoShoot();
+        boolean videoGeneration = videoGenerationService.isConfigured();
         boolean cloudStorage = configured(cloudinaryCloudName)
                 && configured(cloudinaryApiKey);
         boolean smtpEmail = configured(smtpHost);
@@ -96,6 +152,18 @@ public class SystemController {
                 linkedinOAuth,
                 xOAuth
         ));
+    }
+
+    private int length(String value) {
+        return value == null ? 0 : value.length();
+    }
+
+    private boolean containsWhitespace(String value) {
+        return value != null && value.chars().anyMatch(Character::isWhitespace);
+    }
+
+    private boolean contains(String value, char character) {
+        return value != null && value.indexOf(character) >= 0;
     }
 
     private boolean configured(String value) {

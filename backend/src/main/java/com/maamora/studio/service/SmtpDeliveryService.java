@@ -16,6 +16,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
@@ -58,8 +60,27 @@ public class SmtpDeliveryService {
                 .user(user).post(post).toAddress(request.toAddress())
                 .subject(request.subject()).body(request.body()).status(DeliveryStatus.QUEUED).build();
         EmailDelivery saved = deliveryRepository.save(delivery);
-        processAsync(saved.getId());
+        if (!StringUtils.hasText(fromAddress)) {
+            saved.setStatus(DeliveryStatus.FAILED);
+            saved.setErrorMessage("SMTP sender address is not configured");
+            deliveryRepository.save(saved);
+        } else {
+            scheduleProcessingAfterCommit(saved.getId());
+        }
         return EmailDeliveryResponse.from(saved);
+    }
+
+    private void scheduleProcessingAfterCommit(String deliveryId) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    processAsync(deliveryId);
+                }
+            });
+        } else {
+            processAsync(deliveryId);
+        }
     }
 
     public List<EmailDeliveryResponse> list(String userId) {

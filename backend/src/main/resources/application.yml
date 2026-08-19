@@ -33,6 +33,24 @@ spring:
             enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:${SMTP_STARTTLS:true}}
 
 app:
+  image:
+    provider: ${IMAGE_PROVIDER:gemini}
+    fallback-provider: ${IMAGE_PROVIDER_FALLBACK:disabled}
+
+  fal-reference-mode: ${FAL_REFERENCE_MODE:product-only}
+
+  stability:
+    api-key: ${STABILITY_API_KEY:}
+    model: ${STABILITY_IMAGE_MODEL:ultra}
+    base-url: ${STABILITY_BASE_URL:https://api.stability.ai}
+    timeout-ms: ${STABILITY_TIMEOUT_MS:180000}
+
+  fal:
+    key: ${FAL_KEY:}
+    model: ${FAL_IMAGE_MODEL:fal-ai/flux-pro/kontext}
+    base-url: ${FAL_BASE_URL:https://fal.run}
+    timeout-ms: ${FAL_TIMEOUT_MS:180000}
+
   anthropic:
     api-key: ${ANTHROPIC_API_KEY:}
     model: ${ANTHROPIC_MODEL:claude-3-5-sonnet-20240620}
@@ -51,10 +69,78 @@ app:
     api-key: ${CLOUDINARY_API_KEY:placeholder}
     api-secret: ${CLOUDINARY_API_SECRET:placeholder}
 
+  caption:
+    provider: ${CAPTION_PROVIDER:groq}
+
+  cloudflare:
+    account-id: ${CLOUDFLARE_ACCOUNT_ID:}
+    api-token: ${CLOUDFLARE_API_TOKEN:}
+    base-url: ${CLOUDFLARE_AI_BASE_URL:https://api.cloudflare.com/client/v4}
+    image-model: ${CLOUDFLARE_AI_MODEL:@cf/black-forest-labs/flux-2-dev}
+    timeout-ms: ${CLOUDFLARE_AI_TIMEOUT_MS:180000}
+    poll-interval-ms: ${CLOUDFLARE_AI_POLL_INTERVAL_MS:3000}
+    steps: ${CLOUDFLARE_AI_STEPS:25}
+    guidance: ${CLOUDFLARE_AI_GUIDANCE:4.0}
+    retry-attempts: ${CLOUDFLARE_AI_RETRY_ATTEMPTS:3}
+    retry-backoff-ms: ${CLOUDFLARE_AI_RETRY_BACKOFF_MS:1500}
+
+  deapi:
+    api-key: ${DEAPI_API_KEY:}
+    image-model: ${DEAPI_IMAGE_MODEL:Flux1schnell}
+    edit-model: ${DEAPI_EDIT_MODEL:QwenImageEdit_Plus_NF4}
+    base-url: ${DEAPI_BASE_URL:https://api.deapi.ai}
+    steps: ${DEAPI_STEPS:4}
+    guidance: ${DEAPI_GUIDANCE:7.5}
+    poll-interval-ms: ${DEAPI_POLL_INTERVAL_MS:3000}
+    timeout-ms: ${DEAPI_TIMEOUT_MS:180000}
+
+  apiframe:
+    api-key: ${APIFRAME_API_KEY:}
+    model: ${APIFRAME_IMAGE_MODEL:flux-2-pro}
+    base-url: ${APIFRAME_BASE_URL:https://api.apiframe.ai/v2}
+    poll-interval-ms: ${APIFRAME_POLL_INTERVAL_MS:3000}
+    timeout-ms: ${APIFRAME_TIMEOUT_MS:180000}
+    output-format: ${APIFRAME_OUTPUT_FORMAT:png}
+
+
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+    image-model: ${OPENAI_IMAGE_MODEL:gpt-image-1}
+    text-model: ${OPENAI_TEXT_MODEL:gpt-4o-mini}
+    image-quality: ${OPENAI_IMAGE_QUALITY:medium}
+    image-timeout-ms: ${OPENAI_IMAGE_TIMEOUT_MS:180000}
+
+  openrouter:
+    api-key: ${OPENROUTER_API_KEY:}
+    models: ${OPENROUTER_MODELS:openai/gpt-4o-mini,google/gemini-2.0-flash-001}
+    image-model: ${OPENROUTER_IMAGE_MODEL:bytedance-seed/seedream-4.5}
+    base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1}
+    max-attempts: ${OPENROUTER_MAX_ATTEMPTS:2}
+    image-timeout-ms: ${OPENROUTER_IMAGE_TIMEOUT_MS:180000}
+    image-api-path: ${OPENROUTER_IMAGE_API_PATH:/images}
+
+  groq:
+    api-key: ${GROQ_API_KEY:}
+    model: ${GROQ_MODEL:llama-3.3-70b-versatile}
+    base-url: ${GROQ_BASE_URL:https://api.groq.com/openai/v1}
+
+  video:
+    provider: ${VIDEO_PROVIDER:disabled}
+
   gemini:
+    # Use separate credentials when caption and Veo access are provisioned independently.
+    # GEMINI_API_KEY remains a compatibility fallback for both services.
     api-key: ${GEMINI_API_KEY:}
-    model: ${GEMINI_MODEL:gemini-1.5-pro}
+    image-model: ${GEMINI_IMAGE_MODEL:gemini-3.1-flash-image}
+    image-timeout-ms: ${GEMINI_IMAGE_TIMEOUT_MS:180000}
+    caption-api-key: ${GEMINI_CAPTION_API_KEY:${GEMINI_API_KEY:}}
+    video-api-key: ${GEMINI_VIDEO_API_KEY:${GEMINI_API_KEY:}}
+    model: ${GEMINI_MODEL:gemini-2.5-flash}
+    video-model: ${GEMINI_VIDEO_MODEL:veo-3.1-generate-preview}
     base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+    video-timeout-ms: ${GEMINI_VIDEO_TIMEOUT_MS:600000}
+    video-poll-interval-ms: ${GEMINI_VIDEO_POLL_INTERVAL_MS:5000}
 
   higgsfield:
     api-key-id: ${HIGGSFIELD_API_KEY_ID:}
@@ -73,6 +159,12 @@ app:
     
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}
+
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
+    redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/api/auth/google/callback}
+    frontend-url: ${FRONTEND_URL:http://localhost:3000}
 
   social:
     frontend-url: ${FRONTEND_URL:http://localhost:3000}
