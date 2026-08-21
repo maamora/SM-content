@@ -157,6 +157,11 @@
 - [x] Route Generate Visual, Photo Shoot, Edit Image, and batch creation through deterministic local templates with clear output provenance.
 - [x] Replace AI caption requests with local multilingual template captions and validate storage, approval, export, and responsive Studio pages.
 
+## Local template workflow hardening
+- [x] Audit all authenticated Studio pages for remaining provider-specific labels, actions, and stale empty/error states.
+- [x] Ensure template selection, product context, local captions, approval, and export state are consistently visible and actionable.
+- [x] Verify local SVG rendering, creative composition, batch orchestration, approval/export contracts, backend tests, and the final frontend production build.
+
 ## Deterministic Content Generation Engine
 - [x] Design a server-side template composition fallback for Product → branded social visual when image AI is unavailable.
 - [x] Design multilingual rule-based caption templates with safely selected variations for French, Arabic, and Darija.

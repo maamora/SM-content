@@ -4,7 +4,6 @@ import com.maamora.studio.dto.response.ApiResponse;
 import com.maamora.studio.dto.response.HiggsfieldDiagnosticsResponse;
 import com.maamora.studio.dto.response.SystemCapabilitiesResponse;
 import org.springframework.beans.factory.annotation.Value;
-import com.maamora.studio.service.ImageGenerationProvider;
 import com.maamora.studio.service.VideoGenerationService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,32 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/system")
 public class SystemController {
 
-    private final ImageGenerationProvider imageGenerationProvider;
     private final VideoGenerationService videoGenerationService;
 
-    public SystemController(ImageGenerationProvider imageGenerationProvider,
-                            VideoGenerationService videoGenerationService) {
-        this.imageGenerationProvider = imageGenerationProvider;
+    public SystemController(VideoGenerationService videoGenerationService) {
         this.videoGenerationService = videoGenerationService;
     }
-
-    @Value("${app.gemini.caption-api-key:}")
-    private String geminiCaptionApiKey;
-
-    @Value("${app.caption.provider:gemini}")
-    private String captionProvider;
-
-    @Value("${app.groq.api-key:}")
-    private String groqApiKey;
-
-    @Value("${app.openrouter.api-key:}")
-    private String openRouterApiKey;
-
-    @Value("${app.openrouter.models:}")
-    private String openRouterModels;
-
-    @Value("${app.openai.api-key:}")
-    private String openAiApiKey;
 
     @Value("${app.higgsfield.api-key-id:}")
     private String higgsfieldApiKeyId;
@@ -58,9 +36,6 @@ public class SystemController {
 
     @Value("${app.higgsfield.reference-model:flux-pro/kontext/max/image-to-image}")
     private String higgsfieldReferenceModel;
-
-    @Value("${app.ollama.enabled:false}")
-    private boolean ollamaEnabled;
 
     @Value("${app.cloudinary.cloud-name:}")
     private String cloudinaryCloudName;
@@ -115,13 +90,6 @@ public class SystemController {
 
     @GetMapping("/capabilities")
     public ApiResponse<SystemCapabilitiesResponse> capabilities() {
-        boolean openRouterCaption = "openrouter".equalsIgnoreCase(captionProvider)
-                && configured(openRouterApiKey)
-                && configured(openRouterModels);
-        boolean groqCaption = "groq".equalsIgnoreCase(captionProvider) && configured(groqApiKey);
-        boolean geminiCaption = "gemini".equalsIgnoreCase(captionProvider) && configured(geminiCaptionApiKey);
-        boolean openAiCaption = "openai".equalsIgnoreCase(captionProvider) && configured(openAiApiKey);
-        boolean ollamaCaption = "ollama".equalsIgnoreCase(captionProvider) && ollamaEnabled;
         boolean captionGeneration = true;
         boolean imageGeneration = true;
         boolean creativeEditing = true;

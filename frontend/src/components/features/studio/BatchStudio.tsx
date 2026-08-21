@@ -70,8 +70,8 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                 setStatusMsg("Batch visuals and multilingual captions are ready.");
             } else {
                 setErrorMsg(batch.posts.length > 0
-                    ? "Batch processing completed with one or more failures. The completed visuals remain available below."
-                    : "Batch processing failed before any visual could be completed. Review the provider configuration and try again.");
+                    ? "Le traitement du lot s’est terminé avec une ou plusieurs erreurs. Les compositions terminées restent disponibles ci-dessous."
+                    : "Le traitement du lot s’est interrompu avant la fin des compositions. Vérifiez les références produit et réessayez.");
             }
         } catch (error) {
             setErrorMsg(error instanceof Error ? error.message : "Unable to retrieve batch progress.");
@@ -92,7 +92,7 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                 templateId: selectedTemplateId,
             });
             setActiveBatch(batch);
-            setStatusMsg("Batch started. STUDIO is generating visuals and multilingual captions in the background.");
+            setStatusMsg("Lot lancé. STUDIO rend les compositions et prépare les légendes multilingues en arrière-plan.");
             void pollBatch(batch.id);
         } catch (err) {
             setErrorMsg(err instanceof Error ? err.message : "Failed to start batch");
@@ -128,8 +128,8 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                         <div className="studio-creative-status__icon"><Loader2 className="h-5 w-5 animate-spin" /></div>
                         <div>
                             <p className="studio-kicker">BATCH IN PROGRESS</p>
-                            <h3 className="mt-2 font-serif text-2xl font-normal text-[var(--studio-ink)]">Creating your campaign set</h3>
-                            <p className="mt-2 max-w-lg text-xs leading-6 text-[#777870]">Each approved product is generated and captioned by the server workflow. Keep this page open while STUDIO refreshes the completed set.</p>
+                            <h3 className="mt-2 font-serif text-2xl font-normal text-[var(--studio-ink)]">Composition de votre campagne</h3>
+                            <p className="mt-2 max-w-lg text-xs leading-6 text-[#777870]">Chaque produit approuvé reçoit une composition de modèle et des légendes multilingues. Gardez cette page ouverte pendant la mise à jour du lot.</p>
                         </div>
                     </div>
                 </div>
@@ -146,10 +146,10 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                         {generatedPosts.map((output) => (
                             <div key={output.id} className="border border-[#deddd5] bg-[#faf9f4] p-3">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={output.imageUrl || ""} alt={`${output.productName} generated visual`} className={`w-full object-cover ${selectedFormat === "SQUARE_POST" ? "aspect-square" : "aspect-[9/16]"}`} />
+                                <img src={output.imageUrl || ""} alt={`Composition de marque pour ${output.productName}`} className={`w-full object-cover ${selectedFormat === "SQUARE_POST" ? "aspect-square" : "aspect-[9/16]"}`} />
                                 <div className="mt-3 flex items-center justify-between gap-2">
                                     <span className="truncate text-xs font-bold text-[var(--studio-ink)]">{output.productName}</span>
-                                    {output.imageUrl && <a className="studio-text-button shrink-0" href={output.imageUrl} download={`studio-${output.productName}.png`}>Download</a>}
+                                    {output.imageUrl && <a className="studio-text-button shrink-0" href={output.imageUrl} download={`studio-${output.productName}.png`}>Télécharger</a>}
                                 </div>
                             </div>
                         ))}
@@ -234,7 +234,7 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                             className="studio-button studio-button--lime studio-button--large w-full disabled:opacity-50"
                         >
                             {isStartingBatch && <Loader2 className="h-4 w-4 animate-spin" />}
-                            Lancer le traitement ({selectedProducts.size} éléments)
+                            Lancer le rendu ({selectedProducts.size} éléments)
                         </button>
                     </div>
                 </div>

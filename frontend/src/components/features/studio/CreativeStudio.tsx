@@ -19,7 +19,6 @@ import { listTemplates, type Template } from "@/lib/api/templates";
 import { generateImage, generateCaptions, editCaption, approvePost, exportPost, type Post } from "@/lib/api/posts";
 import { Product3DModel } from "@/components/features/products/Product3DModel";
 import { CreativeWorkflowPanel } from "./CreativeWorkflowPanel";
-import { getSystemCapabilities, type SystemCapabilities } from "@/lib/api/system";
 import { generateLocalCaption } from "@/lib/local-caption";
 
 interface Product {
@@ -41,10 +40,9 @@ interface CreativeStudioProps {
 
 type CaptionLang = "fr" | "ar" | "darija" | "en";
 
-// Purely cosmetic mood swatches for the live preview panel while a real,
-// backend-rendered creative doesn't exist yet. These never get sent to the
-// server — the actual output is always the Playwright-rendered image from
-// /api/posts/generate-image.
+// Mood swatches provide the visual direction passed to the local SVG template
+// renderer. They also keep the in-browser preview aligned with the requested
+// composition before its final PNG is rendered.
 const MOOD_PRESETS = [
     { id: "sunset", name: "Maamora Sunset", bg: "from-[#f7f8ef] via-[#e8f3c8] to-[#d7ff97]", accent: "#5f762a" },
     { id: "moss", name: "Atlas Moss", bg: "from-[#fbfdfb] via-[#eaf2ed] to-[#d4e6dc]", accent: "#2d5a41" },
@@ -77,7 +75,6 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const [isApproving, setIsApproving] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    const [capabilities, setCapabilities] = useState<SystemCapabilities | null>(null);
 
     const [activeCaptionLang, setActiveCaptionLang] = useState<CaptionLang>("darija");
     const [draftCaption, setDraftCaption] = useState<string>("");
@@ -92,9 +89,6 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
 
     const approvedProducts = useMemo(() => products.filter((p) => p.status === "APPROVED"), [products]);
     const pendingCount = products.length - approvedProducts.length;
-    const imageGenerationUnavailable = capabilities !== null && !capabilities.imageGeneration;
-    const serverCaptionGenerationUnavailable = capabilities !== null && !capabilities.captionGeneration;
-
     const selectedProduct = approvedProducts.find((p) => p.id === selectedProductId) || approvedProducts[0];
 
     const matchingProducts = useMemo(
@@ -134,14 +128,6 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     }, []);
 
     useEffect(() => {
-        getSystemCapabilities().then(setCapabilities).catch(() => {
-            // Do not block a healthy server workflow merely because this
-            // informational capability check is temporarily unavailable.
-            setCapabilities(null);
-        });
-    }, []);
-
-    useEffect(() => {
         if (approvedProducts.length > 0 && !approvedProducts.some((p) => p.id === selectedProductId)) {
             // eslint-disable-next-line react-hooks/set-state-in-effect -- default-select the first approved product
             setSelectedProductId(approvedProducts[0].id);
@@ -175,7 +161,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
         setPost(null);
         setGeneratedImageSrc(null);
         setLocalCaptions({});
-    }, [selectedProductId, selectedTemplateId, promoText, accentColor, badgeText]);
+    }, [selectedProductId, selectedTemplateId, promoText, accentColor, badgeText, mood.name]);
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- sync the editable draft from the loaded post/language
@@ -184,10 +170,6 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
 
     const handleGenerateImage = async () => {
         if (!selectedProduct || !selectedTemplateId) return;
-        if (imageGenerationUnavailable) {
-            setErrorMsg("La génération d’images n’est pas configurée. Ajoutez une clé Gemini valide au backend pour activer les visuels, les photo shoots et les retouches.");
-            return;
-        }
         setErrorMsg(null);
         setIsGeneratingImage(true);
         try {
@@ -343,7 +325,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                 </div>
             )}
 
-            <CreativeWorkflowPanel imageGenerationAvailable={!imageGenerationUnavailable} />
+            <CreativeWorkflowPanel />
 
             <div className="studio-creative-grid">
 
@@ -466,7 +448,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                             </div>
 
                             <div className="space-y-1.5">
-                                <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Ambiance de l&apos;aperçu</span>
+                                <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Direction de composition</span>
                                 <div className="flex flex-wrap gap-2">
                                     {MOOD_PRESETS.map((m) => (
                                         <button
@@ -479,7 +461,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                         />
                                     ))}
                                 </div>
-                                <p className="text-[10px] font-medium text-[#91918b]">Purement visuel — n&apos;affecte pas le rendu final.</p>
+                                <p className="text-[10px] font-medium text-[#91918b]">Cette direction guide les couleurs du rendu de modèle.</p>
                             </div>
 
                             <div className="h-px bg-[#deddd5]" />
@@ -523,7 +505,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
 
                             <button
                                 onClick={handleGenerateImage}
-                                disabled={isGeneratingImage || !selectedProduct || !selectedTemplateId || imageGenerationUnavailable}
+                                disabled={isGeneratingImage || !selectedProduct || !selectedTemplateId}
                                 className="studio-button studio-button--lime studio-button--large w-full disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {isGeneratingImage ? (
@@ -531,13 +513,8 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                 ) : (
                                     <Sparkles className="h-3.5 w-3.5" />
                                 )}
-                                {isGeneratingImage ? "Rendu du visuel en cours..." : imageGenerationUnavailable ? "Génération visuelle indisponible" : generatedImageSrc ? "Régénérer le visuel" : "Générer le visuel"}
+                                {isGeneratingImage ? "Rendu du visuel en cours..." : generatedImageSrc ? "Rendre à nouveau" : "Composer le visuel"}
                             </button>
-                            {imageGenerationUnavailable && (
-                                <p className="text-[10px] font-medium leading-relaxed text-[#777870]">
-                                    Ajoutez une clé Gemini valide au backend pour activer la création d’images, les photo shoots et les retouches. Aucun package navigateur ne peut remplacer cette étape sans télécharger un très grand modèle sur l’appareil.
-                                </p>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -551,20 +528,21 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                         <div className={`studio-creative-preview bg-gradient-to-br ${mood.bg}`}>
                             <p className="absolute left-4 top-4 z-10 flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-[#777870]">
                                 <Eye className="h-3 w-3" style={{ color: mood.accent }} />
-                                {generatedImageSrc ? "Visuel généré" : post?.imageUrl ? "Visuel rendu" : "Aperçu en direct"}
+                                {generatedImageSrc ? "Composition rendue" : post?.imageUrl ? "Composition prête" : "Aperçu de composition"}
                             </p>
 
                             {generatedImageSrc ? (
                                 <div className="flex flex-col items-center gap-3">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={generatedImageSrc} alt="Generated creative visual" className={`object-cover ${selectedFormat === "SQUARE_POST" ? "h-[300px] w-[300px]" : "h-[400px] w-[240px]"}`} />
-                                    <button type="button" onClick={handleDownloadGeneratedVisual} className="studio-button studio-button--dark"><Download className="h-3.5 w-3.5" /> Download PNG</button>
+                                    <img src={generatedImageSrc} alt="Visuel de composition de marque" className={`object-cover ${selectedFormat === "SQUARE_POST" ? "h-[300px] w-[300px]" : "h-[400px] w-[240px]"}`} />
+                                    <span className="text-center text-[10px] font-mono uppercase tracking-widest text-[#777870]">Composition de modèle · PNG</span>
+                                    <button type="button" onClick={handleDownloadGeneratedVisual} className="studio-button studio-button--dark"><Download className="h-3.5 w-3.5" /> Télécharger le PNG</button>
                                 </div>
                             ) : post?.imageUrl ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
                                     src={post.imageUrl}
-                                    alt={selectedProduct ? `${selectedProduct.name} creative` : "Generated creative"}
+                                    alt={selectedProduct ? `Composition de marque pour ${selectedProduct.name}` : "Composition de marque"}
                                     className={`object-cover ${selectedFormat === "SQUARE_POST" ? "h-[300px] w-[300px]" : "h-[400px] w-[240px]"
                                         }`}
                                 />
@@ -605,7 +583,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                         Rédaction Multilingue
                                     </h3>
                                     <p className="mt-0.5 text-[11px] font-medium text-[#777870]">
-                                        Généré par IA, modifiable avant export
+                                        Modèle multilingue, modifiable avant export
                                     </p>
                                 </div>
                                 <div className="studio-creative-card__body">
@@ -664,7 +642,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                             ? `Langue sélectionnée : ${LANGS.find((lang) => lang.id === activeCaptionLang)?.label}. Cliquez sur une langue pour appliquer sa légende générée dans l’éditeur.`
                                             : localCaptions[activeCaptionLang]
                                                 ? "Brouillon rédigé sur cet appareil. Relisez-le avant publication."
-                                                : "Rédigez une légende à partir du produit sélectionné, sans clé API."}
+                                                : "Créez une légende à partir du produit sélectionné, sans clé API."}
                                     </p>
 
                                     <button
@@ -686,11 +664,6 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                             ? localCaptionProgress ? `${localCaptionProgress.progress}% · ${localCaptionProgress.detail}` : "Préparation…"
                                             : "Rédiger la légende sur cet appareil"}
                                     </button>
-                                    {serverCaptionGenerationUnavailable && (
-                                        <p className="mt-2 text-[10px] font-medium leading-relaxed text-[#777870]">
-                                            La génération de toutes les langues n’est pas configurée. La rédaction locale reste disponible pour la langue sélectionnée.
-                                        </p>
-                                    )}
                                 </div>
                             </div>
                         </div>

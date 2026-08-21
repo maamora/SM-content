@@ -16,7 +16,7 @@ type CreativeType = "PHOTO_SHOOT" | "EDIT_IMAGE";
 
 const PROMPTS = {
     EDIT_IMAGE: "Keep the product exactly recognizable. Change the background to a warm daylight studio with soft editorial shadows and a quiet cream palette. Preserve the packaging, label, materials, and colors.",
-    PHOTO_SHOOT: "Create a premium campaign frame with the model and product in the same scene. Keep the product clearly visible and recognizable, preserve the model's identity, use a muted olive set, directional daylight, realistic editorial texture, and a refined commercial finish.",
+    PHOTO_SHOOT: "Arrange the product and model reference in a premium campaign composition. Keep both references clearly labelled, use a muted olive set, directional light shapes, and a refined editorial hierarchy.",
 };
 
 function ReferenceTile({
@@ -43,7 +43,7 @@ function ReferenceTile({
     );
 }
 
-export function CreativeWorkflowPanel({ compact = false, imageGenerationAvailable = true }: CreativeWorkflowPanelProps) {
+export function CreativeWorkflowPanel({ compact = false }: CreativeWorkflowPanelProps) {
     const [type, setType] = useState<CreativeType>("PHOTO_SHOOT");
     const [prompt, setPrompt] = useState(PROMPTS.PHOTO_SHOOT);
     const [productFile, setProductFile] = useState<File | null>(null);
@@ -60,9 +60,9 @@ export function CreativeWorkflowPanel({ compact = false, imageGenerationAvailabl
     const hasRequiredReferences = Boolean(isPhotoShoot ? productFile && modelFile : productFile);
     const activeImageUrl = resultImageUrl ?? productUrl ?? null;
     const statusLabel = useMemo(() => {
-        if (resultImageUrl && resultMode === "TEMPLATE_COMPOSED") return "Branded template ready";
-        if (resultImageUrl) return isPhotoShoot ? "Photo shoot ready" : "Edit ready";
-        return isPhotoShoot ? "Ready for a photo shoot direction" : "Ready for an image edit";
+        if (resultImageUrl && resultMode === "TEMPLATE_COMPOSED") return "Composition prête";
+        if (resultImageUrl) return "Visuel prêt";
+        return isPhotoShoot ? "Prêt pour une composition à deux références" : "Prêt pour une composition produit";
     }, [isPhotoShoot, resultImageUrl, resultMode]);
 
     async function waitForCreativeJob(jobId: string): Promise<CreativeJob> {
@@ -70,17 +70,17 @@ export function CreativeWorkflowPanel({ compact = false, imageGenerationAvailabl
             await new Promise((resolve) => window.setTimeout(resolve, 2500));
             const job = await getCreativeJob(jobId);
             if (job.status === "COMPLETED") {
-                if (!job.resultImageUrl) throw new Error("Creative workflow completed without an image result.");
+                if (!job.resultImageUrl) throw new Error("Le flux de composition s’est terminé sans visuel.");
                 return job;
             }
-            if (job.status === "FAILED") throw new Error(job.errorMessage || "The creative workflow could not generate this visual.");
+            if (job.status === "FAILED") throw new Error(job.errorMessage || "Le flux de composition n’a pas pu produire ce visuel.");
         }
-        throw new Error("Visual generation timed out. Please try again.");
+        throw new Error("Le rendu de composition a expiré. Réessayez.");
     }
 
     async function handleGenerate() {
         if (!hasRequiredReferences) {
-            setError(isPhotoShoot ? "Add both a product image and a model image." : "Add a product image to edit.");
+            setError(isPhotoShoot ? "Ajoutez une image produit et une image modèle." : "Ajoutez une image produit à composer.");
             return;
         }
         setBusy(true);
@@ -103,7 +103,7 @@ export function CreativeWorkflowPanel({ compact = false, imageGenerationAvailabl
             setResultMode(completedJob.outputMode);
             setRecoveryMessage(completedJob.recoveryMessage);
         } catch (generateError) {
-            setError(generateError instanceof Error ? generateError.message : "Visual generation failed.");
+            setError(generateError instanceof Error ? generateError.message : "Le rendu de composition a échoué.");
         } finally {
             setBusy(false);
         }
@@ -114,15 +114,15 @@ export function CreativeWorkflowPanel({ compact = false, imageGenerationAvailabl
             <div className="creative-workflow__head">
                 <div>
                     <p className="studio-kicker studio-kicker--dark"><span className="studio-pulse" /> CREATIVE WORKFLOW / 02</p>
-                    <h2>Give the image<br /><em>another life.</em></h2>
-                    <p>Bring a product and a model into the same frame, then steer the shoot with a sentence.</p>
+                    <h2>Composez une image<br /><em>qui vous ressemble.</em></h2>
+                    <p>Placez un produit et un modèle dans la même composition, puis pilotez la direction graphique avec une phrase.</p>
                 </div>
                 <span className="creative-workflow__status"><span className="studio-dot studio-dot--lime" /> {statusLabel}</span>
             </div>
 
             <div className="creative-workflow__modebar">
-                <button type="button" className={type === "PHOTO_SHOOT" ? "is-active" : ""} onClick={() => { setType("PHOTO_SHOOT"); setPrompt(PROMPTS.PHOTO_SHOOT); setResultImageUrl(null); setError(null); }}><WandSparkles size={15} /> Photo shoot</button>
-                <button type="button" className={type === "EDIT_IMAGE" ? "is-active" : ""} onClick={() => { setType("EDIT_IMAGE"); setPrompt(PROMPTS.EDIT_IMAGE); setResultImageUrl(null); setError(null); }}><ImagePlus size={15} /> Edit an image</button>
+                <button type="button" className={type === "PHOTO_SHOOT" ? "is-active" : ""} onClick={() => { setType("PHOTO_SHOOT"); setPrompt(PROMPTS.PHOTO_SHOOT); setResultImageUrl(null); setError(null); }}><WandSparkles size={15} /> Produit + modèle</button>
+                <button type="button" className={type === "EDIT_IMAGE" ? "is-active" : ""} onClick={() => { setType("EDIT_IMAGE"); setPrompt(PROMPTS.EDIT_IMAGE); setResultImageUrl(null); setError(null); }}><ImagePlus size={15} /> Composer un produit</button>
             </div>
 
             <div className="creative-workflow__grid">
@@ -132,26 +132,26 @@ export function CreativeWorkflowPanel({ compact = false, imageGenerationAvailabl
                         {isPhotoShoot && <ReferenceTile label="02 / MODEL" file={modelFile} url={modelUrl} onChange={(file) => { setModelFile(file); setModelUrl(URL.createObjectURL(file)); setResultImageUrl(null); }} />}
                     </div>
                     <label className="creative-workflow__prompt">
-                        <span>SCENARIO / PROMPT</span>
-                        <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={5} placeholder="Describe the scene, motion, lighting, and what must stay true..." />
+                        <span>DIRECTION DE COMPOSITION</span>
+                        <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={5} placeholder="Décrivez la palette, la hiérarchie, la lumière graphique et ce qui doit rester fidèle…" />
                     </label>
                     <div className="creative-workflow__actions">
                         <button type="button" className="studio-button studio-button--dark" onClick={handleGenerate} disabled={busy}>
                             {busy ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                            {busy ? "Generating visual..." : !imageGenerationAvailable ? "Generate template composition" : isPhotoShoot ? "Generate photo shoot" : "Apply image edit"}
+                            {busy ? "Rendu en cours..." : isPhotoShoot ? "Créer la composition" : "Appliquer la composition"}
                         </button>
-                        <span>{imageGenerationAvailable ? "AI-enhanced output is ready when you are." : "AI is unavailable; a branded template composition will be created from your references."}</span>
+                        <span>Un visuel de composition de marque est créé localement à partir de vos références.</span>
                     </div>
                     {error && <p className="studio-form-error">{error}</p>}
                 </div>
 
                 <div className="creative-workflow__result">
                     {activeImageUrl ? (
-                        <img src={activeImageUrl} alt="Generated creative result" className="creative-workflow__media" />
+                        <img src={activeImageUrl} alt="Résultat de composition de marque" className="creative-workflow__media" />
                     ) : (
-                        <div className="creative-workflow__empty"><Sparkles size={24} /><span>Your result lands here.</span><small>Reference → direction → visual</small></div>
+                        <div className="creative-workflow__empty"><Sparkles size={24} /><span>Votre composition arrive ici.</span><small>Références → direction → composition</small></div>
                     )}
-                    {resultImageUrl && <div className="creative-workflow__result-meta"><span><span className="studio-dot studio-dot--lime" /> {resultMode === "TEMPLATE_COMPOSED" ? "TEMPLATE READY" : "VISUAL READY"}</span><span>{resultMode === "TEMPLATE_COMPOSED" ? "Reference composition" : isPhotoShoot ? "Photo shoot frame" : "Edited image"}</span></div>}
+                    {resultImageUrl && <div className="creative-workflow__result-meta"><span><span className="studio-dot studio-dot--lime" /> {resultMode === "TEMPLATE_COMPOSED" ? "COMPOSITION DE MODÈLE" : "VISUEL PRÊT"}</span><span>{resultMode === "TEMPLATE_COMPOSED" ? "Composition à partir des références" : isPhotoShoot ? "Cadre de campagne" : "Composition produit"}</span></div>}
                     {recoveryMessage && <p className="studio-form-error">{recoveryMessage}</p>}
                 </div>
             </div>
