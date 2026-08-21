@@ -162,8 +162,7 @@ Select-String -Path .\.env -Pattern '^(IMAGE_PROVIDER|CAPTION_PROVIDER|STORAGE_L
 ```
 
 Alternatively, use the committed Windows helper. It loads `backend/.env` into the current PowerShell process without printing secret values, detects duplicate keys such as
-`HIGGSFIELD_MODEL`, clears inherited `SPRING_DATASOURCE_*` overrides that can suppress the derived connection URL, and
-checks the Supabase pooler username format before starting Spring Boot:
+`HIGGSFIELD_MODEL`, builds `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, and `SPRING_DATASOURCE_PASSWORD` from the validated `DB_*` values, and checks the Supabase pooler username format before starting Spring Boot:
 
 ```powershell
 cd backend

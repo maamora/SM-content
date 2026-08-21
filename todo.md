@@ -196,6 +196,11 @@
 - [x] Harden the local configuration path and document a safe first-start datasource setup.
 - [x] Validate the configuration contract, then commit any required repair.
 
+## Windows datasource property mapping repair
+- [x] Compare the launcher environment variables with the active Spring datasource placeholders.
+- [x] Correct the Windows launcher mapping while keeping database secrets out of logs.
+- [x] Add a regression check for the mapping contract, validate startup configuration, and commit the repair.
+
 ## Deterministic Content Generation Engine
 - [x] Design a server-side template composition fallback for Product → branded social visual when image AI is unavailable.
 - [x] Design multilingual rule-based caption templates with safely selected variations for French, Arabic, and Darija.

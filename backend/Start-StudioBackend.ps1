@@ -46,7 +46,7 @@ if ($jwtSecretLength -lt 32) {
     throw "JWT_SECRET must contain at least 32 UTF-8 bytes for secure HS256 token signing. Replace it locally with a longer random server-only value."
 }
 
-foreach ($override in @("SPRING_DATASOURCE_URL", "SPRING_DATASOURCE_USERNAME", "SPRING_DATASOURCE_PASSWORD")) {
+foreach ($override in @("SPRING_DATASOURCE_URL", "SPRING_DATASOURCE_USERNAME", "SPRING_DATASOURCE_PASSWORD", "SPRING_DATASOURCE_DRIVER_CLASS_NAME")) {
     if ($settings.ContainsKey($override)) {
         throw "Remove '$override' from backend/.env. STUDIO uses DB_* variables only."
     }
@@ -61,6 +61,17 @@ if ($settings["DB_HOST"] -match '\.pooler\.supabase\.com$' -and $settings["DB_US
 
 if ($settings["DB_SSL_MODE"] -ne "require" -and $settings["DB_HOST"] -match '\.supabase\.com$') {
     throw "Set DB_SSL_MODE=require for a Supabase connection."
+}
+
+$env:SPRING_DATASOURCE_URL = "jdbc:postgresql://$($settings["DB_HOST"]):$($settings["DB_PORT"])/$($settings["DB_NAME"])?sslmode=$($settings["DB_SSL_MODE"])"
+$env:SPRING_DATASOURCE_USERNAME = $settings["DB_USERNAME"]
+$env:SPRING_DATASOURCE_PASSWORD = $settings["DB_PASSWORD"]
+$env:SPRING_DATASOURCE_DRIVER_CLASS_NAME = "org.postgresql.Driver"
+
+if ([string]::IsNullOrWhiteSpace($env:SPRING_DATASOURCE_URL) -or
+    [string]::IsNullOrWhiteSpace($env:SPRING_DATASOURCE_USERNAME) -or
+    [string]::IsNullOrWhiteSpace($env:SPRING_DATASOURCE_PASSWORD)) {
+    throw "The launcher could not construct Spring datasource properties from backend/.env. Verify the DB_* entries without printing their secret values."
 }
 
 Write-Host "STUDIO configuration loaded from backend/.env. Starting Spring Boot on http://localhost:8080..." -ForegroundColor Green
