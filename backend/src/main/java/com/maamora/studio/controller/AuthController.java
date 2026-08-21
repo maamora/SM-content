@@ -4,12 +4,16 @@ import com.maamora.studio.dto.request.LoginRequest;
 import com.maamora.studio.dto.request.RegisterRequest;
 import com.maamora.studio.dto.response.ApiResponse;
 import com.maamora.studio.dto.response.AuthResponse;
+import com.maamora.studio.dto.response.UserProfileResponse;
 import com.maamora.studio.exception.RateLimitExceededException;
+import com.maamora.studio.security.CurrentUserProvider;
 import com.maamora.studio.service.AuthService;
 import com.maamora.studio.service.RateLimiterService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
@@ -21,6 +25,8 @@ public class AuthController {
 
     private final AuthService authService;
     private final RateLimiterService rateLimiter;
+    private final CurrentUserProvider currentUserProvider;
+    private final com.maamora.studio.service.GoogleAuthService googleAuthService;
 
     // Covers both spam brand-creation (a bot registering many brands) and
     // brute-forcing a specific brand's join code: 6 tries per IP per 15
@@ -44,6 +50,34 @@ public class AuthController {
         return ApiResponse.ok(authService.login(request));
     }
 
+    @GetMapping("/google/start")
+    public ResponseEntity<Void> googleStart() {
+        String location = googleAuthService.configured()
+                ? googleAuthService.authorizationUrl()
+                : googleAuthService.errorRedirect("Google sign-in is not configured on this server.");
+        return ResponseEntity.status(302).header(HttpHeaders.LOCATION, location).build();
+    }
+
+    @GetMapping("/google/callback")
+    public ResponseEntity<Void> googleCallback(
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String state,
+            @RequestParam(required = false) String error) {
+        if (error != null || code == null || state == null) {
+            return redirect(googleAuthService.errorRedirect("Google sign-in was cancelled or denied."));
+        }
+        try {
+            return redirect(googleAuthService.complete(code, state));
+        } catch (Exception exception) {
+            return redirect(googleAuthService.errorRedirect(exception.getMessage() == null ? "Google sign-in failed." : exception.getMessage()));
+        }
+    }
+
+    @GetMapping("/me")
+    public ApiResponse<UserProfileResponse> me() {
+        return ApiResponse.ok(authService.currentUser(currentUserProvider.getCurrentUserId()));
+    }
+
     // Trusts X-Forwarded-For when present (set by a reverse proxy in front of
     // the app) and falls back to the raw socket address otherwise. Only
     // trustworthy if that header can't be spoofed by the client directly —
@@ -56,5 +90,9 @@ public class AuthController {
             return forwarded.split(",")[0].trim();
         }
         return request.getRemoteAddr();
+    }
+
+    private ResponseEntity<Void> redirect(String location) {
+        return ResponseEntity.status(302).header(HttpHeaders.LOCATION, location).build();
     }
 }

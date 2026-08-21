@@ -92,3 +92,16 @@ export function UtilityPage({ title, body, action = "Continue" }: { title: strin
   const [complete, setComplete] = useState(false);
   return <main className="studio-utility"><div className="studio-utility__grid"><Link href="/" className="studio-utility__back">← STUDIO</Link><div className="studio-utility__card"><StudioMark /><span className="studio-kicker studio-kicker--dark">STUDIO / NEXT STEP</span><h1>{title}</h1><p>{body}</p><button className="studio-button studio-button--lime studio-button--large" onClick={() => setComplete(true)}>{complete ? "You are all set" : action} <ArrowUpRight size={16} /></button><div className="studio-utility__progress"><span /><span /><span className={complete ? "is-active" : ""} /></div></div><span className="studio-utility__foot">A living production system for the next draft.</span></div></main>;
 }
+
+export function RecoveryPage({ mode }: { mode: "forgot" | "reset" }) {
+  const isForgot = mode === "forgot";
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [status, setStatus] = useState("");
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setStatus(isForgot ? "Password recovery is not configured on this backend yet." : "Password reset is not configured on this backend yet.");
+  };
+  return <main className="studio-utility"><div className="studio-utility__grid"><Link href="/" className="studio-utility__back">← STUDIO</Link><div className="studio-utility__card"><StudioMark /><span className="studio-kicker studio-kicker--dark">STUDIO / NEXT STEP</span><h1>{isForgot ? "Find your way back in." : "A fresh start for the workspace."}</h1><p>{isForgot ? "Enter the email attached to your workspace. We will confirm recovery availability before sending anything." : "Choose and confirm a new password for the next draft."}</p><form className="studio-auth-form" onSubmit={submit}>{isForgot ? <label>Email<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@team.com" autoComplete="email" /></label> : <><label>New password<input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="8 characters minimum" autoComplete="new-password" /></label><label>Confirm password<input required minLength={8} type="password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Repeat your password" autoComplete="new-password" /></label></>}{status && <p className="studio-form-error" role="alert">{status}</p>}<button className="studio-button studio-button--lime studio-button--large" type="submit">{status ? "Unavailable" : isForgot ? "Send reset link" : "Set new password"} <ArrowUpRight size={16} /></button></form><div className="studio-utility__progress"><span /><span /><span className={status ? "is-active" : ""} /></div></div><span className="studio-utility__foot">A living production system for the next draft.</span></div></main>;
+}

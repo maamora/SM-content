@@ -2,6 +2,7 @@ package com.maamora.studio.service;
 
 import com.maamora.studio.dto.request.GenerateCaptionsRequest;
 import com.maamora.studio.dto.request.GenerateImageRequest;
+import com.maamora.studio.dto.request.CreateBrowserVisualPostRequest;
 import com.maamora.studio.exception.ResourceNotFoundException;
 import com.maamora.studio.exception.UnauthorizedException;
 import com.maamora.studio.model.*;
@@ -71,6 +72,31 @@ public class PostService {
     }
 
     /**
+     * Turns a browser-generated visual that has already passed through the
+     * authenticated upload endpoint into a normal draft post. This keeps the
+     * caption editor and every downstream post action connected to the visual.
+     */
+    public Post createFromBrowserVisual(String userId, CreateBrowserVisualPostRequest request) {
+        Product product = productService.getOwned(userId, request.getProductId());
+        if (product.getStatus() != ProductStatus.APPROVED) {
+            throw new UnauthorizedException("Product is pending admin approval and cannot be used yet.");
+        }
+        Template template = templateService.getById(request.getTemplateId());
+
+        Post post = Post.builder()
+                .product(product)
+                .template(template)
+                .format(template.getFormat())
+                .imageUrl(request.getImageUrl())
+                .badgeText(request.getBadgeText())
+                .promoText(request.getPromoText())
+                .status(PostStatus.DRAFT)
+                .build();
+
+        return postRepository.save(post);
+    }
+
+    /**
      * Step 5: fills in the requested caption languages on an existing Post.
      *
      * Each language is generated independently: if one call fails (Gemini
@@ -89,9 +115,12 @@ public class PostService {
         Post post = postRepository.findByIdAndProduct_Brand_IdFetchProduct(request.getPostId(), brand.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found."));
 
+        int generatedCount = 0;
+        String lastError = null;
         for (String lang : request.getLanguages()) {
             try {
                 String caption = captionGenerationService.generateCaption(post, brand, lang);
+                generatedCount++;
                 switch (lang) {
                     case "en" -> post.setCaptionEn(caption);
                     case "ar" -> post.setCaptionAr(caption);
@@ -99,10 +128,15 @@ public class PostService {
                     default -> post.setCaptionFr(caption);
                 }
             } catch (Exception e) {
+                lastError = e.getMessage();
                 log.error("Caption generation failed for post {} lang {}: {}", post.getId(), lang, e.getMessage(), e);
             }
         }
 
+        if (generatedCount == 0) {
+            throw new IllegalStateException("Caption generation failed for every requested language. "
+                    + (lastError == null || lastError.isBlank() ? "Check the configured caption provider." : lastError));
+        }
         return postRepository.save(post);
     }
 

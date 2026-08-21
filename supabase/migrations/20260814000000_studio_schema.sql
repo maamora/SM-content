@@ -104,6 +104,80 @@ create table if not exists public.post (
         foreign key (batch_job_id) references public.batch_job(id)
 );
 
+create table if not exists public.creative_job (
+    id text primary key default gen_random_uuid()::text,
+    user_id text not null,
+    type varchar(32) not null,
+    status varchar(32) not null default 'QUEUED',
+    prompt varchar(4000) not null,
+    aspect_ratio varchar(32),
+    product_image_url varchar(2048),
+    model_image_url varchar(2048),
+    result_image_url varchar(2048),
+    result_video_url varchar(2048),
+    error_message varchar(1200),
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    constraint creative_job_type_check check (type in ('EDIT_IMAGE', 'PHOTO_SHOOT', 'PHOTO_SHOOT_VIDEO')),
+    constraint creative_job_status_check check (status in ('QUEUED', 'PROCESSING', 'COMPLETED', 'FAILED')),
+    constraint creative_job_user_id_fkey foreign key (user_id) references public.app_user(id)
+);
+
+create table if not exists public.social_connection (
+    id text primary key default gen_random_uuid()::text,
+    user_id text not null,
+    provider varchar(32) not null,
+    external_account_id varchar(255) not null,
+    account_name varchar(255) not null,
+    access_token_encrypted text not null,
+    refresh_token_encrypted text,
+    expires_at timestamptz,
+    metadata_json text,
+    status varchar(32) not null default 'ACTIVE',
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    constraint social_connection_provider_check check (provider in ('META', 'TIKTOK', 'LINKEDIN', 'X')),
+    constraint social_connection_status_check check (status in ('ACTIVE', 'EXPIRED', 'REVOKED', 'ERROR')),
+    constraint social_connection_user_id_fkey foreign key (user_id) references public.app_user(id),
+    constraint social_connection_unique_account unique (user_id, provider, external_account_id)
+);
+
+create table if not exists public.publish_job (
+    id text primary key default gen_random_uuid()::text,
+    user_id text not null,
+    post_id text not null,
+    connection_id text not null,
+    provider varchar(32) not null,
+    status varchar(32) not null default 'QUEUED',
+    external_post_id varchar(255),
+    error_message varchar(1000),
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    published_at timestamptz,
+    constraint publish_job_provider_check check (provider in ('META', 'TIKTOK', 'LINKEDIN', 'X')),
+    constraint publish_job_status_check check (status in ('QUEUED', 'PROCESSING', 'SENT', 'FAILED')),
+    constraint publish_job_user_id_fkey foreign key (user_id) references public.app_user(id),
+    constraint publish_job_post_id_fkey foreign key (post_id) references public.post(id),
+    constraint publish_job_connection_id_fkey foreign key (connection_id) references public.social_connection(id)
+);
+
+create table if not exists public.email_delivery (
+    id text primary key default gen_random_uuid()::text,
+    user_id text not null,
+    post_id text,
+    to_address varchar(320) not null,
+    subject varchar(300) not null,
+    body text not null,
+    status varchar(32) not null default 'QUEUED',
+    error_message varchar(1000),
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    sent_at timestamptz,
+    constraint email_delivery_status_check check (status in ('QUEUED', 'PROCESSING', 'SENT', 'FAILED')),
+    constraint email_delivery_user_id_fkey foreign key (user_id) references public.app_user(id),
+    constraint email_delivery_post_id_fkey foreign key (post_id) references public.post(id)
+);
+
 create index if not exists idx_app_user_brand_id
     on public.app_user (brand_id);
 
@@ -139,6 +213,24 @@ create index if not exists idx_post_batch_job_id
 
 create index if not exists idx_post_created_at
     on public.post (created_at desc);
+
+create index if not exists idx_creative_job_user_created
+    on public.creative_job (user_id, created_at desc);
+
+create index if not exists idx_social_connection_user_updated
+    on public.social_connection (user_id, updated_at desc);
+
+create index if not exists idx_publish_job_user_created
+    on public.publish_job (user_id, created_at desc);
+
+create index if not exists idx_publish_job_status
+    on public.publish_job (status);
+
+create index if not exists idx_email_delivery_user_created
+    on public.email_delivery (user_id, created_at desc);
+
+create index if not exists idx_email_delivery_status
+    on public.email_delivery (status);
 
 comment on table public.brand_settings is
     'STUDIO brand kit settings; the current application treats one row as the shared brand.';

@@ -3,6 +3,7 @@ package com.maamora.studio.service;
 import com.maamora.studio.dto.request.LoginRequest;
 import com.maamora.studio.dto.request.RegisterRequest;
 import com.maamora.studio.dto.response.AuthResponse;
+import com.maamora.studio.dto.response.UserProfileResponse;
 import com.maamora.studio.exception.UnauthorizedException;
 import com.maamora.studio.model.BrandSettings;
 import com.maamora.studio.model.User;
@@ -13,6 +14,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Locale;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +36,7 @@ public class AuthService {
      */
     @Transactional
     public AuthResponse register(RegisterRequest request) {
+<<<<<<< HEAD
         // Honeypot: a real user never fills this in. Reject with the exact
         // same error a bot would get from a plausible-looking failure
         // elsewhere, so there's no observable difference that would teach it
@@ -41,6 +46,10 @@ public class AuthService {
         }
 
         if (userRepository.existsByEmail(request.getEmail())) {
+=======
+        String email = normalizeEmail(request.getEmail());
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+>>>>>>> 0aaa1cfa406c946d0887dbeaa5c9c2676e5da0aa
             throw new UnauthorizedException("An account with this email already exists.");
         }
 
@@ -57,7 +66,7 @@ public class AuthService {
 
         User user = User.builder()
                 .name(request.getName())
-                .email(request.getEmail())
+                .email(email)
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
                 .brand(brand)
@@ -68,8 +77,28 @@ public class AuthService {
         return new AuthResponse(token, user.getEmail(), brand.getId(), user.getRole().name());
     }
 
+    @Transactional
+    public AuthResponse loginOrCreateGoogle(String email, String name) {
+        String normalizedEmail = normalizeEmail(email);
+        User user = userRepository.findByEmailIgnoreCase(normalizedEmail).orElseGet(() -> {
+            BrandSettings brand = brandSettingsService.getSharedBrand();
+            User created = User.builder()
+                    .name(name == null || name.isBlank() ? normalizedEmail : name)
+                    .email(normalizedEmail)
+                    .passwordHash(passwordEncoder.encode(UUID.randomUUID().toString()))
+                    .role(Role.USER)
+                    .brand(brand)
+                    .build();
+            return userRepository.save(created);
+        });
+
+        if (user.getBrand() == null) user.setBrand(brandSettingsService.getSharedBrand());
+        String token = jwtService.generateToken(user.getId(), user.getEmail());
+        return new AuthResponse(token, user.getEmail(), user.getBrand().getId(), user.getRole().name());
+    }
+
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmailIgnoreCase(normalizeEmail(request.getEmail()))
                 .orElseThrow(() -> new UnauthorizedException("Invalid email or password."));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
@@ -82,5 +111,23 @@ public class AuthService {
 
         String token = jwtService.generateToken(user.getId(), user.getEmail());
         return new AuthResponse(token, user.getEmail(), user.getBrand().getId(), user.getRole().name());
+    }
+
+    @Transactional(readOnly = true)
+    public UserProfileResponse currentUser(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("Authenticated account was not found."));
+        return new UserProfileResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getBrand() == null ? null : user.getBrand().getId(),
+                user.getRole().name(),
+                user.getCreatedAt()
+        );
+    }
+
+    private String normalizeEmail(String email) {
+        return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
     }
 }

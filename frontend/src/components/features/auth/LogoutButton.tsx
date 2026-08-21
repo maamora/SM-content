@@ -1,6 +1,5 @@
 "use client";
 
-/* STUDIO editorial refresh: authentication exits use quiet, uppercase utility actions. */
 import { useRouter } from "next/navigation";
 import { logout } from "@/lib/api/auth";
 
@@ -13,7 +12,7 @@ export function LogoutButton() {
                 logout();
                 router.push("/login");
             }}
-            className="studio-text-button text-xs uppercase tracking-[0.12em]"
+            className="text-xs font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
         >
             Sign out
         </button>

@@ -18,6 +18,7 @@ import {
 import { listTemplates, type Template } from "@/lib/api/templates";
 import { generateImage, generateCaptions, editCaption, approvePost, exportPost, type Post } from "@/lib/api/posts";
 import { Product3DModel } from "@/components/features/products/Product3DModel";
+import { CreativeWorkflowPanel } from "./CreativeWorkflowPanel";
 
 interface Product {
     id: string;
@@ -66,6 +67,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const [accentColor, setAccentColor] = useState<string>("#b9ff43");
     const [badgeText, setBadgeText] = useState<string>("-20% TODAY");
     const [mood, setMood] = useState<(typeof MOOD_PRESETS)[number]>(MOOD_PRESETS[0]);
+    const [generatedImageSrc, setGeneratedImageSrc] = useState<string | null>(null);
 
     const [post, setPost] = useState<Post | null>(null);
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -155,6 +157,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- stale post must be cleared when its inputs change
         setPost(null);
+        setGeneratedImageSrc(null);
     }, [selectedProductId, selectedTemplateId, promoText, accentColor, badgeText]);
 
     useEffect(() => {
@@ -173,14 +176,22 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                 badgeText,
                 promoText,
                 accentColor,
-                mood: mood.id,
+                mood: mood.name,
             });
             setPost(result);
+            setGeneratedImageSrc(result.imageUrl);
             onPostChange?.();
         } catch (err) {
             setErrorMsg(err instanceof Error ? err.message : "Failed to generate image");
         } finally {
             setIsGeneratingImage(false);
+        }
+    };
+
+    const handleSelectCaptionLanguage = (lang: CaptionLang) => {
+        setActiveCaptionLang(lang);
+        if (!post) {
+            setErrorMsg("Generate a visual first. Caption choices become active as soon as Gemini creates the Studio post.");
         }
     };
 
@@ -223,6 +234,16 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
         } finally {
             setIsApproving(false);
         }
+    };
+
+    const handleDownloadGeneratedVisual = () => {
+        if (!generatedImageSrc) return;
+        const link = document.createElement("a");
+        link.href = generatedImageSrc;
+        link.download = `studio-visual-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
     };
 
     const handleDownload = async () => {
@@ -275,6 +296,8 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                     {errorMsg}
                 </div>
             )}
+
+            <CreativeWorkflowPanel />
 
             <div className="studio-creative-grid">
 
@@ -462,7 +485,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                 ) : (
                                     <Sparkles className="h-3.5 w-3.5" />
                                 )}
-                                {isGeneratingImage ? "Rendu en cours..." : post ? "Régénérer le visuel" : "Générer le visuel"}
+                                {isGeneratingImage ? "Rendu Gemini en cours..." : generatedImageSrc ? "Régénérer le visuel" : "Générer le visuel"}
                             </button>
                         </div>
                     </div>
@@ -477,10 +500,16 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                         <div className={`studio-creative-preview bg-gradient-to-br ${mood.bg}`}>
                             <p className="absolute left-4 top-4 z-10 flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-[#777870]">
                                 <Eye className="h-3 w-3" style={{ color: mood.accent }} />
-                                {post?.imageUrl ? "Visuel Rendu" : "Aperçu en direct"}
+                                {generatedImageSrc ? "Visuel Gemini généré" : post?.imageUrl ? "Visuel rendu" : "Aperçu en direct"}
                             </p>
 
-                            {post?.imageUrl ? (
+                            {generatedImageSrc ? (
+                                <div className="flex flex-col items-center gap-3">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={generatedImageSrc} alt="Generated creative visual" className={`object-cover ${selectedFormat === "SQUARE_POST" ? "h-[300px] w-[300px]" : "h-[400px] w-[240px]"}`} />
+                                    <button type="button" onClick={handleDownloadGeneratedVisual} className="studio-button studio-button--dark"><Download className="h-3.5 w-3.5" /> Download PNG</button>
+                                </div>
+                            ) : post?.imageUrl ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
                                     src={post.imageUrl}
@@ -533,7 +562,9 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                         {LANGS.map(lang => (
                                             <button
                                                 key={lang.id}
-                                                onClick={() => setActiveCaptionLang(lang.id)}
+                                                type="button"
+                                                aria-selected={activeCaptionLang === lang.id}
+                                                onClick={() => handleSelectCaptionLanguage(lang.id)}
                                                 className={`studio-caption-tab ${activeCaptionLang === lang.id
                                                     ? "studio-caption-tab--active"
                                                     : "hover:text-[var(--studio-ink)]"
@@ -575,6 +606,12 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                             </button>
                                         </div>
                                     </div>
+
+                                    <p className="mt-2 text-[10px] font-medium text-[#777870]" aria-live="polite">
+                                        {post
+                                            ? `Langue sélectionnée : ${LANGS.find((lang) => lang.id === activeCaptionLang)?.label}. Cliquez sur une langue pour appliquer sa légende générée dans l’éditeur.`
+                                            : "Générez un visuel pour activer les légendes."}
+                                    </p>
 
                                     <button
                                         onClick={handleGenerateCaptions}
