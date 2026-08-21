@@ -1,15 +1,9 @@
 
 import Link from "next/link";
-import { Globe2, ArrowUpRight, LoaderCircle } from "lucide-react";
+import { Globe2, ArrowUpRight, LoaderCircle, Upload, X } from "lucide-react";
 import { FormEvent, useState } from "react";
-<<<<<<< HEAD
-import { ArrowUpRight, LoaderCircle, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { login, register as registerAccount, uploadBrandLogo } from "@/lib/api/auth";
-=======
-import { useRouter } from "next/navigation";
-import { login, register as registerAccount, startGoogleAuth } from "@/lib/api/auth";
->>>>>>> 0aaa1cfa406c946d0887dbeaa5c9c2676e5da0aa
+import { login, register as registerAccount, uploadBrandLogo, startGoogleAuth } from "@/lib/api/auth";
 import { StudioMark } from "./StudioShell";
 
 export function AuthPage({ mode }: { mode: "login" | "register" }) {
@@ -17,7 +11,6 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-<<<<<<< HEAD
   // "create" = new isolated brand workspace (name + logo below). "join" =
   // attach to a teammate's existing brand via their generated code instead —
   // see BrandSettingsService.joinExisting on the backend. "personal" = an
@@ -34,7 +27,11 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   // display:none, since some bots skip visually-hidden-but-still-"visible"
   // fields differently). Left blank by any real submission.
   const [website, setWebsite] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("oauth") === "error" ? (params.get("message") || "Google sign-in could not be completed.") : null;
+  });
   const [loading, setLoading] = useState(false);
 
   const handleLogoSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,28 +49,15 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     }
   };
 
-=======
-  const [error, setError] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    const params = new URLSearchParams(window.location.search);
-    return params.get("oauth") === "error" ? (params.get("message") || "Google sign-in could not be completed.") : null;
-  });
-  const [loading, setLoading] = useState(false);
-
->>>>>>> 0aaa1cfa406c946d0887dbeaa5c9c2676e5da0aa
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
     setLoading(true);
     try {
       if (mode === "login") await login({ email, password });
-<<<<<<< HEAD
       else if (signupMode === "personal") await registerAccount({ name, email, password, personal: true, website });
       else if (signupMode === "join") await registerAccount({ name, email, password, joinCode, website });
       else await registerAccount({ name, email, password, brandName, logoUrl, website });
-=======
-      else await registerAccount({ name, email, password });
->>>>>>> 0aaa1cfa406c946d0887dbeaa5c9c2676e5da0aa
       router.push("/dashboard");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Something went wrong");
@@ -99,7 +83,17 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
           <span className="studio-kicker studio-kicker--dark">STUDIO / {mode === "login" ? "SIGN IN" : "CREATE ACCOUNT"}</span>
           <h2>{mode === "login" ? "Welcome back." : "Give the work a room."}</h2>
           <p>{mode === "login" ? "Pick up where the last good draft left off." : "Start with a workspace built around your point of view."}</p>
-<<<<<<< HEAD
+
+          {/* Google OAuth button */}
+          <button
+            type="button"
+            className="studio-button studio-button--outline studio-button--large studio-google-button"
+            onClick={startGoogleAuth}
+          >
+            <Globe2 size={16} /> Continue with Google <ArrowUpRight size={16} />
+          </button>
+          <div className="studio-auth-divider"><span>or use email</span></div>
+
           <form onSubmit={submit} className="studio-auth-form">
             {mode === "register" && (
               <>
@@ -232,26 +226,6 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
             ) : (
               <span>Already have a workspace? <Link href="/login">Sign in</Link></span>
             )}
-=======
-
-          <button type="button" className="studio-button studio-button--outline studio-button--large studio-google-button" onClick={startGoogleAuth}>
-            <Globe2 size={16} /> Continue with Google <ArrowUpRight size={16} />
-          </button>
-          <div className="studio-auth-divider"><span>or use email</span></div>
-
-          <form onSubmit={submit} className="studio-auth-form">
-            {mode === "register" && <label>Name<input required value={name} onChange={(event) => setName(event.target.value)} placeholder="Your name" /></label>}
-            <label>Email<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@team.com" /></label>
-            <label>Password<input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="8 characters minimum" /></label>
-            {error && <p className="studio-form-error" role="alert">{error}</p>}
-            <button disabled={loading} className="studio-button studio-button--lime studio-button--large" type="submit">
-              {loading ? <LoaderCircle size={16} className="studio-spin" /> : null}
-              {loading ? "Working..." : mode === "login" ? "Enter STUDIO" : "Create workspace"}<ArrowUpRight size={16} />
-            </button>
-          </form>
-          <div className="studio-auth-links">
-            {mode === "login" ? <><Link href="/forgot-password">Forgot password?</Link><span>New here? <Link href="/register">Create an account</Link></span></> : <span>Already have a workspace? <Link href="/login">Sign in</Link></span>}
->>>>>>> 0aaa1cfa406c946d0887dbeaa5c9c2676e5da0aa
           </div>
         </section>
       </div>
