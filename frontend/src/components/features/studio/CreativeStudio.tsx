@@ -91,14 +91,17 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const pickerRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const approvedProducts = useMemo(() => products.filter((product) => product.status === "APPROVED"), [products]);
-    const selectedProduct = approvedProducts.find((product) => product.id === productId) ?? approvedProducts[0] ?? null;
+    // The API exposes approved products plus pending products created by the
+    // current user. Keeping those owner-visible drafts available here makes
+    // product testing possible without exposing a teammate's unapproved work.
+    const availableProducts = useMemo(() => products.filter((product) => product.status === "APPROVED" || product.status === "PENDING"), [products]);
+    const selectedProduct = availableProducts.find((product) => product.id === productId) ?? availableProducts[0] ?? null;
     const selectedMood = moods.find((mood) => mood.id === moodId) ?? moods[0];
     const activeTemplates = useMemo(() => templates.filter((template) => template.format === format), [templates, format]);
     const selectedTemplate = activeTemplates.find((template) => template.id === templateId) ?? null;
     const matchingProducts = useMemo(
-        () => approvedProducts.filter((product) => product.name.toLowerCase().includes(productQuery.toLowerCase())),
-        [approvedProducts, productQuery],
+        () => availableProducts.filter((product) => product.name.toLowerCase().includes(productQuery.toLowerCase())),
+        [availableProducts, productQuery],
     );
     const previewImage = post?.imageUrl ?? (mode === "upload" ? uploadPreview : null);
     const configuredBrandName = brand?.configured && brand.name.trim() ? brand.name.trim() : null;
@@ -115,8 +118,8 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     }, []);
 
     useEffect(() => {
-        if (approvedProducts.length && !approvedProducts.some((product) => product.id === productId)) setProductId(approvedProducts[0].id);
-    }, [approvedProducts, productId]);
+        if (availableProducts.length && !availableProducts.some((product) => product.id === productId)) setProductId(availableProducts[0].id);
+    }, [availableProducts, productId]);
     useEffect(() => {
         if (activeTemplates.length && !activeTemplates.some((template) => template.id === templateId)) setTemplateId(activeTemplates[0].id);
     }, [activeTemplates, templateId]);
@@ -290,7 +293,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                 </aside>
             </div>
 
-            {!approvedProducts.length && <div className="studio-artboard-empty"><ImagePlus className="h-5 w-5" /><div><strong>Ajoutez puis approuvez un produit.</strong><p>Le produit relie la composition, le contenu, l’export et la diffusion programmée.</p></div></div>}
+            {!availableProducts.length && <div className="studio-artboard-empty"><ImagePlus className="h-5 w-5" /><div><strong>Ajoutez un produit pour commencer.</strong><p>Vos produits en attente restent privés jusqu’à leur approbation, mais vous pouvez déjà les tester dans Studio.</p></div></div>}
         </div>
     );
 }

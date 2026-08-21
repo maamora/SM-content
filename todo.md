@@ -741,3 +741,9 @@ The second attachment does not show an application compile or route error. `pnpm
 - [x] Inspect the exact PowerShell launcher command and Maven property propagation behavior.
 - [x] Pass the temporary datasource configuration to the Spring Boot JVM with deterministic precedence over application defaults.
 - [x] Validate the new startup and schema-migration sequence, then commit the repair.
+
+## Authenticated product testing catalog
+- [x] Inspect the user-owned product API, product form, moderation behavior, and local SVG renderer contract.
+- [x] Add an explicit, repeat-safe testing catalog action that creates records only through the authenticated product API.
+- [x] Permit only a creator’s own pending products to produce private draft posts; preserve admin approval for shared catalog visibility.
+- [x] Validate the frontend build and document the creator-owned testing and approval boundaries.

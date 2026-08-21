@@ -14,7 +14,7 @@ import BatchStudio from "@/components/features/studio/BatchStudio";
 import ProductList from "@/components/features/products/ProductList";
 import { ProductForm } from "@/components/features/products/ProductForm";
 import ApprovalsQueue from "@/components/features/products/ApprovalsQueue";
-import { listProducts, type Product } from "@/lib/api/products";
+import { createProduct, listProducts, type Product, type ProductInput } from "@/lib/api/products";
 import { deletePost, exportPost, listPosts, type Post } from "@/lib/api/posts";
 import { getBrand, updateBrand, uploadBrandLogo, type BrandSettings, type BrandSettingsInput } from "@/lib/api/brand";
 import { listTemplates, type Template } from "@/lib/api/templates";
@@ -55,8 +55,57 @@ const adminData = {
 } as const;
 type AdminMode = keyof typeof adminData;
 
+const testingCatalog: ReadonlyArray<ProductInput & { assetPath: string }> = [
+    {
+        name: "TEST · Arc Runner sneaker",
+        description: "A STUDIO testing reference for validating the local template composition, captions, approvals, export, and scheduling workflow.",
+        sellingPoint: "Testing source material — delete when your live product catalog is ready.",
+        price: 0,
+        assetPath: "/studio/creative/arc-runner-product.jpg",
+    },
+    {
+        name: "TEST · Campaign detail",
+        description: "A close editorial product reference for checking crop behavior, headline hierarchy, and alternative visual directions in STUDIO.",
+        sellingPoint: "Testing source material — created only in your current workspace.",
+        price: 0,
+        assetPath: "/studio/creative/campaign-detail.jpg",
+    },
+    {
+        name: "TEST · Campaign wide frame",
+        description: "A wide campaign reference for testing social crops, caption variants, approval states, and scheduled delivery without using a live catalog item.",
+        sellingPoint: "Testing source material — remove after verification.",
+        price: 0,
+        assetPath: "/studio/creative/campaign-wide.jpg",
+    },
+];
+
 function Notice({ title, detail, action }: { title: string; detail: string; action?: ReactNode }) {
     return <div className="studio-unavailable"><span className="studio-kicker studio-kicker--dark">BACKEND SIGNAL</span><h3>{title}</h3><p>{detail}</p>{action}</div>;
+}
+
+function TestingCatalog({ products, onCreated }: { products: Product[]; onCreated: () => void }) {
+    const [importing, setImporting] = useState(false);
+    const [status, setStatus] = useState<string | null>(null);
+
+    const importCatalog = async () => {
+        const existingNames = new Set(products.map((product) => product.name.trim().toLocaleLowerCase()));
+        const missing = testingCatalog.filter((product) => !existingNames.has(product.name.toLocaleLowerCase()));
+        if (!missing.length) { setStatus("The testing catalog is already available in this workspace."); return; }
+
+        setImporting(true); setStatus(null);
+        try {
+            const origin = window.location.origin;
+            const results = await Promise.allSettled(missing.map(({ assetPath, ...product }) => createProduct({ ...product, imageUrl: new URL(assetPath, origin).toString() })));
+            const created = results.filter((result) => result.status === "fulfilled").length;
+            const failed = results.length - created;
+            onCreated();
+            setStatus(failed ? `${created} testing product${created === 1 ? "" : "s"} added; ${failed} could not be created. Try again to complete the catalog.` : `${created} testing products added to your workspace.`);
+        } catch (error) {
+            setStatus(error instanceof Error ? error.message : "Unable to add the testing catalog.");
+        } finally { setImporting(false); }
+    };
+
+    return <div className="mt-6 border border-dashed border-[#93a66d] bg-[#f6f8ee] p-4"><span className="studio-kicker studio-kicker--dark">QUICK TESTING CATALOG</span><h3 className="mt-2 font-serif text-xl text-[var(--studio-ink)]">Start with three disposable references.</h3><p className="mt-2 text-xs leading-5 text-[#5e605a]">Adds clearly labeled test products to your own workspace through the live product API. Their image references are bundled with STUDIO; no provider, account, or external asset is used.</p><button type="button" className="studio-button studio-button--dark mt-4" disabled={importing} onClick={() => void importCatalog()}>{importing ? <Loader2 className="studio-spin" size={14} /> : <Package size={14} />}{importing ? "Adding catalog…" : "Add testing catalog"}</button><p className="mt-3 text-[11px] leading-4 text-[#6f7068]">Test records are marked as pending, remain visible only to their creator until approved, and can be deleted from the product list after verification.</p>{status && <p role="status" className="studio-inline-notice mt-3">{status}</p>}</div>;
 }
 
 function WorkspaceSidebar({ active }: { active: WorkspaceMode }) {
@@ -180,7 +229,7 @@ function Unavailable({ label, reason }: { label: string; reason: string }) { ret
 
 function Surface({ mode, products, posts, refresh }: { mode: WorkspaceMode; products: Product[]; posts: Post[]; refresh: () => void }) {
     if (mode === "dashboard") return <Overview products={products} posts={posts} refresh={refresh} />;
-    if (mode === "products") return <div className="studio-live-columns"><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">SOURCE MATERIAL</span><h2>Products</h2></div><span className="studio-chip">{products.length} total</span></div><ProductList products={products} onProductDeleted={refresh} /></section><section className="studio-workspace-panel studio-workspace-panel--accent"><span className="studio-kicker studio-kicker--dark">NEW INPUT</span><h2>Add a product reference.</h2><p>Upload source material that powers approved creative directions.</p><ProductForm onCreated={refresh} /></section></div>;
+    if (mode === "products") return <div className="studio-live-columns"><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">SOURCE MATERIAL</span><h2>Products</h2></div><span className="studio-chip">{products.length} total</span></div><ProductList products={products} onProductDeleted={refresh} /></section><section className="studio-workspace-panel studio-workspace-panel--accent"><span className="studio-kicker studio-kicker--dark">NEW INPUT</span><h2>Add a product reference.</h2><p>Upload source material that powers your creative directions.</p><ProductForm onCreated={refresh} /><TestingCatalog products={products} onCreated={refresh} /></section></div>;
     if (mode === "brand") return <BrandSurface />;
     if (mode === "studio") return <section className="studio-workspace-panel studio-workspace-panel--wide"><CreativeStudio products={products} onPostChange={refresh} /></section>;
     if (mode === "batch") return <section className="studio-workspace-panel studio-workspace-panel--wide"><BatchStudio products={products} onBatchChange={refresh} /></section>;

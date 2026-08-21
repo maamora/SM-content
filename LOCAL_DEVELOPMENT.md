@@ -270,7 +270,7 @@ Login
   → Dashboard
   → Products: read the PostgreSQL-backed catalogue
   → Brand: read and update persisted brand settings
-  → Studio: use approved products, templates, brand data, and post APIs
+  → Studio: use approved products plus the signed-in creator's own pending test products, templates, brand data, and post APIs
   → Posts: review/export/delete available post records
 ```
 
@@ -284,7 +284,7 @@ The following backend-backed areas were rechecked after the merge preparation:
 | --- | --- |
 | Registration and login | Live; login was verified against PostgreSQL |
 | Product list/create/update/delete | Live API surface and frontend integration |
-| Product approvals and pending products | Live API surface and frontend integration |
+| Product approvals and pending products | Live API surface and frontend integration; a creator may make private drafts from their own pending product, while shared catalogue visibility still requires admin approval |
 | Brand settings | Live read/update flow; persisted across backend restart |
 | Posts | Live list/create/update/delete/export API surface |
 | Templates | Live list API surface |
@@ -298,6 +298,12 @@ The following backend-backed areas were rechecked after the merge preparation:
 | Admin users/workspaces | Read-only live counts are available; mutation and role-management routes are intentionally absent until audited workflows are added |
 
 The complete endpoint inventory and availability boundary is documented in `backend-api-inventory.md`. The screens for unavailable areas are intentionally explicit; they do not pretend that missing backend records are persisted.
+
+### Quick product testing catalog
+
+After signing in, open **Products** and select **Add testing catalog**. STUDIO creates three clearly named `TEST ·` product records in the signed-in workspace using the existing authenticated product API and bundled product-reference images. The action is repeat-safe: it adds only catalog names not already present.
+
+These records begin as `PENDING`. They are available to their own creator in **Studio** for private template composition, captions, approval, export, and scheduling checks. They are not visible to other non-admin workspace members and cannot become shared catalogue products until an administrator approves them. Remove the test records from **Products** once the live catalogue is ready.
 
 ## 8. Troubleshooting
 

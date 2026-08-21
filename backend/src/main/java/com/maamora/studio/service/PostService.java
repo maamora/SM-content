@@ -47,9 +47,7 @@ public class PostService {
     public Post generateImage(String userId, GenerateImageRequest request, BatchJob batchJob) {
         BrandSettings brand = brandSettingsService.getForUser(userId);
         Product product = productService.getOwned(userId, request.getProductId());
-        if (product.getStatus() != ProductStatus.APPROVED) {
-            throw new UnauthorizedException("Product is pending admin approval and cannot be used yet.");
-        }
+        assertCanCreatePrivateDraft(userId, product);
         Template template = templateService.getById(request.getTemplateId());
 
         ImageRenderService.RenderedVisual renderedVisual = imageRenderService.render(
@@ -82,9 +80,7 @@ public class PostService {
      */
     public Post createFromBrowserVisual(String userId, CreateBrowserVisualPostRequest request) {
         Product product = productService.getOwned(userId, request.getProductId());
-        if (product.getStatus() != ProductStatus.APPROVED) {
-            throw new UnauthorizedException("Product is pending admin approval and cannot be used yet.");
-        }
+        assertCanCreatePrivateDraft(userId, product);
         Template template = templateService.getById(request.getTemplateId());
 
         Post post = Post.builder()
@@ -99,6 +95,23 @@ public class PostService {
                 .build();
 
         return postRepository.save(post);
+    }
+
+    /**
+     * Shared products still require approval. A pending product may be used only
+     * by its own creator to make private draft output for testing or iteration;
+     * it remains invisible to teammates until an administrator approves it.
+     */
+    private void assertCanCreatePrivateDraft(String userId, Product product) {
+        if (product.getStatus() == ProductStatus.APPROVED) {
+            return;
+        }
+        boolean creatorOwnsPendingProduct = product.getStatus() == ProductStatus.PENDING
+                && product.getCreatedBy() != null
+                && userId.equals(product.getCreatedBy().getId());
+        if (!creatorOwnsPendingProduct) {
+            throw new UnauthorizedException("Only the creator can use a pending product for a private draft. Approve it before sharing it with the workspace.");
+        }
     }
 
     /**
