@@ -112,23 +112,54 @@ public class CaptionGenerationService {
      * exhausts its retries doesn't cost the other languages their captions.
      */
     public String generateCaption(Post post, BrandSettings brand, String language) {
-        if ("openrouter".equalsIgnoreCase(captionProvider)) {
-            return generateWithOpenRouter(post, brand, language);
-        }
-        if ("groq".equalsIgnoreCase(captionProvider)) {
-            return generateWithGroq(post, brand, language);
-        }
-        if ("openai".equalsIgnoreCase(captionProvider)) {
-            return generateWithOpenAi(post, brand, language);
-        }
-        if (!configured(apiKey)) {
-            if (!ollamaEnabled) {
-                throw new IllegalStateException(
-                        "Caption generation is unavailable: configure GROQ_API_KEY with CAPTION_PROVIDER=groq, configure GEMINI_CAPTION_API_KEY with CAPTION_PROVIDER=gemini, or enable Ollama locally.");
+        try {
+            if ("openrouter".equalsIgnoreCase(captionProvider)) {
+                return generateWithOpenRouter(post, brand, language);
             }
-            return generateWithOllama(post, brand, language);
+            if ("groq".equalsIgnoreCase(captionProvider)) {
+                return generateWithGroq(post, brand, language);
+            }
+            if ("openai".equalsIgnoreCase(captionProvider)) {
+                return generateWithOpenAi(post, brand, language);
+            }
+            if (!configured(apiKey)) {
+                if (!ollamaEnabled) {
+                    throw new IllegalStateException("No configured caption provider.");
+                }
+                return generateWithOllama(post, brand, language);
+            }
+            return generateWithGemini(post, brand, language);
+        } catch (Exception e) {
+            log.warn("Caption provider unavailable for post {} and language {}; using deterministic template: {}",
+                    post.getId(), language, e.getMessage());
+            return generateDeterministicCaption(post, brand, language);
         }
-        return generateWithGemini(post, brand, language);
+    }
+
+    private String generateDeterministicCaption(Post post, BrandSettings brand, String language) {
+        Product product = post.getProduct();
+        String productName = textOr(product == null ? null : product.getName(), "our latest piece");
+        String brandName = textOr(brand == null ? null : brand.getName(), "STUDIO");
+        String detail = textOr(post.getPromoText(), textOr(product == null ? null : product.getSellingPoint(), "Made to be noticed."));
+        int variation = Math.floorMod((post.getId() + ":" + language).hashCode(), 3);
+        return switch (language == null ? "fr" : language.toLowerCase()) {
+            case "en" -> switch (variation) {
+                case 1 -> productName + " by " + brandName + ". " + detail + " Discover it today. #" + tag(productName);
+                case 2 -> "Meet " + productName + ". " + detail + " A considered release from " + brandName + ". #" + tag(productName);
+                default -> productName + ", selected by " + brandName + ". " + detail + " #" + tag(productName);
+            };
+            case "ar" -> productName + " من " + brandName + ". " + detail + " اكتشفه اليوم. #" + tag(productName);
+            case "darija" -> productName + " من " + brandName + ". " + detail + " اكتاشفوه اليوم. #" + tag(productName);
+            default -> productName + " par " + brandName + ". " + detail + " Découvrez-le aujourd’hui. #" + tag(productName);
+        };
+    }
+
+    private String textOr(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value.trim();
+    }
+
+    private String tag(String value) {
+        return value.replaceAll("[^\\p{L}\\p{N}]", "");
     }
 
     private String generateWithGroq(Post post, BrandSettings brand, String language) {

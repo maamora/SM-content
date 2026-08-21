@@ -36,6 +36,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "app.higgsfield.api-key-secret=",
         "app.higgsfield.video-model=",
         "app.ollama.enabled=false",
+        "app.cloudinary.cloud-name=placeholder",
+        "app.cloudinary.api-key=placeholder",
+        "app.cloudinary.api-secret=placeholder",
+        "app.storage.local-path=target/test-uploads",
+        "app.storage.public-base-url=http://localhost:8080/files",
         "spring.mail.host=",
         "STABILITY_API_KEY=",
         "META_APP_ID=",
@@ -130,7 +135,7 @@ class StudioApplicationSmokeTest {
     }
 
     @Test
-    void unavailableProvidersReturnHonestErrorsAndPersistTerminalJobStates() throws Exception {
+    void unavailableProvidersCreateTemplateCompositionsAndPersistTerminalJobStates() throws Exception {
         String bearer = "Bearer " + registerAndGetToken();
 
         mockMvc.perform(get("/api/social/connect/meta").header("Authorization", bearer))
@@ -156,7 +161,11 @@ class StudioApplicationSmokeTest {
                 .andReturn();
         String creativeId = objectMapper.readTree(creativeResult.getResponse().getContentAsString())
                 .path("data").path("id").asText();
-        waitForStatus("/api/creative/jobs/" + creativeId, bearer, "FAILED");
+        waitForStatus("/api/creative/jobs/" + creativeId, bearer, "COMPLETED");
+        mockMvc.perform(get("/api/creative/jobs/" + creativeId).header("Authorization", bearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.outputMode").value("TEMPLATE_COMPOSED"))
+                .andExpect(jsonPath("$.data.recoveryMessage").isNotEmpty());
 
         MvcResult emailResult = mockMvc.perform(post("/api/email/send")
                         .header("Authorization", bearer)
@@ -189,7 +198,7 @@ class StudioApplicationSmokeTest {
     }
 
     private void waitForStatus(String path, String bearer, String expectedStatus) throws Exception {
-        Instant deadline = Instant.now().plus(Duration.ofSeconds(3));
+        Instant deadline = Instant.now().plus(Duration.ofSeconds(10));
         while (Instant.now().isBefore(deadline)) {
             MvcResult result = mockMvc.perform(get(path).header("Authorization", bearer)).andReturn();
             String status = objectMapper.readTree(result.getResponse().getContentAsString())
@@ -201,7 +210,7 @@ class StudioApplicationSmokeTest {
     }
 
     private void waitForStatus(String path, String bearer, String id, String expectedStatus) throws Exception {
-        Instant deadline = Instant.now().plus(Duration.ofSeconds(3));
+        Instant deadline = Instant.now().plus(Duration.ofSeconds(10));
         while (Instant.now().isBefore(deadline)) {
             MvcResult result = mockMvc.perform(get(path).header("Authorization", bearer)).andReturn();
             JsonNode deliveries = objectMapper.readTree(result.getResponse().getContentAsString()).path("data");

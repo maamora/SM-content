@@ -2,6 +2,7 @@ package com.maamora.studio.service;
 
 import com.maamora.studio.model.Product;
 import com.maamora.studio.model.Template;
+import com.maamora.studio.model.enums.GenerationMode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -38,6 +39,8 @@ import java.util.Map;
 @Service
 public class ImageRenderService {
 
+    public record RenderedVisual(byte[] png, GenerationMode generationMode, String recoveryMessage) {}
+
     @Value("${STABILITY_API_KEY:}")
     private String apiKey;
 
@@ -66,6 +69,16 @@ public class ImageRenderService {
     public byte[] renderToPng(Template template, Product product,
             String badgeText, String promoText,
             String accentColor, String mood) {
+        return render(template, product, badgeText, promoText, accentColor, mood).png();
+    }
+
+    /**
+     * Produces an AI visual when the configured provider is available, otherwise a
+     * branded composition from the source product image and template overlays.
+     */
+    public RenderedVisual render(Template template, Product product,
+            String badgeText, String promoText,
+            String accentColor, String mood) {
         boolean isSquare = template.getFormat() != null
                 && template.getFormat().name().equals("SQUARE_POST");
         // SDXL only accepts a fixed set of width/height pairs; anything else is
@@ -86,27 +99,28 @@ public class ImageRenderService {
                         badgeText, promoText, accentColor, mood);
                 List<String> references = hasProductImage ? List.of(product.getImageUrl()) : List.of();
                 byte[] aiPng = imageGenerationProvider.generateImage(prompt, isSquare ? "1:1" : "9:16", references);
-                return compositeOverlays(aiPng, badgeText, promoText, accentColor, mood);
+                return new RenderedVisual(
+                        compositeOverlays(aiPng, badgeText, promoText, accentColor, mood),
+                        GenerationMode.AI_GENERATED,
+                        null);
             } catch (Exception e) {
-                log.error("Managed image generation failed: {}", e.getMessage(), e);
-                throw new IllegalStateException("Visual generation failed: " + e.getMessage(), e);
+                log.warn("Managed image generation unavailable; creating deterministic template composition: {}", e.getMessage());
+                return deterministicVisual(product, width, height, badgeText, promoText, accentColor, mood,
+                        "AI visual generation is temporarily unavailable. A branded template composition was created from your product reference.");
             }
         }
 
-        // No managed image provider is configured: keep a deterministic
-        // product-photo/canvas fallback instead of failing the whole post flow.
-        if (apiKey == null || apiKey.isEmpty()) {
-            byte[] plainBase = buildPlainBase(product.getImageUrl(), width, height);
-            return compositeOverlays(plainBase, badgeText, promoText, accentColor, mood);
-        }
+        return deterministicVisual(product, width, height, badgeText, promoText, accentColor, mood,
+                "AI visual generation is not configured. A branded template composition was created instead.");
+    }
 
-        // 1. Generate the AI image (img2img or text-to-image)
-        byte[] aiPng = product.getImageUrl() != null && !product.getImageUrl().isBlank()
-                ? generateImg2Img(product, badgeText, promoText, accentColor, mood, width, height)
-                : generateText2Img(product, badgeText, promoText, accentColor, mood, width, height);
-
-        // 2. Composite logo and text overlays
-        return compositeOverlays(aiPng, badgeText, promoText, accentColor, mood);
+    private RenderedVisual deterministicVisual(Product product, int width, int height,
+            String badgeText, String promoText, String accentColor, String mood, String recoveryMessage) {
+        byte[] plainBase = buildPlainBase(product.getImageUrl(), width, height);
+        return new RenderedVisual(
+                compositeOverlays(plainBase, badgeText, promoText, accentColor, mood),
+                GenerationMode.TEMPLATE_COMPOSED,
+                recoveryMessage);
     }
 
     /**

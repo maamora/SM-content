@@ -137,6 +137,17 @@
 - [x] Remove unused browser-inference dependencies that introduced unnecessary pnpm build-script approval prompts.
 - [x] Re-run the frozen-lockfile install and production validation after the dependency cleanup.
 
+## Gemini quota exhaustion handling
+- [x] Trace Gemini HTTP 429 quota errors through single visual generation, Photo Shoot, Edit Image, and batch generation.
+- [x] Classify provider unavailability through explicit template-composition output provenance and recovery messaging.
+- [x] Verify unaffected Studio pages remain usable when the configured image provider is temporarily unavailable.
+
+## Deterministic Content Generation Engine
+- [x] Design a server-side template composition fallback for Product → branded social visual when image AI is unavailable.
+- [x] Design multilingual rule-based caption templates with safely selected variations for French, Arabic, and Darija.
+- [x] Expose the deterministic visual and caption outputs through existing authenticated Studio workflows, without labeling them as AI photoshoots.
+- [x] Validate provider-down fallback creation, storage, approval, export, and batch generation paths.
+
 ## Live caption and image generation validation
 - [ ] Confirm the updated backend is running with the corrected JWT_SECRET and provider capabilities.
 - [ ] Execute a disposable authenticated caption-generation request using Gemini.

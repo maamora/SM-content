@@ -3,6 +3,7 @@ package com.maamora.studio.service;
 import com.maamora.studio.model.CreativeJob;
 import com.maamora.studio.model.enums.CreativeJobStatus;
 import com.maamora.studio.model.enums.CreativeJobType;
+import com.maamora.studio.model.enums.GenerationMode;
 import com.maamora.studio.repository.CreativeJobRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -62,18 +63,32 @@ public class CreativeJobProcessor {
                 }
             }
 
-            byte[] image = imageGenerationProvider.generateImage(prompt, job.getAspectRatio(), references);
+            byte[] image;
+            try {
+                image = imageGenerationProvider.generateImage(prompt, job.getAspectRatio(), references);
+                job.setOutputMode(GenerationMode.AI_GENERATED);
+                job.setRecoveryMessage(null);
+            } catch (Exception generationError) {
+                log.warn("Creative job {} AI generation unavailable; creating a template composition: {}", jobId, generationError.getMessage());
+                image = job.getType() == CreativeJobType.EDIT_IMAGE
+                        ? referenceCompositeService.composeSingle(job.getProductImageUrl(), "BRANDED EDIT PREVIEW")
+                        : references.size() > 1
+                                ? referenceCompositeService.compose(job.getModelImageUrl(), job.getProductImageUrl())
+                                : referenceCompositeService.composeSingle(job.getProductImageUrl(), "BRANDED PHOTO SHOOT PREVIEW");
+                job.setOutputMode(GenerationMode.TEMPLATE_COMPOSED);
+                job.setRecoveryMessage("AI visual generation is temporarily unavailable. This is a branded template composition from your supplied reference images, not an AI photoshoot or pixel edit.");
+            }
             String imageUrl = storageService.upload(image, "creative/" + job.getId() + ".png", "image/png");
             job.setResultImageUrl(imageUrl);
 
             if (job.getType() == CreativeJobType.PHOTO_SHOOT_VIDEO) {
-                if (!videoGenerationService.isConfigured()) {
-                    throw new IllegalStateException(
-                            "Video generation is unavailable. Configure Gemini/Veo with billing and model access.");
+                if (videoGenerationService.isConfigured() && job.getOutputMode() == GenerationMode.AI_GENERATED) {
+                    byte[] video = videoGenerationService.generateVideo(imageUrl, prompt, job.getAspectRatio());
+                    String videoUrl = storageService.upload(video, "creative/" + job.getId() + ".mp4", "video/mp4");
+                    job.setResultVideoUrl(videoUrl);
+                } else {
+                    job.setRecoveryMessage("A branded template composition was created. Video output requires an available AI image and video provider.");
                 }
-                byte[] video = videoGenerationService.generateVideo(imageUrl, prompt, job.getAspectRatio());
-                String videoUrl = storageService.upload(video, "creative/" + job.getId() + ".mp4", "video/mp4");
-                job.setResultVideoUrl(videoUrl);
             }
 
             job.setStatus(CreativeJobStatus.COMPLETED);

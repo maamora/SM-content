@@ -1,6 +1,6 @@
 # STUDIO local development guide
 
-> Studio workflow note: the authenticated Studio page submits the selected product, template, prompt, and references through the managed image provider. After a visual is created, it automatically requests captions and keeps the visual visible if the active caption provider is temporarily unavailable. Configure a real fallback provider before expecting failover from provider rate or capacity limits.
+> Studio workflow note: the authenticated Studio page submits the selected product, template, prompt, and references through the managed image provider. When image generation is temporarily unavailable—for example, Gemini HTTP 429 quota exhaustion—the backend produces a clearly labelled deterministic template composition instead of leaving the post or creative job stuck. When caption AI is unavailable, it supplies deterministic French, Arabic, and Darija caption templates. Configure a real provider for generative photoshoots and enhanced captions; deterministic output is a branded composition, not an AI photoshoot.
 
 
 This guide explains how to run the merged STUDIO application locally. The repository contains a **Next.js 16 frontend**, a **Spring Boot 3.3 backend**, and a **PostgreSQL database**. The browser talks to Spring Boot over HTTP; Spring Boot owns authentication, authorization, persistence, product workflows, brand settings, posts, templates, uploads, and the integration boundary for future AI and publishing providers.
@@ -255,6 +255,14 @@ Do not add `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, or
 six `DB_*` variables. Keep exactly one entry for every key, including `IMAGE_PROVIDER`, `IMAGE_PROVIDER_FALLBACK`, `CAPTION_PROVIDER`, and the selected image/caption provider variables. Duplicate keys are rejected before Spring Boot initializes.
 
 The API should become available at `http://localhost:8080`. Cloudflare Workers AI FLUX.2 [dev] uses a multipart inference request and supports up to four `input_image_N` references, each resized below 512px before submission. Product-plus-model shoots send the product and model references together. Groq captions use the OpenAI-compatible `/chat/completions` endpoint and validate a non-empty `choices[0].message.content`; rate-limited, malformed, or empty responses are treated as provider failures rather than returned to the frontend as blank captions.
+
+### Provider-down deterministic fallback
+
+STUDIO never fabricates a completed AI render when an upstream model fails. If the configured image provider is disabled, unavailable, rate-limited, or returns a quota error, the server instead creates a **template-composed** visual using the selected layout, product metadata, campaign text, brand colour, and available product/model references. The result is stored, approved, exported, and included in batch jobs through the same authenticated workflow as a provider render. Creative jobs expose the same provenance and recovery message in their polling response, so the interface can distinguish a template composition from an AI-generated image.
+
+The deterministic fallback is appropriate for branded product cards, campaign tiles, editorial product layouts, and product-plus-model reference boards. It cannot synthesize a new photographic scene, re-pose a model, or perform semantic retouching. These capabilities resume automatically on the next request once a configured image provider has quota and responds successfully; no database migration or user retry of the failed job is required.
+
+Caption generation follows the same availability principle. A failed Groq or Gemini call returns selectable deterministic variations in French, Arabic, and Darija built from the stored product and brand fields. Review each caption before publishing, particularly translations, product claims, and region-specific phrasing.
 
 The backend applies missing JPA schema objects with `ddl-auto: update`; this preserves existing rows while adding schema changes. Never use `create` or `create-drop` against a database containing real data.
 

@@ -5,7 +5,7 @@
 
 import { useMemo, useState } from "react";
 import { ImagePlus, Loader2, Sparkles, Upload, WandSparkles } from "lucide-react";
-import { createCreativeJob, getCreativeJob, uploadCreativeReference } from "@/lib/api/creative";
+import { createCreativeJob, getCreativeJob, uploadCreativeReference, type CreativeJob } from "@/lib/api/creative";
 
 type CreativeWorkflowPanelProps = {
     compact?: boolean;
@@ -51,6 +51,8 @@ export function CreativeWorkflowPanel({ compact = false, imageGenerationAvailabl
     const [productUrl, setProductUrl] = useState<string | null>(null);
     const [modelUrl, setModelUrl] = useState<string | null>(null);
     const [resultImageUrl, setResultImageUrl] = useState<string | null>(null);
+    const [resultMode, setResultMode] = useState<CreativeJob["outputMode"]>(null);
+    const [recoveryMessage, setRecoveryMessage] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -58,28 +60,25 @@ export function CreativeWorkflowPanel({ compact = false, imageGenerationAvailabl
     const hasRequiredReferences = Boolean(isPhotoShoot ? productFile && modelFile : productFile);
     const activeImageUrl = resultImageUrl ?? productUrl ?? null;
     const statusLabel = useMemo(() => {
+        if (resultImageUrl && resultMode === "TEMPLATE_COMPOSED") return "Branded template ready";
         if (resultImageUrl) return isPhotoShoot ? "Photo shoot ready" : "Edit ready";
         return isPhotoShoot ? "Ready for a photo shoot direction" : "Ready for an image edit";
-    }, [isPhotoShoot, resultImageUrl]);
+    }, [isPhotoShoot, resultImageUrl, resultMode]);
 
-    async function waitForCreativeJob(jobId: string) {
+    async function waitForCreativeJob(jobId: string): Promise<CreativeJob> {
         for (let attempt = 0; attempt < 72; attempt += 1) {
             await new Promise((resolve) => window.setTimeout(resolve, 2500));
             const job = await getCreativeJob(jobId);
             if (job.status === "COMPLETED") {
-                if (!job.resultImageUrl) throw new Error("Gemini completed without an image result.");
-                return job.resultImageUrl;
+                if (!job.resultImageUrl) throw new Error("Creative workflow completed without an image result.");
+                return job;
             }
-            if (job.status === "FAILED") throw new Error(job.errorMessage || "Gemini could not generate this visual.");
+            if (job.status === "FAILED") throw new Error(job.errorMessage || "The creative workflow could not generate this visual.");
         }
         throw new Error("Visual generation timed out. Please try again.");
     }
 
     async function handleGenerate() {
-        if (!imageGenerationAvailable) {
-            setError("La génération d’images n’est pas configurée. Ajoutez une clé Gemini valide au backend pour activer les photo shoots et les retouches.");
-            return;
-        }
         if (!hasRequiredReferences) {
             setError(isPhotoShoot ? "Add both a product image and a model image." : "Add a product image to edit.");
             return;
@@ -87,6 +86,8 @@ export function CreativeWorkflowPanel({ compact = false, imageGenerationAvailabl
         setBusy(true);
         setError(null);
         setResultImageUrl(null);
+        setResultMode(null);
+        setRecoveryMessage(null);
         try {
             const product = await uploadCreativeReference(productFile!);
             const model = isPhotoShoot && modelFile ? await uploadCreativeReference(modelFile) : null;
@@ -97,7 +98,10 @@ export function CreativeWorkflowPanel({ compact = false, imageGenerationAvailabl
                 productImageUrl: product.url,
                 modelImageUrl: model?.url,
             });
-            setResultImageUrl(await waitForCreativeJob(job.id));
+            const completedJob = await waitForCreativeJob(job.id);
+            setResultImageUrl(completedJob.resultImageUrl);
+            setResultMode(completedJob.outputMode);
+            setRecoveryMessage(completedJob.recoveryMessage);
         } catch (generateError) {
             setError(generateError instanceof Error ? generateError.message : "Visual generation failed.");
         } finally {
@@ -132,11 +136,11 @@ export function CreativeWorkflowPanel({ compact = false, imageGenerationAvailabl
                         <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={5} placeholder="Describe the scene, motion, lighting, and what must stay true..." />
                     </label>
                     <div className="creative-workflow__actions">
-                        <button type="button" className="studio-button studio-button--dark" onClick={handleGenerate} disabled={busy || !imageGenerationAvailable}>
+                        <button type="button" className="studio-button studio-button--dark" onClick={handleGenerate} disabled={busy}>
                             {busy ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                            {busy ? "Generating visual..." : !imageGenerationAvailable ? "Visual generation unavailable" : isPhotoShoot ? "Generate photo shoot" : "Apply image edit"}
+                            {busy ? "Generating visual..." : !imageGenerationAvailable ? "Generate template composition" : isPhotoShoot ? "Generate photo shoot" : "Apply image edit"}
                         </button>
-                        <span>{imageGenerationAvailable ? "Image output is ready when you are." : "Configure image generation to activate this workflow."}</span>
+                        <span>{imageGenerationAvailable ? "AI-enhanced output is ready when you are." : "AI is unavailable; a branded template composition will be created from your references."}</span>
                     </div>
                     {error && <p className="studio-form-error">{error}</p>}
                 </div>
@@ -147,7 +151,8 @@ export function CreativeWorkflowPanel({ compact = false, imageGenerationAvailabl
                     ) : (
                         <div className="creative-workflow__empty"><Sparkles size={24} /><span>Your result lands here.</span><small>Reference → direction → visual</small></div>
                     )}
-                    {resultImageUrl && <div className="creative-workflow__result-meta"><span><span className="studio-dot studio-dot--lime" /> VISUAL READY</span><span>{isPhotoShoot ? "Photo shoot frame" : "Edited image"}</span></div>}
+                    {resultImageUrl && <div className="creative-workflow__result-meta"><span><span className="studio-dot studio-dot--lime" /> {resultMode === "TEMPLATE_COMPOSED" ? "TEMPLATE READY" : "VISUAL READY"}</span><span>{resultMode === "TEMPLATE_COMPOSED" ? "Reference composition" : isPhotoShoot ? "Photo shoot frame" : "Edited image"}</span></div>}
+                    {recoveryMessage && <p className="studio-form-error">{recoveryMessage}</p>}
                 </div>
             </div>
         </section>

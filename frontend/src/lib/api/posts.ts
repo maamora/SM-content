@@ -11,6 +11,7 @@ export interface Post {
     captionAr: string | null;
     captionDarija: string | null;
     status: "DRAFT" | "APPROVED" | "EXPORTED";
+    generationMode: "AI_GENERATED" | "TEMPLATE_COMPOSED" | "BROWSER_GENERATED";
     productName: string;
     createdAt: string | null;
 }

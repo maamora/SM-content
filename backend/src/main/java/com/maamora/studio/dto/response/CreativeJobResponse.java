@@ -19,6 +19,8 @@ public class CreativeJobResponse {
     private String resultImageUrl;
     private String resultVideoUrl;
     private String errorMessage;
+    private String outputMode;
+    private String recoveryMessage;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -34,6 +36,8 @@ public class CreativeJobResponse {
                 job.getResultImageUrl(),
                 job.getResultVideoUrl(),
                 job.getErrorMessage(),
+                job.getOutputMode() == null ? null : job.getOutputMode().name(),
+                job.getRecoveryMessage(),
                 job.getCreatedAt(),
                 job.getUpdatedAt());
     }

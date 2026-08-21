@@ -6,6 +6,7 @@ import com.maamora.studio.dto.request.CreateBrowserVisualPostRequest;
 import com.maamora.studio.exception.ResourceNotFoundException;
 import com.maamora.studio.exception.UnauthorizedException;
 import com.maamora.studio.model.*;
+import com.maamora.studio.model.enums.GenerationMode;
 import com.maamora.studio.model.enums.PostStatus;
 import com.maamora.studio.model.enums.ProductStatus;
 import com.maamora.studio.repository.PostRepository;
@@ -50,12 +51,12 @@ public class PostService {
         }
         Template template = templateService.getById(request.getTemplateId());
 
-        byte[] png = imageRenderService.renderToPng(
+        ImageRenderService.RenderedVisual renderedVisual = imageRenderService.render(
                 template, product, request.getBadgeText(), request.getPromoText(),
                 request.getAccentColor(), request.getMood());
 
         String path = "posts/" + UUID.randomUUID() + ".png";
-        String imageUrl = storageService.upload(png, path, "image/png");
+        String imageUrl = storageService.upload(renderedVisual.png(), path, "image/png");
 
         Post post = Post.builder()
                 .product(product)
@@ -65,6 +66,7 @@ public class PostService {
                 .imageUrl(imageUrl)
                 .badgeText(request.getBadgeText())
                 .promoText(request.getPromoText())
+                .generationMode(renderedVisual.generationMode())
                 .status(PostStatus.DRAFT)
                 .build();
 
@@ -90,6 +92,7 @@ public class PostService {
                 .imageUrl(request.getImageUrl())
                 .badgeText(request.getBadgeText())
                 .promoText(request.getPromoText())
+                .generationMode(GenerationMode.BROWSER_GENERATED)
                 .status(PostStatus.DRAFT)
                 .build();
 

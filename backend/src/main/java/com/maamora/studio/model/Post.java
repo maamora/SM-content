@@ -1,6 +1,7 @@
 package com.maamora.studio.model;
 
 import com.maamora.studio.model.enums.Format;
+import com.maamora.studio.model.enums.GenerationMode;
 import com.maamora.studio.model.enums.PostStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -52,6 +53,11 @@ public class Post {
 
     private String badgeText;
     private String promoText;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 32)
+    @Builder.Default
+    private GenerationMode generationMode = GenerationMode.AI_GENERATED;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

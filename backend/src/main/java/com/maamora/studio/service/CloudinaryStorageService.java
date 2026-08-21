@@ -2,9 +2,13 @@ package com.maamora.studio.service;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
@@ -16,6 +20,7 @@ import java.util.regex.Pattern;
  * returned URL is a real public HTTPS address that works regardless of where
  * the backend happens to be running.
  */
+@Slf4j
 @Service
 public class CloudinaryStorageService implements StorageService {
 
@@ -27,6 +32,12 @@ public class CloudinaryStorageService implements StorageService {
 
     @Value("${app.cloudinary.api-secret}")
     private String apiSecret;
+
+    @Value("${app.storage.local-path}")
+    private String localPath;
+
+    @Value("${app.storage.public-base-url}")
+    private String publicBaseUrl;
 
     private Cloudinary cloudinary;
 
@@ -49,6 +60,9 @@ public class CloudinaryStorageService implements StorageService {
 
     @Override
     public String upload(byte[] content, String relativePath, String contentType) {
+        if (!isCloudinaryConfigured()) {
+            return storeLocally(content, relativePath);
+        }
         try {
             // The public_id is derived from the content's hash, not a random
             // UUID: uploading the exact same bytes twice (e.g. the user picks
@@ -66,7 +80,8 @@ public class CloudinaryStorageService implements StorageService {
 
             return (String) result.get("secure_url");
         } catch (Exception e) {
-            throw new RuntimeException("Failed to upload file to Cloudinary: " + relativePath, e);
+            log.warn("Cloudinary upload unavailable for {}; storing generated output locally instead: {}", relativePath, e.getMessage());
+            return storeLocally(content, relativePath);
         }
     }
 
@@ -115,5 +130,24 @@ public class CloudinaryStorageService implements StorageService {
 
     private String resourceTypeOfUrl(String url) {
         return url.contains("/video/upload/") ? "video" : "image";
+    }
+
+    private boolean isCloudinaryConfigured() {
+        return configuredValue(cloudName) && configuredValue(apiKey) && configuredValue(apiSecret);
+    }
+
+    private boolean configuredValue(String value) {
+        return value != null && !value.isBlank() && !"placeholder".equalsIgnoreCase(value.trim());
+    }
+
+    private String storeLocally(byte[] content, String relativePath) {
+        try {
+            Path target = Path.of(localPath, relativePath);
+            Files.createDirectories(target.getParent());
+            Files.write(target, content);
+            return publicBaseUrl + "/" + relativePath;
+        } catch (IOException exception) {
+            throw new RuntimeException("Failed to store generated output locally: " + relativePath, exception);
+        }
     }
 }
