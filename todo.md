@@ -162,6 +162,13 @@
 - [x] Ensure template selection, product context, local captions, approval, and export state are consistently visible and actionable.
 - [x] Verify local SVG rendering, creative composition, batch orchestration, approval/export contracts, backend tests, and the final frontend production build.
 
+## Editable post composer and publishing setup
+- [x] Audit existing product composition, direct media upload, scheduling, and social connection contracts.
+- [x] Replace the product-plus-model composition section with a focused editable product-post composer.
+- [x] Add direct post upload alongside product-template composition, caption drafting, and review controls.
+- [x] Redesign account connection and scheduling as a guided step-by-step setup with honest unavailable states.
+- [x] Validate the new flows, production build, and backend tests before committing.
+
 ## Deterministic Content Generation Engine
 - [x] Design a server-side template composition fallback for Product → branded social visual when image AI is unavailable.
 - [x] Design multilingual rule-based caption templates with safely selected variations for French, Arabic, and Darija.

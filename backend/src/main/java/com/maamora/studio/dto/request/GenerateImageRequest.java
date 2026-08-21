@@ -14,6 +14,7 @@ public class GenerateImageRequest {
     private String badgeText;
     private String promoText;
     private String accentColor;
+    private Boolean includeBrandLogo;
 
     /**
      * Mood / ambiance preset chosen by the user in the studio UI.

@@ -45,6 +45,7 @@ public class PostService {
      * Same as above, but attaches the Post to a BatchJob (used by BatchJobService).
      */
     public Post generateImage(String userId, GenerateImageRequest request, BatchJob batchJob) {
+        BrandSettings brand = brandSettingsService.getForUser(userId);
         Product product = productService.getOwned(userId, request.getProductId());
         if (product.getStatus() != ProductStatus.APPROVED) {
             throw new UnauthorizedException("Product is pending admin approval and cannot be used yet.");
@@ -53,7 +54,7 @@ public class PostService {
 
         ImageRenderService.RenderedVisual renderedVisual = imageRenderService.render(
                 template, product, request.getBadgeText(), request.getPromoText(),
-                request.getAccentColor(), request.getMood());
+                request.getAccentColor(), request.getMood(), brand, Boolean.TRUE.equals(request.getIncludeBrandLogo()));
 
         String path = "posts/" + UUID.randomUUID() + ".png";
         String imageUrl = storageService.upload(renderedVisual.png(), path, "image/png");

@@ -1,25 +1,14 @@
 "use client";
 
-/* STUDIO editorial refresh: a graphite-and-paper composition desk with lime signal accents and capability-honest creative controls. */
-import React, { useEffect, useMemo, useRef, useState } from "react";
+/* STUDIO POST COMPOSER: editorial pasteboard, visible source controls, paper previews, lime signal accents, and no model-workflow language. */
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-    Sparkles,
-    Copy,
-    Check,
-    Download,
-    RefreshCw,
-    Languages,
-    Sliders,
-    CheckCircle,
-    Eye,
-    Loader2,
-    Search,
+    Check, CheckCircle2, Copy, Download, Eye, FileUp, ImagePlus, Layers3,
+    Loader2, Palette, Search, Sparkles, Stamp, UploadCloud,
 } from "lucide-react";
+import { getBrand, type BrandSettings } from "@/lib/api/brand";
+import { createBrowserVisualPost, editCaption, exportPost, generateCaptions, generateImage, approvePost, type Post } from "@/lib/api/posts";
 import { listTemplates, type Template } from "@/lib/api/templates";
-import { generateImage, generateCaptions, editCaption, approvePost, exportPost, type Post } from "@/lib/api/posts";
-import { Product3DModel } from "@/components/features/products/Product3DModel";
-import { CreativeWorkflowPanel } from "./CreativeWorkflowPanel";
-import { generateLocalCaption } from "@/lib/local-caption";
 
 interface Product {
     id: string;
@@ -32,682 +21,199 @@ interface Product {
 
 interface CreativeStudioProps {
     products: Product[];
-    /** Called after generate/approve/export succeeds, so the parent can
-     * refresh workspace-wide stats (e.g. the Dashboard's post counts) even
-     * though this component stays mounted in the background on other tabs. */
     onPostChange?: () => void;
 }
 
 type CaptionLang = "fr" | "ar" | "darija" | "en";
+type ComposerMode = "template" | "upload";
 
-// Mood swatches provide the visual direction passed to the local SVG template
-// renderer. They also keep the in-browser preview aligned with the requested
-// composition before its final PNG is rendered.
-const MOOD_PRESETS = [
-    { id: "sunset", name: "Maamora Sunset", bg: "from-[#f7f8ef] via-[#e8f3c8] to-[#d7ff97]", accent: "#5f762a" },
-    { id: "moss", name: "Atlas Moss", bg: "from-[#fbfdfb] via-[#eaf2ed] to-[#d4e6dc]", accent: "#2d5a41" },
-    { id: "ochre", name: "Ochre Medina", bg: "from-[#faf6f0] via-[#f1efe5] to-[#dfded6]", accent: "#6b6d5f" },
-    { id: "mint", name: "Royal Mint", bg: "from-[#f7fcfa] via-[#ecf7f3] to-[#d1ede3]", accent: "#1b5e4f" },
-    { id: "eclipse", name: "Graphite Eclipse", bg: "from-[#0a0a0a] via-[#141414] to-[#25251f]", accent: "#b9ff43" },
+const moods = [
+    { id: "sunset", label: "Sauge", color: "#D7FF97", ink: "#55712E" },
+    { id: "moss", label: "Atlas", color: "#B9D9B0", ink: "#244B37" },
+    { id: "ochre", label: "Terre", color: "#E5CBB7", ink: "#6E412B" },
+    { id: "mint", label: "Menthe", color: "#BDE8D8", ink: "#1B5E4F" },
+    { id: "eclipse", label: "Nuit", color: "#191A18", ink: "#B9FF43" },
 ] as const;
 
-const LANGS: { id: CaptionLang; label: string }[] = [
-    { id: "darija", label: "Darija" },
-    { id: "fr", label: "Français" },
-    { id: "ar", label: "العربية" },
-    { id: "en", label: "English" },
+const languages: { id: CaptionLang; label: string }[] = [
+    { id: "darija", label: "Darija" }, { id: "fr", label: "Français" },
+    { id: "ar", label: "العربية" }, { id: "en", label: "English" },
 ];
+
+function captionFor(post: Post, language: CaptionLang) {
+    if (language === "fr") return post.captionFr;
+    if (language === "ar") return post.captionAr;
+    if (language === "en") return post.captionEn;
+    return post.captionDarija;
+}
 
 export default function CreativeStudio({ products, onPostChange }: CreativeStudioProps) {
     const [templates, setTemplates] = useState<Template[]>([]);
-    const [selectedProductId, setSelectedProductId] = useState<string>("");
-    const [selectedFormat, setSelectedFormat] = useState<"SQUARE_POST" | "STORY">("SQUARE_POST");
-    const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
-    const [promoText, setPromoText] = useState<string>("OFFRE SPÉCIALE !");
-    const [accentColor, setAccentColor] = useState<string>("#b9ff43");
-    const [badgeText, setBadgeText] = useState<string>("-20% TODAY");
-    const [mood, setMood] = useState<(typeof MOOD_PRESETS)[number]>(MOOD_PRESETS[0]);
-    const [generatedImageSrc, setGeneratedImageSrc] = useState<string | null>(null);
-
-    const [post, setPost] = useState<Post | null>(null);
-    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-    const [isGeneratingCaptions, setIsGeneratingCaptions] = useState(false);
-    const [isApproving, setIsApproving] = useState(false);
-    const [isExporting, setIsExporting] = useState(false);
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-    const [activeCaptionLang, setActiveCaptionLang] = useState<CaptionLang>("darija");
-    const [draftCaption, setDraftCaption] = useState<string>("");
-    const [copiedLang, setCopiedLang] = useState<string | null>(null);
-    const [localCaptions, setLocalCaptions] = useState<Partial<Record<CaptionLang, string>>>({});
-    const [isGeneratingLocalCaption, setIsGeneratingLocalCaption] = useState(false);
-    const [localCaptionProgress, setLocalCaptionProgress] = useState<{ progress: number; detail: string } | null>(null);
-
+    const [brand, setBrand] = useState<BrandSettings | null>(null);
+    const [mode, setMode] = useState<ComposerMode>("template");
+    const [format, setFormat] = useState<"SQUARE_POST" | "STORY">("SQUARE_POST");
+    const [productId, setProductId] = useState("");
+    const [templateId, setTemplateId] = useState("");
+    const [moodId, setMoodId] = useState<(typeof moods)[number]["id"]>("sunset");
+    const [promoText, setPromoText] = useState("OFFRE ÉDITION LIMITÉE");
+    const [badgeText, setBadgeText] = useState("NOUVEAU");
+    const [accentColor, setAccentColor] = useState("#B9FF43");
+    const [includeBrandLogo, setIncludeBrandLogo] = useState(true);
     const [productQuery, setProductQuery] = useState("");
-    const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
-    const productSearchRef = useRef<HTMLDivElement>(null);
+    const [productPickerOpen, setProductPickerOpen] = useState(false);
+    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+    const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+    const [post, setPost] = useState<Post | null>(null);
+    const [captionLanguage, setCaptionLanguage] = useState<CaptionLang>("darija");
+    const [captionDraft, setCaptionDraft] = useState("");
+    const [error, setError] = useState<string | null>(null);
+    const [copied, setCopied] = useState(false);
+    const [busy, setBusy] = useState<"render" | "upload" | "captions" | "approve" | "export" | null>(null);
+    const pickerRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const approvedProducts = useMemo(() => products.filter((p) => p.status === "APPROVED"), [products]);
-    const pendingCount = products.length - approvedProducts.length;
-    const selectedProduct = approvedProducts.find((p) => p.id === selectedProductId) || approvedProducts[0];
-
+    const approvedProducts = useMemo(() => products.filter((product) => product.status === "APPROVED"), [products]);
+    const selectedProduct = approvedProducts.find((product) => product.id === productId) ?? approvedProducts[0] ?? null;
+    const selectedMood = moods.find((mood) => mood.id === moodId) ?? moods[0];
+    const activeTemplates = useMemo(() => templates.filter((template) => template.format === format), [templates, format]);
     const matchingProducts = useMemo(
-        () => approvedProducts
-            .filter((p) => p.name.toLowerCase().includes(productQuery.toLowerCase()))
-            .sort((a, b) => a.name.localeCompare(b.name)),
-        [approvedProducts, productQuery]
+        () => approvedProducts.filter((product) => product.name.toLowerCase().includes(productQuery.toLowerCase())),
+        [approvedProducts, productQuery],
     );
-
-    // Keep the search box text in sync with whichever product is actually
-    // selected (initial default pick, or after choosing one from the list).
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- sync the search box display text with the selected product
-        setProductQuery(selectedProduct?.name ?? "");
-        // Only re-run when the *selected id* changes, not on every render —
-        // selectedProduct is a fresh object from .find() each time and would
-        // otherwise re-trigger this and fight with in-progress typing.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedProduct?.id]);
-
-    // Close the dropdown on outside click.
-    useEffect(() => {
-        function handleClickOutside(e: MouseEvent) {
-            if (productSearchRef.current && !productSearchRef.current.contains(e.target as Node)) {
-                setIsProductDropdownOpen(false);
-                setProductQuery(selectedProduct?.name ?? "");
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [selectedProduct]);
+    const previewImage = post?.imageUrl ?? (mode === "upload" ? uploadPreview : null);
 
     useEffect(() => {
-        listTemplates()
-            .then(setTemplates)
-            .catch((err: unknown) => setErrorMsg(err instanceof Error ? err.message : "Failed to load templates"));
+        void Promise.all([listTemplates(), getBrand()])
+            .then(([nextTemplates, nextBrand]) => { setTemplates(nextTemplates); setBrand(nextBrand); })
+            .catch((err: unknown) => setError(err instanceof Error ? err.message : "Impossible de charger le poste de composition."));
     }, []);
 
     useEffect(() => {
-        if (approvedProducts.length > 0 && !approvedProducts.some((p) => p.id === selectedProductId)) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect -- default-select the first approved product
-            setSelectedProductId(approvedProducts[0].id);
-        }
-    }, [approvedProducts, selectedProductId]);
-
-    const templatesForFormat = useMemo(
-        () => templates.filter((t) => t.format === selectedFormat),
-        [templates, selectedFormat]
-    );
-
-    function captionFor(p: Post, lang: CaptionLang): string | null {
-        if (lang === "fr") return p.captionFr;
-        if (lang === "ar") return p.captionAr;
-        if (lang === "en") return p.captionEn;
-        return p.captionDarija;
-    }
+        if (approvedProducts.length && !approvedProducts.some((product) => product.id === productId)) setProductId(approvedProducts[0].id);
+    }, [approvedProducts, productId]);
 
     useEffect(() => {
-        if (templatesForFormat.length === 0) return;
-        if (!templatesForFormat.some((t) => t.id === selectedTemplateId)) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect -- default-select the first template for the chosen format
-            setSelectedTemplateId(templatesForFormat[0].id);
-        }
-    }, [templatesForFormat, selectedTemplateId]);
+        if (activeTemplates.length && !activeTemplates.some((template) => template.id === templateId)) setTemplateId(activeTemplates[0].id);
+    }, [activeTemplates, templateId]);
 
-    // Reset the working post whenever the underlying inputs change — an existing
-    // post no longer reflects the current parameters once they're edited.
+    useEffect(() => { setProductQuery(selectedProduct?.name ?? ""); }, [selectedProduct?.id]);
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- stale post must be cleared when its inputs change
-        setPost(null);
-        setGeneratedImageSrc(null);
-        setLocalCaptions({});
-    }, [selectedProductId, selectedTemplateId, promoText, accentColor, badgeText, mood.name]);
+        const close = (event: MouseEvent) => {
+            if (!pickerRef.current?.contains(event.target as Node)) { setProductPickerOpen(false); setProductQuery(selectedProduct?.name ?? ""); }
+        };
+        document.addEventListener("mousedown", close);
+        return () => document.removeEventListener("mousedown", close);
+    }, [selectedProduct?.name]);
+    useEffect(() => () => { if (uploadPreview) URL.revokeObjectURL(uploadPreview); }, [uploadPreview]);
+    useEffect(() => { setCaptionDraft(post ? captionFor(post, captionLanguage) ?? "" : ""); }, [post, captionLanguage]);
 
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- sync the editable draft from the loaded post/language
-        setDraftCaption(post ? captionFor(post, activeCaptionLang) ?? localCaptions[activeCaptionLang] ?? "" : localCaptions[activeCaptionLang] ?? "");
-    }, [post, activeCaptionLang, localCaptions]);
+    const clearWorkingPost = () => { setPost(null); setError(null); };
+    const chooseFile = (file?: File) => {
+        if (!file) return;
+        if (!file.type.startsWith("image/")) { setError("Ajoutez une image PNG, JPG, WebP ou SVG."); return; }
+        if (file.size > 15 * 1024 * 1024) { setError("L’image dépasse la limite de 15 Mo."); return; }
+        if (uploadPreview) URL.revokeObjectURL(uploadPreview);
+        setUploadedFile(file); setUploadPreview(URL.createObjectURL(file)); clearWorkingPost();
+    };
 
-    const handleGenerateImage = async () => {
-        if (!selectedProduct || !selectedTemplateId) return;
-        setErrorMsg(null);
-        setIsGeneratingImage(true);
+    const renderTemplate = async () => {
+        if (!selectedProduct || !templateId) return;
+        setBusy("render"); setError(null);
         try {
-            const result = await generateImage({
-                productId: selectedProduct.id,
-                templateId: selectedTemplateId,
-                badgeText,
-                promoText,
-                accentColor,
-                mood: mood.name,
-            });
-            setPost(result);
-            setGeneratedImageSrc(result.imageUrl);
-            onPostChange?.();
-        } catch (err) {
-            setErrorMsg(err instanceof Error ? err.message : "Failed to generate image");
-        } finally {
-            setIsGeneratingImage(false);
-        }
+            const result = await generateImage({ productId: selectedProduct.id, templateId, promoText, badgeText, accentColor, mood: moodId, includeBrandLogo });
+            setPost(result); onPostChange?.();
+        } catch (err) { setError(err instanceof Error ? err.message : "Le rendu local n’a pas abouti."); }
+        finally { setBusy(null); }
     };
 
-    const handleSelectCaptionLanguage = (lang: CaptionLang) => {
-        setActiveCaptionLang(lang);
+    const saveUploadedPost = async () => {
+        if (!selectedProduct || !templateId || !uploadedFile) return;
+        setBusy("upload"); setError(null);
+        try {
+            const result = await createBrowserVisualPost({ productId: selectedProduct.id, templateId, image: uploadedFile, promoText, badgeText });
+            setPost(result); onPostChange?.();
+        } catch (err) { setError(err instanceof Error ? err.message : "Impossible d’ajouter ce visuel à la bibliothèque."); }
+        finally { setBusy(null); }
     };
 
-    const handleGenerateCaptions = async () => {
+    const createCaptions = async () => {
         if (!post) return;
-        setErrorMsg(null);
-        setIsGeneratingCaptions(true);
-        try {
-            const result = await generateCaptions(post.id);
-            setPost(result);
-            onPostChange?.();
-        } catch (err) {
-            setErrorMsg(err instanceof Error ? err.message : "Failed to generate captions");
-        } finally {
-            setIsGeneratingCaptions(false);
-        }
+        setBusy("captions"); setError(null);
+        try { const result = await generateCaptions(post.id); setPost(result); onPostChange?.(); }
+        catch (err) { setError(err instanceof Error ? err.message : "Impossible de rédiger les légendes."); }
+        finally { setBusy(null); }
     };
 
-    const handleGenerateLocalCaption = async () => {
-        if (!selectedProduct) {
-            setErrorMsg("Sélectionnez un produit approuvé avant de rédiger une légende.");
-            return;
-        }
-
-        setErrorMsg(null);
-        setIsGeneratingLocalCaption(true);
-        setLocalCaptionProgress({ progress: 0, detail: "Préparation de la rédaction locale…" });
-        try {
-            const caption = await generateLocalCaption({
-                productName: selectedProduct.name,
-                productDescription: selectedProduct.description,
-                offer: promoText,
-                badge: badgeText,
-                language: activeCaptionLang,
-                onProgress: (progress, detail) => setLocalCaptionProgress({ progress, detail }),
-            });
-            setLocalCaptions((current) => ({ ...current, [activeCaptionLang]: caption }));
-            setDraftCaption(caption);
-        } catch (err) {
-            setErrorMsg(err instanceof Error ? err.message : "Impossible de générer une légende locale.");
-        } finally {
-            setIsGeneratingLocalCaption(false);
-            setLocalCaptionProgress(null);
-        }
-    };
-
-    const handleSaveCaption = async () => {
+    const saveCaption = async () => {
         if (!post) return;
-        setErrorMsg(null);
-        try {
-            const result = await editCaption(post.id, activeCaptionLang, draftCaption);
-            setPost(result);
-        } catch (err) {
-            setErrorMsg(err instanceof Error ? err.message : "Failed to save caption");
-        }
+        try { setPost(await editCaption(post.id, captionLanguage, captionDraft)); }
+        catch (err) { setError(err instanceof Error ? err.message : "Impossible d’enregistrer cette légende."); }
     };
 
-    const handleApprove = async () => {
+    const approve = async () => {
         if (!post) return;
-        setErrorMsg(null);
-        setIsApproving(true);
-        try {
-            const result = await approvePost(post.id);
-            setPost(result);
-            onPostChange?.();
-        } catch (err) {
-            setErrorMsg(err instanceof Error ? err.message : "Failed to approve post");
-        } finally {
-            setIsApproving(false);
-        }
+        setBusy("approve"); setError(null);
+        try { setPost(await approvePost(post.id)); onPostChange?.(); }
+        catch (err) { setError(err instanceof Error ? err.message : "Impossible d’approuver ce post."); }
+        finally { setBusy(null); }
     };
 
-    const handleDownloadGeneratedVisual = () => {
-        if (!generatedImageSrc) return;
-        const link = document.createElement("a");
-        link.href = generatedImageSrc;
-        link.download = `studio-visual-${Date.now()}.png`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-    };
-
-    const handleDownload = async () => {
+    const exportPostFile = async () => {
         if (!post) return;
-        setErrorMsg(null);
-        setIsExporting(true);
+        setBusy("export"); setError(null);
         try {
-            const blob = await exportPost(post.id);
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `post-${post.id}.zip`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-            setPost((prev) => (prev ? { ...prev, status: "EXPORTED" } : prev));
-            onPostChange?.();
-        } catch (err) {
-            setErrorMsg(err instanceof Error ? err.message : "Failed to export post");
-        } finally {
-            setIsExporting(false);
-        }
+            const file = await exportPost(post.id); const url = URL.createObjectURL(file); const link = document.createElement("a");
+            link.href = url; link.download = `studio-post-${post.id}.zip`; link.click(); URL.revokeObjectURL(url);
+            setPost((current) => current ? { ...current, status: "EXPORTED" } : current); onPostChange?.();
+        } catch (err) { setError(err instanceof Error ? err.message : "Impossible d’exporter ce post."); }
+        finally { setBusy(null); }
     };
 
-    const handleCopyCaption = () => {
-        navigator.clipboard.writeText(draftCaption);
-        setCopiedLang(activeCaptionLang);
-        setTimeout(() => setCopiedLang(null), 2000);
+    const copyCaption = async () => {
+        if (!captionDraft) return;
+        await navigator.clipboard.writeText(captionDraft); setCopied(true); window.setTimeout(() => setCopied(false), 1800);
     };
 
-    const inputCls = "w-full border border-[#bdbdb4] bg-[#faf9f4] px-3 py-2 text-sm text-[var(--studio-ink)] placeholder:text-[#91918b] outline-none transition-colors focus:border-[var(--studio-lime)] font-medium h-10";
+    const ratioClass = format === "SQUARE_POST" ? "aspect-square" : "aspect-[9/16] max-h-[570px]";
+    const canCreate = Boolean(selectedProduct && templateId && (mode === "template" || uploadedFile));
 
     return (
-        <div className="space-y-8 select-none">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                        <h2 className="flex items-center gap-2 font-serif text-2xl font-normal tracking-tight text-[var(--studio-ink)]">
-                            <Sparkles className="h-5 w-5 text-[#5f762a]" />
-                        Atelier de Composition
-                    </h2>
-                    <p className="mt-1 text-xs font-medium text-[#777870]">
-                        Composez un visuel de marque, générez les légendes, approuvez, puis exportez.
-                    </p>
-                </div>
+        <div className="space-y-7">
+            <header className="flex flex-col gap-3 border-b border-[#d6d5cc] pb-5 md:flex-row md:items-end md:justify-between">
+                <div><span className="studio-kicker studio-kicker--dark">POST COMPOSER / LOCAL</span><h2 className="mt-2 font-serif text-3xl tracking-tight text-[var(--studio-ink)]">Un produit. Un post. Votre contrôle.</h2><p className="mt-2 max-w-2xl text-sm text-[#6f7068]">Composez une mise en page SVG à partir du produit, ou ajoutez un visuel terminé. Chaque post reste éditable avant sa diffusion.</p></div>
+                <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-[#68705d]"><span className="studio-status-dot studio-status-dot--lime" /> rendu local · sans clé API</div>
+            </header>
+
+            {error && <div className="studio-form-error" role="alert">{error}</div>}
+
+            <div className="grid gap-7 xl:grid-cols-[minmax(280px,.78fr)_minmax(420px,1.2fr)_minmax(280px,.76fr)]">
+                <section className="studio-creative-card h-fit">
+                    <div className="studio-creative-card__head"><div className="flex items-center gap-2"><Layers3 className="h-4 w-4 text-[#5f762a]" /><h3 className="text-sm font-black">La direction</h3></div><p>Choisissez les ingrédients, pas une boîte noire.</p></div>
+                    <div className="studio-creative-card__body space-y-5">
+                        <div className="grid grid-cols-2 gap-2 rounded-sm border border-[#d6d5cc] bg-[#f2f1eb] p-1">
+                            <button type="button" onClick={() => { setMode("template"); clearWorkingPost(); }} className={`px-3 py-2 text-xs font-bold transition-colors ${mode === "template" ? "bg-[var(--studio-ink)] text-white" : "text-[#6f7068]"}`}>Composer</button>
+                            <button type="button" onClick={() => { setMode("upload"); clearWorkingPost(); }} className={`px-3 py-2 text-xs font-bold transition-colors ${mode === "upload" ? "bg-[var(--studio-ink)] text-white" : "text-[#6f7068]"}`}>Importer</button>
+                        </div>
+
+                        <div ref={pickerRef} className="relative space-y-1.5"><label className="text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Produit approuvé</label><div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#91918b]" /><input value={productQuery} onFocus={() => setProductPickerOpen(true)} onChange={(event) => { setProductQuery(event.target.value); setProductPickerOpen(true); }} placeholder="Rechercher un produit" className="w-full border border-[#bdbdb4] bg-[#faf9f4] py-2 pl-9 pr-3 text-sm font-medium outline-none focus:border-[var(--studio-lime)]" /></div>{productPickerOpen && <div className="absolute z-20 mt-1 max-h-52 w-full overflow-auto border border-[var(--studio-ink)] bg-[var(--studio-paper)] shadow-[6px_6px_0_rgba(17,17,15,.12)]">{matchingProducts.map((product) => <button key={product.id} type="button" onMouseDown={(event) => { event.preventDefault(); setProductId(product.id); setProductQuery(product.name); setProductPickerOpen(false); clearWorkingPost(); }} className={`flex w-full items-center justify-between border-b border-[#e3e2da] px-3 py-2.5 text-left text-xs font-bold hover:bg-[#f1f0e9] ${product.id === selectedProduct?.id ? "bg-[#edf7d4] text-[#426421]" : ""}`}><span>{product.name}</span>{product.price != null && <small>{product.price.toFixed(2)} MAD</small>}</button>)}{!matchingProducts.length && <p className="px-3 py-3 text-xs text-[#777870]">Aucun produit approuvé.</p>}</div>}</div>
+
+                        <div><span className="text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Format</span><div className="mt-2 grid grid-cols-2 gap-2">{([ ["SQUARE_POST", "Post 1:1"], ["STORY", "Story 9:16"] ] as const).map(([value, label]) => <button key={value} type="button" onClick={() => { setFormat(value); clearWorkingPost(); }} className={`border px-3 py-2 text-left text-xs font-bold ${format === value ? "border-[#7c9b4d] bg-[#eef7da] text-[#426421]" : "border-[#c5c4bb] bg-[#faf9f4] text-[#777870]"}`}>{label}</button>)}</div></div>
+
+                        <div><span className="text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Template</span><div className="mt-2 grid grid-cols-2 gap-2">{activeTemplates.map((template) => <button key={template.id} type="button" onClick={() => { setTemplateId(template.id); clearWorkingPost(); }} className={`group relative min-h-20 overflow-hidden border p-2 text-left text-xs font-bold ${templateId === template.id ? "border-[#7c9b4d] bg-[#eef7da] text-[#426421]" : "border-[#c5c4bb] bg-[#faf9f4] text-[#777870]"}`}>{template.thumbnailUrl && <img src={template.thumbnailUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20 group-hover:opacity-30" />}<span className="relative">{template.name}</span></button>)}</div>{!activeTemplates.length && <p className="mt-2 text-xs text-[#777870]">Aucun template pour ce format.</p>}</div>
+
+                        {mode === "template" ? <>
+                            <div><span className="text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Atmosphère</span><div className="mt-2 flex flex-wrap gap-2">{moods.map((mood) => <button key={mood.id} type="button" onClick={() => { setMoodId(mood.id); clearWorkingPost(); }} title={mood.label} className={`h-8 w-8 border transition-transform ${moodId === mood.id ? "scale-110 border-[var(--studio-ink)]" : "border-[#c5c4bb]"}`} style={{ backgroundColor: mood.color }} />)}</div></div>
+                            <div className="space-y-3 border-t border-[#deddd5] pt-4"><label className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Titre de l’offre<input value={promoText} onChange={(event) => { setPromoText(event.target.value.toUpperCase()); clearWorkingPost(); }} className="mt-1.5 w-full border border-[#bdbdb4] bg-[#faf9f4] px-3 py-2 text-sm font-medium outline-none focus:border-[var(--studio-lime)]" /></label><label className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Badge<input value={badgeText} onChange={(event) => { setBadgeText(event.target.value.toUpperCase()); clearWorkingPost(); }} className="mt-1.5 w-full border border-[#bdbdb4] bg-[#faf9f4] px-3 py-2 text-sm font-medium outline-none focus:border-[var(--studio-lime)]" /></label><div className="flex items-center justify-between"><span className="text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Accent</span><input type="color" value={accentColor} onChange={(event) => { setAccentColor(event.target.value); clearWorkingPost(); }} className="h-8 w-10 cursor-pointer border border-[var(--studio-ink)] bg-[#faf9f4] p-0.5" /></div>{brand && <label className="flex cursor-pointer items-center justify-between gap-3 border-t border-[#deddd5] pt-3 text-xs font-semibold text-[#4f504a]"><span className="flex items-center gap-2"><Stamp className="h-3.5 w-3.5 text-[#5f762a]" />Afficher {brand.logoUrl ? "le logo" : "la signature"} de {brand.name}</span><input type="checkbox" checked={includeBrandLogo} onChange={(event) => { setIncludeBrandLogo(event.target.checked); clearWorkingPost(); }} className="accent-[#5f762a]" /></label>}</div>
+                        </> : <div className="space-y-3 border-t border-[#deddd5] pt-4"><input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={(event) => chooseFile(event.target.files?.[0])} /><button type="button" onClick={() => fileInputRef.current?.click()} className="flex w-full flex-col items-center gap-2 border border-dashed border-[#7c9b4d] bg-[#f4fae8] px-5 py-7 text-center transition-colors hover:bg-[#ecf7d4]"><UploadCloud className="h-5 w-5 text-[#547e2e]" /><span className="text-xs font-black text-[#426421]">{uploadedFile ? uploadedFile.name : "Choisir votre visuel final"}</span><span className="text-[10px] text-[#6f7068]">PNG, JPG, WebP ou SVG · 15 Mo maximum</span></button><p className="text-[11px] leading-relaxed text-[#777870]">Le visuel reste le vôtre. STUDIO l’associe au produit choisi pour conserver les légendes, l’approbation, l’export et la planification au même endroit.</p></div>}
+                    </div>
+                </section>
+
+                <section className="space-y-4"><div className={`relative mx-auto flex w-full max-w-[560px] items-center justify-center overflow-hidden border border-[var(--studio-ink)] bg-[#1a1b18] p-3 shadow-[10px_10px_0_rgba(17,17,15,.14)] ${ratioClass}`}><div className="absolute left-5 top-5 z-10 flex items-center gap-2 bg-[#faf9f4]/90 px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-[#5f6258]"><Eye className="h-3 w-3" />{previewImage ? (post?.generationMode === "BROWSER_GENERATED" ? "visuel importé" : "rendu enregistré") : "aperçu SVG"}</div>{previewImage ? <img src={previewImage} alt="Aperçu du post" className="h-full w-full object-contain" /> : <svg viewBox="0 0 1000 1000" className="h-full w-full" role="img" aria-label="Aperçu SVG du post"><rect width="1000" height="1000" fill={selectedMood.id === "eclipse" ? "#141512" : "#F4F1E8"} /><circle cx="790" cy="220" r="270" fill={selectedMood.color} opacity=".55" /><rect x="56" y="62" width="310" height="75" fill={accentColor} /><text x="80" y="110" fill="#10110f" fontSize="30" fontWeight="800" letterSpacing="4">{badgeText || "NOUVEAU"}</text>{includeBrandLogo && brand?.logoUrl ? <image href={brand.logoUrl} x="760" y="60" width="165" height="80" preserveAspectRatio="xMaxYMid meet" /> : includeBrandLogo && <text x="925" y="105" textAnchor="end" fill={selectedMood.id === "eclipse" ? "#f5f1e8" : "#11110f"} fontSize="27" fontWeight="700" letterSpacing="3">{brand?.name || "STUDIO"}</text>}{selectedProduct?.imageUrl ? <image href={selectedProduct.imageUrl} x="180" y="175" width="640" height="460" preserveAspectRatio="xMidYMid meet" /> : <rect x="260" y="220" width="480" height="360" rx="40" fill="#c9c7bb" opacity=".55" />}<rect x="0" y="700" width="1000" height="300" fill="#11120f" opacity=".92" /><text x="70" y="800" fill="#F5F1E8" fontSize="62" fontWeight="800">{selectedProduct?.name || "VOTRE PRODUIT"}</text><text x="70" y="865" fill={accentColor} fontSize="30" fontWeight="700">{promoText || "Votre prochaine direction"}</text><text x="70" y="940" fill="#bdbdb4" fontSize="19" letterSpacing="3">LOCAL SVG TEMPLATE COMPOSITION</text></svg>}</div><div className="flex flex-col justify-between gap-3 border border-[#d6d5cc] bg-[#f5f4ee] p-4 sm:flex-row sm:items-center"><div><p className="text-xs font-black text-[var(--studio-ink)]">{mode === "template" ? "Mise en page locale prête à rendre" : uploadedFile ? "Visuel prêt à intégrer" : "Ajoutez le fichier final"}</p><p className="mt-1 text-[11px] text-[#777870]">{mode === "template" ? "Le PNG est rendu localement à partir de cette direction." : "Aucune retouche n’est appliquée à votre fichier."}</p></div><button type="button" disabled={!canCreate || busy !== null} onClick={() => void (mode === "template" ? renderTemplate() : saveUploadedPost())} className="studio-button studio-button--lime whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50">{busy === "render" || busy === "upload" ? <Loader2 className="h-4 w-4 animate-spin" /> : mode === "template" ? <Sparkles className="h-4 w-4" /> : <FileUp className="h-4 w-4" />}{busy === "render" ? "Rendu…" : busy === "upload" ? "Ajout…" : mode === "template" ? "Rendre le post" : "Ajouter au studio"}</button></div></section>
+
+                <section className="space-y-5"><div className="studio-creative-card"><div className="studio-creative-card__head"><div className="flex items-center gap-2"><Palette className="h-4 w-4 text-[#5f762a]" /><h3 className="text-sm font-black">Légende</h3></div><p>Un texte par langue, toujours modifiable.</p></div><div className="studio-creative-card__body"><div className="mb-3 flex flex-wrap gap-1" role="tablist">{languages.map((language) => <button key={language.id} type="button" role="tab" aria-selected={captionLanguage === language.id} onClick={() => setCaptionLanguage(language.id)} className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wide ${captionLanguage === language.id ? "bg-[var(--studio-ink)] text-white" : "bg-[#eeede6] text-[#777870]"}`}>{language.label}</button>)}</div><textarea value={captionDraft} onChange={(event) => setCaptionDraft(event.target.value)} onBlur={() => void saveCaption()} disabled={!post} placeholder={post ? "La légende apparaîtra ici." : "Créez ou importez d’abord un post."} className="min-h-48 w-full resize-none border border-[#bdbdb4] bg-[#faf9f4] p-3 text-sm leading-relaxed outline-none focus:border-[var(--studio-lime)] disabled:opacity-50" /><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => void createCaptions()} disabled={!post || busy !== null} className="studio-button studio-button--paper justify-center text-[11px] disabled:opacity-50">{busy === "captions" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}Générer</button><button type="button" onClick={() => void copyCaption()} disabled={!captionDraft} className="studio-button studio-button--paper justify-center text-[11px] disabled:opacity-50">{copied ? <Check className="h-3.5 w-3.5 text-[#5f762a]" /> : <Copy className="h-3.5 w-3.5" />}{copied ? "Copié" : "Copier"}</button></div></div></div><div className="border border-[#d6d5cc] bg-[#1a1b18] p-4 text-[#f5f1e8]"><div className="flex items-start gap-3"><span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center bg-[var(--studio-lime)] text-[#11120f]"><CheckCircle2 className="h-4 w-4" /></span><div><p className="text-xs font-black">{post ? `Statut : ${post.status}` : "Post en préparation"}</p><p className="mt-1 text-[11px] leading-relaxed text-[#c4c4bd]">Approuvez une fois le visuel et la légende relus. Il apparaîtra ensuite dans l’espace Social pour choisir un canal et une heure de diffusion.</p></div></div><div className="mt-4 grid grid-cols-2 gap-2"><button type="button" onClick={() => void approve()} disabled={!post || post.status !== "DRAFT" || busy !== null} className="studio-button studio-button--paper justify-center text-[11px] disabled:opacity-40">{busy === "approve" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}Approuver</button><button type="button" onClick={() => void exportPostFile()} disabled={!post || busy !== null} className="studio-button studio-button--lime justify-center text-[11px] disabled:opacity-40">{busy === "export" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}Exporter</button></div></div></section>
             </div>
 
-            {errorMsg && (
-                <div className="studio-form-error">
-                    {errorMsg}
-                </div>
-            )}
-
-            <CreativeWorkflowPanel />
-
-            <div className="studio-creative-grid">
-
-                {/* left column config panel */}
-                <div className="space-y-6">
-                    <div className="studio-creative-card">
-                        <div className="studio-creative-card__head">
-                            <h3 className="flex items-center gap-2 text-sm font-black tracking-tight text-[var(--studio-ink)]">
-                                <Sliders className="h-4 w-4 text-[#5f762a]" />
-                                Paramètres
-                            </h3>
-                            <p className="mt-0.5 text-[11px] font-medium text-[#777870]">Configuration du visuel de marque</p>
-                        </div>
-                        <div className="studio-creative-card__body">
-                            <div className="space-y-1.5" ref={productSearchRef}>
-                                <label className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]" htmlFor="product-search">Produit ciblé</label>
-                                <div className="relative">
-                                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#91918b]" />
-                                    <input
-                                        id="product-search"
-                                        type="text"
-                                        autoComplete="off"
-                                        value={productQuery}
-                                        onFocus={() => setIsProductDropdownOpen(true)}
-                                        onChange={(e) => {
-                                            setProductQuery(e.target.value);
-                                            setIsProductDropdownOpen(true);
-                                        }}
-                                        placeholder="Tapez pour rechercher un produit..."
-                                        className="w-full border border-[#bdbdb4] bg-[#faf9f4] py-2 pl-9 pr-3 text-sm font-medium text-[var(--studio-ink)] placeholder:text-[#91918b] outline-none transition-colors focus:border-[var(--studio-lime)]"
-                                    />
-
-                                    {isProductDropdownOpen && (
-                                        <div className="absolute z-20 mt-1.5 max-h-56 w-full overflow-y-auto border border-[var(--studio-ink)] bg-[var(--studio-paper)] shadow-[6px_6px_0px_rgba(17,17,15,.12)]">
-                                            {matchingProducts.length === 0 ? (
-                                                <p className="px-3.5 py-2.5 text-xs font-medium text-[#91918b]">Aucun produit ne correspond.</p>
-                                            ) : (
-                                                matchingProducts.map((p) => (
-                                                    <button
-                                                        key={p.id}
-                                                        type="button"
-                                                        onMouseDown={(e) => {
-                                                            e.preventDefault();
-                                                            setSelectedProductId(p.id);
-                                                            setProductQuery(p.name);
-                                                            setIsProductDropdownOpen(false);
-                                                        }}
-                                                        className={`flex w-full items-center justify-between gap-2 border-b border-[#deddd5] px-3.5 py-2.5 text-left text-xs font-bold transition-colors last:border-b-0 ${p.id === selectedProductId
-                                                            ? "bg-[rgba(185,255,67,.16)] text-[#5f762a]"
-                                                            : "text-[#4f504a] hover:bg-[#e9e8e0]"
-                                                            }`}
-                                                    >
-                                                        {p.name}
-                                                        {p.price != null && (
-                                                            <span className="text-[10px] font-mono text-[#91918b]">{p.price.toFixed(2)} MAD</span>
-                                                        )}
-                                                    </button>
-                                                ))
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                                {pendingCount > 0 && (
-                                    <p className="text-[10px] font-medium text-[#91918b]">
-                                        {pendingCount} produit{pendingCount > 1 ? "s" : ""} en attente d&apos;approbation, masqué{pendingCount > 1 ? "s" : ""} ici.
-                                    </p>
-                                )}
-                                {approvedProducts.length === 0 && (
-                                    <p className="text-[11px] font-bold text-[#5f762a]">
-                                        Aucun produit approuvé — un admin doit en approuver un avant de pouvoir générer du contenu.
-                                    </p>
-                                )}
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Format d&apos;export</span>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {[
-                                        { id: "SQUARE_POST" as const, name: "Post Instagram", desc: "1:1 Carré" },
-                                        { id: "STORY" as const, name: "Story / Statut", desc: "9:16 Vertical" },
-                                    ].map(f => (
-                                        <button
-                                            key={f.id}
-                                            onClick={() => setSelectedFormat(f.id)}
-                                            className={`relative flex flex-col border p-3 text-left text-xs transition-all ${selectedFormat === f.id
-                                                ? "border-[#8aa65a] bg-[rgba(185,255,67,.14)] text-[var(--studio-ink)]"
-                                                : "border-[#c5c4bb] bg-[#faf9f4] text-[#777870] hover:border-[var(--studio-ink)]"
-                                                }`}
-                                        >
-                                            <span className="font-extrabold block">{f.name}</span>
-                                            <span className="mt-0.5 text-[10px] font-medium text-[#91918b]">{f.desc}</span>
-                                            {selectedFormat === f.id && (
-                                                <span className="studio-status-dot studio-status-dot--lime absolute right-2 top-2" />
-                                            )}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Modèle de design</span>
-                                {templatesForFormat.length === 0 ? (
-                                    <p className="text-[11px] font-medium text-[#91918b]">Aucun modèle disponible pour ce format.</p>
-                                ) : (
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {templatesForFormat.map(t => (
-                                            <button
-                                                key={t.id}
-                                                onClick={() => setSelectedTemplateId(t.id)}
-                                                className={`border px-3 py-2.5 text-left text-xs font-bold transition-all ${selectedTemplateId === t.id
-                                                    ? "border-[#8aa65a] bg-[rgba(185,255,67,.14)] text-[#5f762a]"
-                                                    : "border-[#c5c4bb] bg-[#faf9f4] text-[#777870] hover:border-[var(--studio-ink)]"
-                                                    }`}
-                                            >
-                                                {t.name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Direction de composition</span>
-                                <div className="flex flex-wrap gap-2">
-                                    {MOOD_PRESETS.map((m) => (
-                                        <button
-                                            key={m.id}
-                                            type="button"
-                                            onClick={() => setMood(m)}
-                                            title={m.name}
-                                            className={`h-8 w-8 border bg-gradient-to-br ${m.bg} transition-all ${mood.id === m.id ? "scale-110 border-[var(--studio-ink)]" : "border-[#c5c4bb]"
-                                                }`}
-                                        />
-                                    ))}
-                                </div>
-                                <p className="text-[10px] font-medium text-[#91918b]">Cette direction guide les couleurs du rendu de modèle.</p>
-                            </div>
-
-                            <div className="h-px bg-[#deddd5]" />
-
-                            <div className="space-y-3.5">
-                                <div className="space-y-1.5">
-                                    <label htmlFor="promo-title" className="text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Titre de l&apos;offre</label>
-                                    <input
-                                        id="promo-title"
-                                        value={promoText}
-                                        onChange={e => setPromoText(e.target.value.toUpperCase())}
-                                        className={inputCls}
-                                        placeholder="ex. OFFRE SPÉCIALE"
-                                    />
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <label htmlFor="badge-text" className="text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Texte du badge</label>
-                                    <input
-                                        id="badge-text"
-                                        value={badgeText}
-                                        onChange={e => setBadgeText(e.target.value.toUpperCase())}
-                                        className={inputCls}
-                                        placeholder="ex. -20% AUJOURD'HUI"
-                                    />
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Couleur d&apos;accent</span>
-                                    <div className="flex items-center gap-3">
-                                        <input
-                                            type="color"
-                                            value={accentColor}
-                                            onChange={e => setAccentColor(e.target.value)}
-                                            className="h-10 w-11 cursor-pointer border border-[var(--studio-ink)] bg-[#faf9f4] p-1"
-                                        />
-                                        <span className="text-xs font-mono font-bold uppercase text-[#777870]">{accentColor}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={handleGenerateImage}
-                                disabled={isGeneratingImage || !selectedProduct || !selectedTemplateId}
-                                className="studio-button studio-button--lime studio-button--large w-full disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {isGeneratingImage ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                    <Sparkles className="h-3.5 w-3.5" />
-                                )}
-                                {isGeneratingImage ? "Rendu du visuel en cours..." : generatedImageSrc ? "Rendre à nouveau" : "Composer le visuel"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Right column: Preview and Copywriter */}
-                <div className="space-y-8 min-w-0">
-
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(320px,360px)] gap-6">
-
-                        {/* Preview */}
-                        <div className={`studio-creative-preview bg-gradient-to-br ${mood.bg}`}>
-                            <p className="absolute left-4 top-4 z-10 flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-[#777870]">
-                                <Eye className="h-3 w-3" style={{ color: mood.accent }} />
-                                {generatedImageSrc ? "Composition rendue" : post?.imageUrl ? "Composition prête" : "Aperçu de composition"}
-                            </p>
-
-                            {generatedImageSrc ? (
-                                <div className="flex flex-col items-center gap-3">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={generatedImageSrc} alt="Visuel de composition de marque" className={`object-cover ${selectedFormat === "SQUARE_POST" ? "h-[300px] w-[300px]" : "h-[400px] w-[240px]"}`} />
-                                    <span className="text-center text-[10px] font-mono uppercase tracking-widest text-[#777870]">Composition de modèle · PNG</span>
-                                    <button type="button" onClick={handleDownloadGeneratedVisual} className="studio-button studio-button--dark"><Download className="h-3.5 w-3.5" /> Télécharger le PNG</button>
-                                </div>
-                            ) : post?.imageUrl ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                    src={post.imageUrl}
-                                    alt={selectedProduct ? `Composition de marque pour ${selectedProduct.name}` : "Composition de marque"}
-                                    className={`object-cover ${selectedFormat === "SQUARE_POST" ? "h-[300px] w-[300px]" : "h-[400px] w-[240px]"
-                                        }`}
-                                />
-                            ) : selectedProduct ? (
-                                <div className="flex flex-col items-center gap-4">
-                                    <Product3DModel
-                                        type={selectedProduct.imageUrl || "argan-bottle"}
-                                        size="lg"
-                                        isFloating={!isGeneratingImage}
-                                    />
-                                    <div className="text-center space-y-1 max-w-[240px]">
-                                        {badgeText && (
-                                            <span
-                                                className="inline-block border border-[var(--studio-ink)] px-2.5 py-1 text-[10px] font-black text-[var(--studio-ink)]"
-                                                style={{ backgroundColor: mood.accent }}
-                                            >
-                                                {badgeText}
-                                            </span>
-                                        )}
-                                        <p className="mt-2 text-xs font-mono text-[#777870]">
-                                            {isGeneratingImage ? "Rendu du visuel en cours..." : `${promoText || "Aperçu"} — cliquez sur Générer pour le rendu final.`}
-                                        </p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="max-w-[220px] text-center text-xs font-mono text-[#777870]">
-                                    Sélectionnez un produit approuvé pour commencer.
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Copywriter panel */}
-                        <div className="space-y-4">
-                            <div className="studio-creative-card">
-                                <div className="studio-creative-card__head">
-                                    <h3 className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-[#4f504a]">
-                                        <Languages className="h-4 w-4 text-[#5f762a]" />
-                                        Rédaction Multilingue
-                                    </h3>
-                                    <p className="mt-0.5 text-[11px] font-medium text-[#777870]">
-                                        Modèle multilingue, modifiable avant export
-                                    </p>
-                                </div>
-                                <div className="studio-creative-card__body">
-                                    <div className="studio-caption-tabs" role="tablist" aria-label="Caption language">
-                                        {LANGS.map(lang => (
-                                            <button
-                                                key={lang.id}
-                                                type="button"
-                                                role="tab"
-                                                aria-selected={activeCaptionLang === lang.id}
-                                                onClick={() => handleSelectCaptionLanguage(lang.id)}
-                                                className={`studio-caption-tab ${activeCaptionLang === lang.id
-                                                    ? "studio-caption-tab--active"
-                                                    : "hover:text-[var(--studio-ink)]"
-                                                    }`}
-                                            >
-                                                {lang.label}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    <div className="relative">
-                                        <textarea
-                                            aria-label="Copywriter content text"
-                                            value={draftCaption}
-                                            onChange={(e) => setDraftCaption(e.target.value)}
-                                            onBlur={handleSaveCaption}
-                                            disabled={!post && !localCaptions[activeCaptionLang]}
-                                            placeholder={post ? "Aucune légende générée pour cette langue." : "Rédigez une légende locale ou créez d’abord un visuel."}
-                                            className="min-h-[190px] w-full resize-none border border-[#bdbdb4] bg-[#faf9f4] p-3.5 text-xs font-sans leading-relaxed tracking-wide text-[var(--studio-ink)] outline-none focus:border-[var(--studio-lime)] disabled:opacity-50"
-                                        />
-
-                                        <div className="absolute bottom-2.5 right-2.5">
-                                            <button
-                                                onClick={handleCopyCaption}
-                                                disabled={!draftCaption}
-                                                className="studio-button studio-button--dark h-8 px-2.5 py-1 text-[11px] disabled:opacity-40"
-                                            >
-                                                {copiedLang === activeCaptionLang ? (
-                                                    <>
-                                                        <Check className="mr-1.5 h-3 w-3 text-[var(--studio-lime)]" />
-                                                        Copié !
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Copy className="mr-1.5 h-3 w-3 text-[#c5c4bb]" />
-                                                        Copier
-                                                    </>
-                                                )}
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <p className="mt-2 text-[10px] font-medium text-[#777870]" aria-live="polite">
-                                        {post
-                                            ? `Langue sélectionnée : ${LANGS.find((lang) => lang.id === activeCaptionLang)?.label}. Cliquez sur une langue pour appliquer sa légende générée dans l’éditeur.`
-                                            : localCaptions[activeCaptionLang]
-                                                ? "Brouillon rédigé sur cet appareil. Relisez-le avant publication."
-                                                : "Créez une légende à partir du produit sélectionné, sans clé API."}
-                                    </p>
-
-                                    <button
-                                        onClick={handleGenerateCaptions}
-                                        disabled={isGeneratingCaptions || !post}
-                                        className="studio-button studio-button--paper h-9 w-full text-[11px] disabled:opacity-40"
-                                    >
-                                        <RefreshCw className={`h-3.5 w-3.5 ${isGeneratingCaptions ? "animate-spin" : ""}`} />
-                                        {isGeneratingCaptions ? "Génération..." : "Générer toutes les légendes"}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleGenerateLocalCaption}
-                                        disabled={isGeneratingLocalCaption || !selectedProduct}
-                                        className="studio-button studio-button--paper mt-2 h-9 w-full text-[11px] disabled:opacity-40"
-                                    >
-                                        <Sparkles className={`h-3.5 w-3.5 ${isGeneratingLocalCaption ? "animate-pulse" : ""}`} />
-                                        {isGeneratingLocalCaption
-                                            ? localCaptionProgress ? `${localCaptionProgress.progress}% · ${localCaptionProgress.detail}` : "Préparation…"
-                                            : "Rédiger la légende sur cet appareil"}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    {/* Approve / export actions */}
-                    <div className="studio-creative-actions flex-col sm:flex-row">
-                        <div className="studio-creative-status">
-                            <div className="studio-creative-status__icon">
-                                <CheckCircle className="h-4 w-4" />
-                            </div>
-                            <div className="text-left">
-                                <span className="block text-xs font-extrabold text-[var(--studio-ink)]">
-                                    {post ? `Statut : ${post.status}` : "Aucun visuel pour l'instant"}
-                                </span>
-                                <span className="text-[10px] font-medium text-[#777870]">Approuvez avant de transmettre pour diffusion</span>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <button
-                                onClick={handleApprove}
-                                disabled={!post || post.status !== "DRAFT" || isApproving}
-                                className="studio-button studio-button--dark flex-1 text-xs disabled:opacity-50 sm:flex-none"
-                            >
-                                {isApproving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                                {post?.status === "APPROVED" || post?.status === "EXPORTED" ? "Approuvé" : "Approuver"}
-                            </button>
-
-                            <button
-                                onClick={handleDownload}
-                                disabled={!post || isExporting}
-                                className="studio-button studio-button--lime flex-1 text-xs disabled:opacity-50 sm:flex-none"
-                            >
-                                {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                                Télécharger (.ZIP)
-                            </button>
-                        </div>
-                    </div>
-
-                </div>
-
-            </div>
+            {!approvedProducts.length && <div className="studio-unavailable"><span className="studio-kicker studio-kicker--dark">SOURCE REQUIRED</span><h3>Ajoutez puis approuvez un produit.</h3><p>Le produit crée le lien entre votre visuel, votre copywriting, votre export et sa diffusion programmée.</p></div>}
         </div>
     );
 }

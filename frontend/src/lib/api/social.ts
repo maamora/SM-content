@@ -20,6 +20,7 @@ export interface PublishJob {
     errorMessage: string | null;
     createdAt: string | null;
     updatedAt: string | null;
+    scheduledFor: string | null;
     publishedAt: string | null;
 }
 
@@ -33,7 +34,7 @@ export const listSocialConnections = () => apiFetch<SocialConnection[]>("/api/so
 export const disconnectSocialConnection = (id: string) =>
     apiFetch<void>(`/api/social/connections/${id}`, { method: "DELETE" });
 
-export const queueSocialPublish = (input: { postId: string; connectionId: string }) =>
+export const queueSocialPublish = (input: { postId: string; connectionId: string; scheduledFor?: string | null }) =>
     apiFetch<PublishJob>("/api/social/publish", { method: "POST", body: JSON.stringify(input) });
 
 export const listPublishJobs = () => apiFetch<PublishJob[]>("/api/social/jobs");

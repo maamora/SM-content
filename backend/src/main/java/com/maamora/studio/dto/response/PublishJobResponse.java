@@ -14,13 +14,14 @@ public record PublishJobResponse(
         String errorMessage,
         Instant createdAt,
         Instant updatedAt,
+        Instant scheduledFor,
         Instant publishedAt
 ) {
     public static PublishJobResponse from(PublishJob job) {
         return new PublishJobResponse(
                 job.getId(), job.getPost().getId(), job.getConnection().getId(), job.getProvider().name(),
                 job.getStatus().name(), job.getExternalPostId(), job.getErrorMessage(), job.getCreatedAt(),
-                job.getUpdatedAt(), job.getPublishedAt()
+                job.getUpdatedAt(), job.getScheduledFor(), job.getPublishedAt()
         );
     }
 }

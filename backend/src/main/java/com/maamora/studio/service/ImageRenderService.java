@@ -2,6 +2,7 @@ package com.maamora.studio.service;
 
 import com.maamora.studio.model.Product;
 import com.maamora.studio.model.Template;
+import com.maamora.studio.model.BrandSettings;
 import com.maamora.studio.model.enums.GenerationMode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -81,6 +82,12 @@ public class ImageRenderService {
     public RenderedVisual render(Template template, Product product,
             String badgeText, String promoText,
             String accentColor, String mood) {
+        return render(template, product, badgeText, promoText, accentColor, mood, null, false);
+    }
+
+    public RenderedVisual render(Template template, Product product,
+            String badgeText, String promoText,
+            String accentColor, String mood, BrandSettings brand, boolean includeBrandLogo) {
         boolean isSquare = template.getFormat() != null
                 && template.getFormat().name().equals("SQUARE_POST");
         // SDXL only accepts a fixed set of width/height pairs; anything else is
@@ -94,7 +101,8 @@ public class ImageRenderService {
         // DeAPI, and other providers whenever a product image and a Stability
         // key were present, so the UI could appear configured while calling the
         // legacy Stability-only path.
-        byte[] png = svgTemplateRenderer.render(product, width, height, badgeText, promoText, accentColor, mood);
+        byte[] png = svgTemplateRenderer.render(product, width, height, badgeText, promoText, accentColor, mood,
+                brand == null ? null : brand.getName(), brand == null ? null : brand.getLogoUrl(), includeBrandLogo);
         return new RenderedVisual(png, GenerationMode.TEMPLATE_COMPOSED,
                 "Created locally from the selected SVG template. No AI provider or image-generation API was used.");
     }

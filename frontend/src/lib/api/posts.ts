@@ -28,6 +28,7 @@ export const generateImage = (input: {
     promoText?: string;
     accentColor?: string;
     mood?: string;
+    includeBrandLogo?: boolean;
 }) => apiFetch<Post>("/api/posts/generate-image", { method: "POST", body: JSON.stringify(input) });
 
 type UploadResponse = { url: string };

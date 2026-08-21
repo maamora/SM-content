@@ -19,6 +19,11 @@ import java.nio.charset.StandardCharsets;
 public class SvgTemplateRenderer {
 
     public byte[] render(Product product, int width, int height, String badge, String promo, String accent, String mood) {
+        return render(product, width, height, badge, promo, accent, mood, null, null, false);
+    }
+
+    public byte[] render(Product product, int width, int height, String badge, String promo, String accent, String mood,
+                         String brandName, String logoUrl, boolean includeBrandLogo) {
         String safeAccent = color(accent, "#D9FF4A");
         String background = switch (mood == null ? "" : mood.toLowerCase()) {
             case "moss" -> "#183D33";
@@ -33,12 +38,16 @@ public class SvgTemplateRenderer {
         String visual = image.isBlank()
                 ? "<rect x=\"" + (width * .15) + "\" y=\"" + (height * .25) + "\" width=\"" + (width * .70) + "\" height=\"" + (height * .42) + "\" rx=\"36\" fill=\"#F5F1E8\" opacity=\".16\"/>"
                 : "<image href=\"" + xml(image) + "\" x=\"" + (width * .15) + "\" y=\"" + (height * .21) + "\" width=\"" + (width * .70) + "\" height=\"" + (height * .48) + "\" preserveAspectRatio=\"xMidYMid meet\"/>";
+        String brandMark = !includeBrandLogo ? "" : hasHttpUrl(logoUrl)
+                ? "<image href=\"" + xml(logoUrl.trim()) + "\" x=\"" + (width * .78) + "\" y=\"" + (height * .05) + "\" width=\"" + (width * .14) + "\" height=\"" + (height * .08) + "\" preserveAspectRatio=\"xMaxYMid meet\"/>"
+                : "<text x=\"" + (width * .92) + "\" y=\"" + (height * .10) + "\" text-anchor=\"end\" fill=\"#F5F1E8\" font-family=\"Arial,sans-serif\" font-size=\"" + Math.max(12, width / 65) + "\" font-weight=\"700\" letter-spacing=\"2\">" + xml(text(brandName, "STUDIO")) + "</text>";
         String svg = """
                 <svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d">
                   <rect width="100%%" height="100%%" fill="%s"/>
                   <circle cx="%d" cy="%d" r="%d" fill="%s" opacity=".16"/>
                   <rect x="%d" y="%d" width="%d" height="%d" rx="22" fill="%s"/>
                   <text x="%d" y="%d" fill="#111" font-family="Arial,sans-serif" font-size="%d" font-weight="700" letter-spacing="2">%s</text>
+                  %s
                   %s
                   <rect x="%d" y="%d" width="%d" height="%d" fill="#111" opacity=".76"/>
                   <text x="%d" y="%d" fill="#fff" font-family="Arial,sans-serif" font-size="%d" font-weight="700">%s</text>
@@ -49,6 +58,7 @@ public class SvgTemplateRenderer {
                 """.formatted(width, height, width, height, background, width * 3 / 4, height / 4, width / 3, safeAccent,
                 width / 12, height / 12, width / 3, height / 13, safeAccent,
                 width / 12 + 24, height / 12 + height / 21, Math.max(18, width / 42), xml(text(badge, "PRODUCT VISUAL")),
+                brandMark,
                 visual,
                 0, (int) (height * .70), width, (int) (height * .30),
                 width / 12, (int) (height * .78), Math.max(26, width / 21), xml(productName),
@@ -68,5 +78,6 @@ public class SvgTemplateRenderer {
     private String text(String value, String fallback) { return value == null || value.isBlank() ? fallback : value.trim(); }
     private String value(String value) { return value == null ? "" : value.trim(); }
     private String color(String value, String fallback) { return value != null && value.matches("#[0-9a-fA-F]{6}") ? value : fallback; }
+    private boolean hasHttpUrl(String value) { return value != null && value.trim().matches("https?://.+"); }
     private String xml(String value) { return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;"); }
 }

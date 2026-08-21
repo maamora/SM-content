@@ -18,6 +18,7 @@ import com.maamora.studio.repository.SocialConnectionRepository;
 import com.maamora.studio.repository.UserRepository;
 import com.maamora.studio.security.SecretCipher;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -66,6 +67,9 @@ public class SocialPublishService {
         if (connection.getStatus().name().equals("DISCONNECTED")) {
             throw new IllegalArgumentException("Social connection is disconnected");
         }
+        if (request.scheduledFor() != null && !request.scheduledFor().isAfter(Instant.now().plusSeconds(30))) {
+            throw new IllegalArgumentException("Scheduled publishing must be at least 30 seconds in the future.");
+        }
 
         PublishJob job = PublishJob.builder()
                 .user(user)
@@ -73,9 +77,12 @@ public class SocialPublishService {
                 .connection(connection)
                 .provider(connection.getProvider())
                 .status(DeliveryStatus.QUEUED)
+                .scheduledFor(request.scheduledFor())
                 .build();
         PublishJob saved = publishJobRepository.save(job);
-        processAsync(saved.getId());
+        if (saved.getScheduledFor() == null) {
+            processAsync(saved.getId());
+        }
         return PublishJobResponse.from(saved);
     }
 
@@ -94,6 +101,8 @@ public class SocialPublishService {
     public void processAsync(String jobId) {
         PublishJob job = publishJobRepository.findById(jobId).orElse(null);
         if (job == null) return;
+        if (job.getStatus() != DeliveryStatus.QUEUED) return;
+        if (job.getScheduledFor() != null && job.getScheduledFor().isAfter(Instant.now())) return;
         job.setStatus(DeliveryStatus.PROCESSING);
         publishJobRepository.save(job);
         try {
@@ -109,6 +118,17 @@ public class SocialPublishService {
             job.setErrorMessage(safeMessage(exception));
         }
         publishJobRepository.save(job);
+    }
+
+    /**
+     * Durable polling for future posts. The job timestamp is stored in PostgreSQL;
+     * a server restart therefore does not discard the planned delivery.
+     */
+    @Scheduled(fixedDelayString = "${studio.social.scheduler-delay-ms:30000}")
+    public void processDueScheduledJobs() {
+        publishJobRepository
+                .findTop50ByStatusAndScheduledForLessThanEqualOrderByScheduledForAsc(DeliveryStatus.QUEUED, Instant.now())
+                .forEach(job -> processAsync(job.getId()));
     }
 
     private PublishResult publish(SocialProvider provider, String token, String accountId, Post post) {
