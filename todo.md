@@ -186,6 +186,11 @@
 - [x] Implement the redesigned composer with deliberate post-control interactions and responsive behavior.
 - [x] Validate the desktop and mobile composer, frontend build, and backend contracts before committing.
 
+## BrandSettings configured-column startup repair
+- [x] Audit the BrandSettings configured mapping and schema-update behavior against existing PostgreSQL rows.
+- [x] Add a safe idempotent migration that backfills the configured state before applying its not-null constraint.
+- [x] Validate backend startup, Brand seeding, and existing-brand reads, then commit the repair.
+
 ## Deterministic Content Generation Engine
 - [x] Design a server-side template composition fallback for Product → branded social visual when image AI is unavailable.
 - [x] Design multilingual rule-based caption templates with safely selected variations for French, Arabic, and Darija.
