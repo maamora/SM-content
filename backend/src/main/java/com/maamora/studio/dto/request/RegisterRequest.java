@@ -17,9 +17,10 @@ public class RegisterRequest {
     private String password;
 
     /**
-     * Required only when NOT joining an existing brand via joinCode — see
-     * AuthService.register for the branching logic. Not annotated @NotBlank
-     * here because that validation is conditional, not universal.
+     * Required only for the "create a new brand" path — not when joining an
+     * existing brand via joinCode, and not for a personal account. See
+     * AuthService.register for the three-way branching. Not annotated
+     * @NotBlank here because that validation is conditional, not universal.
      */
     private String brandName;
 
@@ -32,6 +33,15 @@ public class RegisterRequest {
      * this is set. See BrandSettingsService.joinExisting.
      */
     private String joinCode;
+
+    /**
+     * Register a personal profile instead of a business brand — for someone
+     * who just wants to post their own content, not represent a company.
+     * When true, brandName/logoUrl/joinCode are all ignored: the account
+     * gets a lightweight auto-named workspace instead (see
+     * BrandSettingsService.createPersonalWorkspace).
+     */
+    private boolean personal;
 
     /**
      * Honeypot — a real user never sees or fills this field (hidden off-screen

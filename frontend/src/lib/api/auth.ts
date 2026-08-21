@@ -18,12 +18,14 @@ export async function register(input: {
     name: string;
     email: string;
     password: string;
-    // Exactly one of these two should be set: brandName to create a new
-    // workspace, or joinCode to attach to an existing one. See AuthPage's
-    // create/join toggle.
+    // Exactly one signup path applies: brandName (+ optional logoUrl) to
+    // create a new brand, joinCode to attach to an existing one, or
+    // personal=true for an individual profile with no brand identity at
+    // all. See AuthPage's three-way toggle.
     brandName?: string;
     logoUrl?: string;
     joinCode?: string;
+    personal?: boolean;
     // Honeypot — always left empty by the real form (see AuthPage). Never
     // shown to or filled by a real user; a non-empty value here is a bot.
     website?: string;

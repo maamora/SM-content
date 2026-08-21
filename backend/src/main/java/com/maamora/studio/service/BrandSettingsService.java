@@ -5,6 +5,7 @@ import com.maamora.studio.exception.ResourceNotFoundException;
 import com.maamora.studio.exception.UnauthorizedException;
 import com.maamora.studio.model.BrandSettings;
 import com.maamora.studio.model.User;
+import com.maamora.studio.model.enums.AccountType;
 import com.maamora.studio.repository.BrandSettingsRepository;
 import com.maamora.studio.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -62,6 +63,24 @@ public class BrandSettingsService {
         return brandSettingsRepository.save(BrandSettings.builder()
                 .name(name)
                 .logoUrl(logoUrl)
+                .primaryColor("#F47315")
+                .joinCode(generateUniqueJoinCode())
+                .build());
+    }
+
+    /**
+     * Creates a lightweight personal workspace for someone who just wants to
+     * post to their own profile, not represent a company — no brand name
+     * prompt, no logo step at signup. Reuses the exact same BrandSettings
+     * table/pipeline as a real brand (products, posts, generation all work
+     * identically) so nothing downstream needs special-casing; it's only
+     * tagged AccountType.PERSONAL so the frontend can soften "brand kit"
+     * language for it, and named after the person rather than a company.
+     */
+    public BrandSettings createPersonalWorkspace(String ownerName) {
+        return brandSettingsRepository.save(BrandSettings.builder()
+                .name(ownerName)
+                .accountType(AccountType.PERSONAL)
                 .primaryColor("#F47315")
                 .joinCode(generateUniqueJoinCode())
                 .build());

@@ -14,6 +14,11 @@ public class BrandSettingsResponse {
     // ADMIN vs regular USER globally — worth revisiting if that role model
     // gets more granular later.
     private final String joinCode;
+    // "BUSINESS" or "PERSONAL" — lets the frontend soften "brand kit"
+    // language for a personal profile. Rows created before this field
+    // existed have a null accountType in the DB; treated as BUSINESS here
+    // rather than requiring a data migration.
+    private final String accountType;
     private final String logoUrl;
     private final String primaryColor;
     private final String secondaryColor;
@@ -24,6 +29,7 @@ public class BrandSettingsResponse {
         this.id = b.getId();
         this.name = b.getName();
         this.joinCode = b.getJoinCode();
+        this.accountType = b.getAccountType() != null ? b.getAccountType().name() : "BUSINESS";
         this.logoUrl = b.getLogoUrl();
         this.primaryColor = b.getPrimaryColor();
         this.secondaryColor = b.getSecondaryColor();

@@ -30,8 +30,13 @@ public class BrandSettings {
     @Column(unique = true)
     private String joinCode;
 
+    // Not "nullable = false" on purpose, same reasoning as joinCode: with
+    // ddl-auto=update, adding a NOT NULL column to a table that already has
+    // rows (the existing "Maamora" brand) would fail outright on startup.
+    // Every code path that creates a BrandSettings sets this explicitly, and
+    // BrandSettingsService.effectiveAccountType() treats a null value as
+    // BUSINESS for any pre-existing row.
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     @Builder.Default
     private AccountType accountType = AccountType.BUSINESS;
 

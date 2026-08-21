@@ -24,10 +24,11 @@ public class AuthService {
     private final JwtService jwtService;
 
     /**
-     * Every new account either creates its own brand workspace (name + logo
-     * set at signup) or joins an existing one via that brand's join code —
-     * never both, never neither. See BrandSettingsService for why brand
-     * names themselves aren't unique/reserved.
+     * Every new account does exactly one of three things: creates its own
+     * business brand (name + logo set at signup), joins an existing brand
+     * via that brand's join code, or registers a personal profile with no
+     * brand identity at all. See BrandSettingsService for why brand names
+     * themselves aren't unique/reserved.
      */
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -44,13 +45,15 @@ public class AuthService {
         }
 
         boolean joining = request.getJoinCode() != null && !request.getJoinCode().isBlank();
-        if (!joining && (request.getBrandName() == null || request.getBrandName().isBlank())) {
-            throw new UnauthorizedException("Enter a brand name, or a workspace code to join an existing brand.");
+        if (!request.isPersonal() && !joining && (request.getBrandName() == null || request.getBrandName().isBlank())) {
+            throw new UnauthorizedException("Enter a brand name, choose a personal account, or enter a workspace code to join an existing brand.");
         }
 
-        BrandSettings brand = joining
-                ? brandSettingsService.joinExisting(request.getJoinCode())
-                : brandSettingsService.createForNewUser(request.getBrandName(), request.getLogoUrl());
+        BrandSettings brand = request.isPersonal()
+                ? brandSettingsService.createPersonalWorkspace(request.getName())
+                : joining
+                        ? brandSettingsService.joinExisting(request.getJoinCode())
+                        : brandSettingsService.createForNewUser(request.getBrandName(), request.getLogoUrl());
 
         User user = User.builder()
                 .name(request.getName())

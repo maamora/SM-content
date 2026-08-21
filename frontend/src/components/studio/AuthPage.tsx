@@ -14,9 +14,11 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const [password, setPassword] = useState("");
   // "create" = new isolated brand workspace (name + logo below). "join" =
   // attach to a teammate's existing brand via their generated code instead —
-  // see BrandSettingsService.joinExisting on the backend. Exactly one of
-  // brandName / joinCode is sent, never both.
-  const [signupMode, setSignupMode] = useState<"create" | "join">("create");
+  // see BrandSettingsService.joinExisting on the backend. "personal" = an
+  // individual profile with no brand identity at all — for someone who just
+  // wants to post their own content, not represent a company. Exactly one
+  // of brandName / joinCode / personal is sent, never more than one.
+  const [signupMode, setSignupMode] = useState<"create" | "join" | "personal">("create");
   const [brandName, setBrandName] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
   const [logoUploading, setLogoUploading] = useState(false);
@@ -50,6 +52,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     setLoading(true);
     try {
       if (mode === "login") await login({ email, password });
+      else if (signupMode === "personal") await registerAccount({ name, email, password, personal: true, website });
       else if (signupMode === "join") await registerAccount({ name, email, password, joinCode, website });
       else await registerAccount({ name, email, password, brandName, logoUrl, website });
       router.push("/dashboard");
@@ -114,9 +117,20 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
                   >
                     Join with a code
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setSignupMode("personal")}
+                    className={`studio-button flex-1 ${signupMode === "personal" ? "studio-button--dark" : "studio-button--paper"}`}
+                  >
+                    Personal profile
+                  </button>
                 </div>
 
-                {signupMode === "join" ? (
+                {signupMode === "personal" ? (
+                  <p className="text-[11px] font-normal normal-case tracking-normal text-[#8b8b83]">
+                    You&apos;ll get your own space to post — no brand name or logo needed.
+                  </p>
+                ) : signupMode === "join" ? (
                   <label>Workspace code
                     <input
                       required
