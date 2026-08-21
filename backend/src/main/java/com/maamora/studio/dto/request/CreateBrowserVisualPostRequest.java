@@ -23,4 +23,10 @@ public class CreateBrowserVisualPostRequest {
 
     private String badgeText;
     private String promoText;
+    private String headline;
+    private String supportingText;
+    private String ctaText;
+    private String layoutStyle;
+    private String productFocus;
+    private String textAlignment;
 }

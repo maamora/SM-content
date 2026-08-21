@@ -25,6 +25,7 @@ class BrandSettingsSchemaMigrationTest {
         try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement()) {
             statement.execute("CREATE TABLE brand_settings (id VARCHAR(36) PRIMARY KEY, name VARCHAR(255) NOT NULL)");
             statement.execute("INSERT INTO brand_settings (id, name) VALUES ('legacy-brand', 'Existing workspace')");
+            statement.execute("CREATE TABLE post (id VARCHAR(36) PRIMARY KEY)");
         }
 
         BrandSettingsSchemaMigration migration = new BrandSettingsSchemaMigration();
@@ -47,6 +48,10 @@ class BrandSettingsSchemaMigrationTest {
             assertThat(resultSet.next()).isTrue();
             assertThat(resultSet.getBoolean("configured")).isFalse();
             assertThat(resultSet.wasNull()).isFalse();
+        }
+        try (Connection connection = dataSource.getConnection();
+             ResultSet columns = connection.getMetaData().getColumns(null, null, "post", "headline")) {
+            assertThat(columns.next()).isTrue();
         }
     }
 }

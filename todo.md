@@ -752,3 +752,8 @@ The second attachment does not show an application compile or route error. `pnpm
 - [x] Audit the current post composer, request contract, persistence model, and SVG renderer for controllable advertising parameters.
 - [x] Add coherent user-facing creative controls that the local renderer can faithfully honor.
 - [x] Validate the renderer, backend, and frontend builds before committing the expanded composer.
+
+## Product-aware multilingual captions
+- [x] Audit current caption request inputs, product fields, caption service templates, and Studio interaction.
+- [x] Generate captions from the selected product data plus the user’s campaign direction in French, Arabic, Darija, and English.
+- [x] Validate the API contract, multilingual output, and frontend caption interaction before committing.

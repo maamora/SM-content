@@ -52,19 +52,17 @@ public class BrandSettingsSchemaMigration implements BeanFactoryPostProcessor, E
         }
 
         try (Connection connection = DriverManager.getConnection(url, username, password)) {
-            if (!tableExists(connection)) {
-                return;
-            }
-
             try (Statement statement = connection.createStatement()) {
-                if (!columnExists(connection)) {
+                if (tableExists(connection, TABLE_NAME) && !columnExists(connection, TABLE_NAME, COLUMN_NAME)) {
                     statement.execute("ALTER TABLE brand_settings ADD COLUMN configured BOOLEAN DEFAULT FALSE");
                     log.info("Added missing brand_settings.configured column for existing workspace data");
                 }
-
-                statement.executeUpdate("UPDATE brand_settings SET configured = FALSE WHERE configured IS NULL");
-                statement.execute("ALTER TABLE brand_settings ALTER COLUMN configured SET DEFAULT FALSE");
-                statement.execute("ALTER TABLE brand_settings ALTER COLUMN configured SET NOT NULL");
+                if (tableExists(connection, TABLE_NAME)) {
+                    statement.executeUpdate("UPDATE brand_settings SET configured = FALSE WHERE configured IS NULL");
+                    statement.execute("ALTER TABLE brand_settings ALTER COLUMN configured SET DEFAULT FALSE");
+                    statement.execute("ALTER TABLE brand_settings ALTER COLUMN configured SET NOT NULL");
+                }
+                addPostCampaignColumns(connection, statement);
             }
         } catch (SQLException exception) {
             throw new IllegalStateException("Unable to repair brand_settings configured-column schema", exception);
@@ -82,11 +80,28 @@ public class BrandSettingsSchemaMigration implements BeanFactoryPostProcessor, E
         return value;
     }
 
-    private boolean tableExists(Connection connection) throws SQLException {
+    private void addPostCampaignColumns(Connection connection, Statement statement) throws SQLException {
+        if (!tableExists(connection, "post")) return;
+        addColumnIfMissing(connection, statement, "headline", "VARCHAR(160)");
+        addColumnIfMissing(connection, statement, "supporting_text", "VARCHAR(360)");
+        addColumnIfMissing(connection, statement, "cta_text", "VARCHAR(120)");
+        addColumnIfMissing(connection, statement, "layout_style", "VARCHAR(32)");
+        addColumnIfMissing(connection, statement, "product_focus", "VARCHAR(32)");
+        addColumnIfMissing(connection, statement, "text_alignment", "VARCHAR(16)");
+    }
+
+    private void addColumnIfMissing(Connection connection, Statement statement, String column, String definition) throws SQLException {
+        if (!columnExists(connection, "post", column)) {
+            statement.execute("ALTER TABLE post ADD COLUMN " + column + " " + definition);
+            log.info("Added missing post.{} campaign context column for existing drafts", column);
+        }
+    }
+
+    private boolean tableExists(Connection connection, String tableName) throws SQLException {
         DatabaseMetaData metadata = connection.getMetaData();
         try (ResultSet tables = metadata.getTables(connection.getCatalog(), null, "%", new String[]{"TABLE"})) {
             while (tables.next()) {
-                if (TABLE_NAME.equalsIgnoreCase(tables.getString("TABLE_NAME"))) {
+                if (tableName.equalsIgnoreCase(tables.getString("TABLE_NAME"))) {
                     return true;
                 }
             }
@@ -94,12 +109,12 @@ public class BrandSettingsSchemaMigration implements BeanFactoryPostProcessor, E
         return false;
     }
 
-    private boolean columnExists(Connection connection) throws SQLException {
+    private boolean columnExists(Connection connection, String tableName, String columnName) throws SQLException {
         DatabaseMetaData metadata = connection.getMetaData();
         try (ResultSet columns = metadata.getColumns(connection.getCatalog(), null, "%", "%")) {
             while (columns.next()) {
-                if (TABLE_NAME.equalsIgnoreCase(columns.getString("TABLE_NAME"))
-                        && COLUMN_NAME.equalsIgnoreCase(columns.getString("COLUMN_NAME"))) {
+                if (tableName.equalsIgnoreCase(columns.getString("TABLE_NAME"))
+                        && columnName.equalsIgnoreCase(columns.getString("COLUMN_NAME"))) {
                     return true;
                 }
             }

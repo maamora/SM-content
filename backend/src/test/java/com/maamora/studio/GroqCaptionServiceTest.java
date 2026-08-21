@@ -62,15 +62,46 @@ class GroqCaptionServiceTest {
                 .sellingPoint("Long-lasting")
                 .price(320.0)
                 .build();
-        Post post = Post.builder().product(product).promoText("Free delivery").badgeText("New").build();
+        Post post = Post.builder().id("post-caption-context")
+                .product(product).promoText("Free delivery").badgeText("New")
+                .headline("Night, distilled").supportingText("A confident scent that stays with you.")
+                .ctaText("Shop the scent").build();
 
         String caption = service.generateCaption(post, brand, "en");
 
         assertThat(caption)
                 .contains("Cedar Eau de Parfum")
+                .contains("A woody fragrance for evenings")
+                .contains("Long-lasting")
+                .contains("320 MAD")
                 .contains("Free delivery")
+                .contains("Night, distilled")
+                .contains("A confident scent that stays with you.")
+                .contains("Shop the scent")
                 .contains("#CedarEaudeParfum");
         assertThat(authorization.get()).isNull();
         assertThat(requestBody.get()).isNull();
+    }
+
+    @Test
+    void carriesProductAndCampaignFactsAcrossAllSupportedLanguages() {
+        BrandSettings brand = BrandSettings.builder().name("ATELIER").build();
+        Product product = Product.builder().name("Arc Runner").description("Breathable daily trainers")
+                .sellingPoint("Responsive foam cushioning").price(890.0).build();
+        Post post = Post.builder().id("caption-all-languages").product(product).badgeText("NEW")
+                .promoText("Free delivery this week").headline("Run lighter")
+                .supportingText("Designed for the last kilometre").ctaText("Explore the collection").build();
+
+        for (String language : new String[]{"fr", "ar", "darija", "en"}) {
+            String caption = service.generateCaption(post, brand, language);
+            assertThat(caption)
+                    .contains("Arc Runner")
+                    .contains("Breathable daily trainers")
+                    .contains("Responsive foam cushioning")
+                    .contains("890 MAD")
+                    .contains("Run lighter")
+                    .contains("Designed for the last kilometre")
+                    .contains("Explore the collection");
+        }
     }
 }

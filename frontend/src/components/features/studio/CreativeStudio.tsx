@@ -183,7 +183,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const saveUploadedPost = async () => {
         if (!selectedProduct || !templateId || !uploadedFile) return;
         setBusy("upload"); setError(null);
-        try { const result = await createBrowserVisualPost({ productId: selectedProduct.id, templateId, image: uploadedFile, promoText, badgeText }); setPost(result); onPostChange?.(); }
+        try { const result = await createBrowserVisualPost({ productId: selectedProduct.id, templateId, image: uploadedFile, promoText, badgeText, headline, supportingText, ctaText, layoutStyle, productFocus, textAlignment }); setPost(result); onPostChange?.(); }
         catch (err) { setError(err instanceof Error ? err.message : "Impossible d’ajouter ce visuel à la bibliothèque."); }
         finally { setBusy(null); }
     };
@@ -315,6 +315,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
 
                     <section className="studio-artboard-section">
                         <div className="flex items-center justify-between"><Label>Légende</Label><span className="text-[10px] font-mono text-[#9c9f94]">{captionDraft.length} car.</span></div>
+                        <p className="studio-artboard-hint">Basée sur {selectedProduct?.name ?? "le produit sélectionné"}, sa description, son bénéfice, son prix et votre direction de campagne.</p>
                         <div className="studio-artboard-language-tabs" role="tablist">{languages.map((language) => <button key={language.id} type="button" role="tab" aria-selected={captionLanguage === language.id} onClick={() => setCaptionLanguage(language.id)}>{language.label}</button>)}</div>
                         <textarea value={captionDraft} onChange={(event) => setCaptionDraft(event.target.value)} onBlur={() => void saveCaption()} disabled={!post} placeholder={post ? "Rédigez la légende de ce post." : "Rendez ou importez le post pour écrire sa légende."} />
                         <div className="mt-2 grid grid-cols-2 gap-2"><button type="button" onClick={() => void createCaptions()} disabled={!post || busy !== null} className="studio-artboard-secondary">{busy === "captions" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}Générer</button><button type="button" onClick={() => void copyCaption()} disabled={!captionDraft} className="studio-artboard-secondary">{copied ? <Check className="h-3.5 w-3.5 text-[#c6ff5e]" /> : <Copy className="h-3.5 w-3.5" />}{copied ? "Copié" : "Copier"}</button></div>

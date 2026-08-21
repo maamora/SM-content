@@ -54,6 +54,24 @@ public class Post {
     private String badgeText;
     private String promoText;
 
+    @Column(length = 160)
+    private String headline;
+
+    @Column(length = 360)
+    private String supportingText;
+
+    @Column(length = 120)
+    private String ctaText;
+
+    @Column(length = 32)
+    private String layoutStyle;
+
+    @Column(length = 32)
+    private String productFocus;
+
+    @Column(length = 16)
+    private String textAlignment;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 32)
     @Builder.Default

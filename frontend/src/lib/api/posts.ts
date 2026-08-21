@@ -46,6 +46,12 @@ export const createBrowserVisualPost = async (input: {
     image: Blob;
     badgeText?: string;
     promoText?: string;
+    headline?: string;
+    supportingText?: string;
+    ctaText?: string;
+    layoutStyle?: "BOLD" | "MINIMAL" | "CATALOG" | "POSTER";
+    productFocus?: "CENTER" | "CLOSE_UP" | "FLOATING" | "WIDE";
+    textAlignment?: "LEFT" | "CENTER";
 }) => {
     const contentType = input.image.type.startsWith("image/") ? input.image.type : "image/png";
     const extension = contentType === "image/jpeg" ? "jpg" : contentType === "image/webp" ? "webp" : "png";
@@ -60,6 +66,12 @@ export const createBrowserVisualPost = async (input: {
             imageUrl: upload.url,
             badgeText: input.badgeText,
             promoText: input.promoText,
+            headline: input.headline,
+            supportingText: input.supportingText,
+            ctaText: input.ctaText,
+            layoutStyle: input.layoutStyle,
+            productFocus: input.productFocus,
+            textAlignment: input.textAlignment,
         }),
     });
 };

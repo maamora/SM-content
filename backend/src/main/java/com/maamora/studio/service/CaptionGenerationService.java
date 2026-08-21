@@ -116,22 +116,76 @@ public class CaptionGenerationService {
     }
 
     private String generateDeterministicCaption(Post post, BrandSettings brand, String language) {
-        Product product = post.getProduct();
-        String productName = textOr(product == null ? null : product.getName(), "our latest piece");
-        String brandName = textOr(brand == null ? null : brand.getName(), "STUDIO");
-        String detail = textOr(post.getPromoText(), textOr(product == null ? null : product.getSellingPoint(), "Made to be noticed."));
+        CaptionBrief brief = captionBrief(post, brand);
         int variation = Math.floorMod((post.getId() + ":" + language).hashCode(), 3);
         return switch (language == null ? "fr" : language.toLowerCase()) {
-            case "en" -> switch (variation) {
-                case 1 -> productName + " by " + brandName + ". " + detail + " Discover it today. #" + tag(productName);
-                case 2 -> "Meet " + productName + ". " + detail + " A considered release from " + brandName + ". #" + tag(productName);
-                default -> productName + ", selected by " + brandName + ". " + detail + " #" + tag(productName);
-            };
-            case "ar" -> productName + " من " + brandName + ". " + detail + " اكتشفه اليوم. #" + tag(productName);
-            case "darija" -> productName + " من " + brandName + ". " + detail + " اكتاشفوه اليوم. #" + tag(productName);
-            default -> productName + " par " + brandName + ". " + detail + " Découvrez-le aujourd’hui. #" + tag(productName);
+            case "en" -> englishCaption(brief, variation);
+            case "ar" -> arabicCaption(brief);
+            case "darija" -> darijaCaption(brief);
+            default -> frenchCaption(brief, variation);
         };
     }
+
+    private CaptionBrief captionBrief(Post post, BrandSettings brand) {
+        Product product = post.getProduct();
+        String productName = textOr(product == null ? null : product.getName(), "our latest piece");
+        String description = textOr(product == null ? null : product.getDescription(), "A considered release made for everyday use.");
+        String sellingPoint = textOr(product == null ? null : product.getSellingPoint(), description);
+        String brandName = textOr(brand == null ? null : brand.getName(), "STUDIO");
+        String headline = textOr(post.getHeadline(), productName);
+        String supporting = textOr(post.getSupportingText(), sellingPoint);
+        String promo = textOr(post.getPromoText(), "");
+        String badge = textOr(post.getBadgeText(), "");
+        String cta = textOr(post.getCtaText(), "");
+        String price = product != null && product.getPrice() != null ? trimPrice(product.getPrice()) + " MAD" : "";
+        return new CaptionBrief(productName, description, sellingPoint, brandName, headline, supporting, promo, badge, cta, price);
+    }
+
+    private String frenchCaption(CaptionBrief brief, int variation) {
+        String opening = switch (variation) {
+            case 1 -> campaignLead(brief);
+            case 2 -> brief.headline() + " — pensé par " + brief.brandName() + ".";
+            default -> brief.headline() + ".";
+        };
+        return opening + "\n\n" + brief.productName() + " : " + brief.description() + " " + brief.sellingPoint() + campaignSupport(brief)
+                + campaignLine(brief.promo(), " ") + priceLine(brief.price(), "Prix : ")
+                + "\n\n" + nonBlank(brief.cta(), "Découvrez-le aujourd’hui.") + "\n\n" + tags(brief);
+    }
+
+    private String englishCaption(CaptionBrief brief, int variation) {
+        String opening = switch (variation) {
+            case 1 -> campaignLead(brief);
+            case 2 -> "Meet " + brief.headline() + ", from " + brief.brandName() + ".";
+            default -> brief.headline() + ".";
+        };
+        return opening + "\n\n" + brief.productName() + ": " + brief.description() + " " + brief.sellingPoint() + campaignSupport(brief)
+                + campaignLine(brief.promo(), " ") + priceLine(brief.price(), "Price: ")
+                + "\n\n" + nonBlank(brief.cta(), "Discover it today.") + "\n\n" + tags(brief);
+    }
+
+    private String arabicCaption(CaptionBrief brief) {
+        return campaignLead(brief) + "\n\n" + brief.productName() + " من " + brief.brandName() + ". "
+                + brief.description() + " " + brief.sellingPoint() + campaignSupport(brief) + campaignLine(brief.promo(), " ")
+                + priceLine(brief.price(), "السعر: ") + "\n\n" + nonBlank(brief.cta(), "اكتشفه اليوم.") + "\n\n" + tags(brief);
+    }
+
+    private String darijaCaption(CaptionBrief brief) {
+        return campaignLead(brief) + "\n\n" + brief.productName() + " من " + brief.brandName() + ". "
+                + brief.description() + " " + brief.sellingPoint() + campaignSupport(brief) + campaignLine(brief.promo(), " ")
+                + priceLine(brief.price(), "الثمن: ") + "\n\n" + nonBlank(brief.cta(), "اكتاشفوه دابا.") + "\n\n" + tags(brief);
+    }
+
+    private String campaignLine(String value, String prefix) { return value.isBlank() ? "" : prefix + value + "."; }
+    private String priceLine(String value, String prefix) { return value.isBlank() ? "" : " " + prefix + value + "."; }
+    private String campaignLead(CaptionBrief brief) { return brief.badge().isBlank() ? brief.headline() : brief.badge() + " — " + brief.headline(); }
+    private String campaignSupport(CaptionBrief brief) {
+        return brief.supporting().equalsIgnoreCase(brief.sellingPoint()) ? "" : " " + brief.supporting();
+    }
+    private String nonBlank(String first, String fallback) { return first == null || first.isBlank() ? fallback : first; }
+    private String trimPrice(Double price) { return Math.rint(price) == price ? String.valueOf(price.longValue()) : String.format(java.util.Locale.ROOT, "%.2f", price); }
+    private String tags(CaptionBrief brief) { return "#" + tag(brief.productName()) + " #" + tag(brief.brandName()) + (brief.badge().isBlank() ? "" : " #" + tag(brief.badge())); }
+    private record CaptionBrief(String productName, String description, String sellingPoint, String brandName,
+                                String headline, String supporting, String promo, String badge, String cta, String price) { }
 
     private String textOr(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value.trim();
@@ -401,6 +455,10 @@ public class CaptionGenerationService {
                 - Price: %s
                 - Promo: %s
                 - Badge Box: %s
+                - Campaign headline: %s
+                - Campaign supporting line: %s
+                - Campaign CTA: %s
+                - Layout direction: %s / product focus: %s / text alignment: %s
 
                 Instructions & Formatting:
                 - Craft a compelling hook that immediately grabs the reader's attention.
@@ -423,6 +481,12 @@ public class CaptionGenerationService {
                         product.getPrice() != null ? product.getPrice() + " MAD" : "-",
                         post.getPromoText() != null ? post.getPromoText() : "-",
                         post.getBadgeText() != null ? post.getBadgeText() : "-",
+                        post.getHeadline() != null ? post.getHeadline() : "-",
+                        post.getSupportingText() != null ? post.getSupportingText() : "-",
+                        post.getCtaText() != null ? post.getCtaText() : "-",
+                        post.getLayoutStyle() != null ? post.getLayoutStyle() : "-",
+                        post.getProductFocus() != null ? post.getProductFocus() : "-",
+                        post.getTextAlignment() != null ? post.getTextAlignment() : "-",
                         languageInstruction);
     }
 

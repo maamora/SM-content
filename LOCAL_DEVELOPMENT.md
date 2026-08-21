@@ -305,6 +305,10 @@ After signing in, open **Products** and select **Add testing catalog**. STUDIO c
 
 These records begin as `PENDING`. They are available to their own creator in **Studio** for private template composition, captions, approval, export, and scheduling checks. They are not visible to other non-admin workspace members and cannot become shared catalogue products until an administrator approves them. Remove the test records from **Products** once the live catalogue is ready.
 
+### Product-aware captions
+
+In **Studio**, select a product and define the campaign headline, message, supporting benefit, offer, and call-to-action before selecting **Generate** in the caption panel. Captions are generated locally in French, Arabic, Darija, or English from the product name, description, selling point, price, brand, and saved campaign direction. Missing product details are omitted or expressed with neutral language rather than invented.
+
 ## 8. Troubleshooting
 
 ### Backend cannot connect to PostgreSQL
