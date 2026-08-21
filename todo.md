@@ -201,6 +201,11 @@
 - [x] Correct the Windows launcher mapping while keeping database secrets out of logs.
 - [x] Add a regression check for the mapping contract, validate startup configuration, and commit the repair.
 
+## Windows explicit Maven datasource repair
+- [x] Verify the launcher revision and the reported Spring startup behavior against its non-secret status output.
+- [x] Pass the derived datasource properties explicitly to Maven and add safe preflight diagnostics.
+- [x] Validate the revised startup contract, then commit the definitive Windows launcher repair.
+
 ## Deterministic Content Generation Engine
 - [x] Design a server-side template composition fallback for Product → branded social visual when image AI is unavailable.
 - [x] Design multilingual rule-based caption templates with safely selected variations for French, Arabic, and Darija.
@@ -731,3 +736,8 @@ The second attachment does not show an application compile or route error. `pnpm
 - [x] Find maintained browser libraries, GitHub projects, and downloadable runtimes that offer visual generation, image editing, Photo Shoot composition, or captions without a paid provider balance.
 - [x] Verify whether each candidate is truly free in production, rather than a demo endpoint, free tier, user-funded account, or a self-hosted model runtime.
 - [x] Recommend only candidates that match STUDIO’s requested workflow coverage and deployment constraints; no candidate currently covers all required workflows without either hosted provider credentials/balance or a local runtime.
+
+## Windows deterministic Spring startup repair
+- [x] Inspect the exact PowerShell launcher command and Maven property propagation behavior.
+- [x] Pass the temporary datasource configuration to the Spring Boot JVM with deterministic precedence over application defaults.
+- [x] Validate the new startup and schema-migration sequence, then commit the repair.

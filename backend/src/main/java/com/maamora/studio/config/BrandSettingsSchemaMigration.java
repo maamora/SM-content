@@ -6,11 +6,13 @@ import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -25,15 +27,31 @@ import java.sql.Statement;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @Slf4j
-public class BrandSettingsSchemaMigration implements BeanFactoryPostProcessor {
+public class BrandSettingsSchemaMigration implements BeanFactoryPostProcessor, EnvironmentAware {
 
     private static final String TABLE_NAME = "brand_settings";
     private static final String COLUMN_NAME = "configured";
+    private Environment environment;
+
+    @Override
+    public void setEnvironment(Environment environment) {
+        this.environment = environment;
+    }
 
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-        DataSource dataSource = beanFactory.getBean(DataSource.class);
-        try (Connection connection = dataSource.getConnection()) {
+        String url = requiredProperty("spring.datasource.url");
+        String username = requiredProperty("spring.datasource.username");
+        String password = environment.getProperty("spring.datasource.password", "");
+        String driverClassName = environment.getProperty("spring.datasource.driver-class-name", "org.postgresql.Driver");
+
+        try {
+            Class.forName(driverClassName);
+        } catch (ClassNotFoundException exception) {
+            throw new IllegalStateException("Unable to load the configured datasource driver " + driverClassName, exception);
+        }
+
+        try (Connection connection = DriverManager.getConnection(url, username, password)) {
             if (!tableExists(connection)) {
                 return;
             }
@@ -51,6 +69,17 @@ public class BrandSettingsSchemaMigration implements BeanFactoryPostProcessor {
         } catch (SQLException exception) {
             throw new IllegalStateException("Unable to repair brand_settings configured-column schema", exception);
         }
+    }
+
+    private String requiredProperty(String propertyName) {
+        if (environment == null) {
+            throw new IllegalStateException("Spring Environment was unavailable while preparing the brand settings schema migration");
+        }
+        String value = environment.getProperty(propertyName);
+        if (value == null || value.isBlank()) {
+            throw new IllegalStateException("Missing required datasource property " + propertyName + " for the brand settings schema migration");
+        }
+        return value;
     }
 
     private boolean tableExists(Connection connection) throws SQLException {

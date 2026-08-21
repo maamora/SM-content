@@ -1,9 +1,12 @@
 package com.maamora.studio;
 
 import com.maamora.studio.config.BrandSettingsSchemaMigration;
+import java.util.Map;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.StandardEnvironment;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -24,10 +27,17 @@ class BrandSettingsSchemaMigrationTest {
             statement.execute("INSERT INTO brand_settings (id, name) VALUES ('legacy-brand', 'Existing workspace')");
         }
 
-        DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
-        beanFactory.registerSingleton("dataSource", dataSource);
-
         BrandSettingsSchemaMigration migration = new BrandSettingsSchemaMigration();
+        StandardEnvironment environment = new StandardEnvironment();
+        environment.getPropertySources().addFirst(new MapPropertySource("testDatasource", Map.of(
+                "spring.datasource.url", "jdbc:h2:mem:brand-schema-upgrade;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
+                "spring.datasource.username", "sa",
+                "spring.datasource.password", "",
+                "spring.datasource.driver-class-name", "org.h2.Driver"
+        )));
+        migration.setEnvironment(environment);
+
+        DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
         migration.postProcessBeanFactory(beanFactory);
         migration.postProcessBeanFactory(beanFactory);
 

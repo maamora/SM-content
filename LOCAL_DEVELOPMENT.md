@@ -137,13 +137,15 @@ cd backend
 bash mvnw spring-boot:run
 ```
 
-In Windows PowerShell, run the wrapper from the current directory using the
-explicit command below; PowerShell does not execute files from the current
-directory when they are invoked by name alone:
+On Windows PowerShell, **do not run** `.\mvnw.cmd spring-boot:run` directly.
+Maven does not load `backend/.env` by itself. Use the committed launcher so the
+database, JWT, mail, storage, and optional integration values are transferred
+to Spring Boot for this one backend process:
 
 ```powershell
 cd backend
-.\mvnw.cmd spring-boot:run
+Set-ExecutionPolicy -Scope Process Bypass
+.\Start-StudioBackend.ps1
 ```
 
 If startup stops with `Duplicate key IMAGE_PROVIDER`, the backend `.env`
@@ -161,8 +163,8 @@ You can locate the active local-engine entries without displaying secret values 
 Select-String -Path .\.env -Pattern '^(IMAGE_PROVIDER|CAPTION_PROVIDER|STORAGE_LOCAL_PATH|STORAGE_PUBLIC_BASE_URL)='
 ```
 
-Alternatively, use the committed Windows helper. It loads `backend/.env` into the current PowerShell process without printing secret values, detects duplicate keys such as
-`HIGGSFIELD_MODEL`, builds `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, and `SPRING_DATASOURCE_PASSWORD` from the validated `DB_*` values, and checks the Supabase pooler username format before starting Spring Boot:
+The committed Windows helper loads `backend/.env` without printing secret values, detects duplicate keys such as
+`HIGGSFIELD_MODEL`, validates the `DB_*` values and Supabase pooler username format, then creates a short-lived runtime properties file outside the repository. It also passes the resolved datasource values as JVM properties, avoiding unreliable environment inheritance through Maven. The helper deletes the temporary directory when the backend process exits:
 
 ```powershell
 cd backend
