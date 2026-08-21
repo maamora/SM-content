@@ -24,6 +24,11 @@ public class SvgTemplateRenderer {
 
     public byte[] render(Product product, int width, int height, String badge, String promo, String accent, String mood,
                          String brandName, String logoUrl, boolean includeBrandLogo) {
+        return render(product, width, height, badge, promo, accent, mood, brandName, logoUrl, includeBrandLogo, "TOP_RIGHT");
+    }
+
+    public byte[] render(Product product, int width, int height, String badge, String promo, String accent, String mood,
+                         String brandName, String logoUrl, boolean includeBrandLogo, String brandLogoPlacement) {
         String safeAccent = color(accent, "#D9FF4A");
         String background = switch (mood == null ? "" : mood.toLowerCase()) {
             case "moss" -> "#183D33";
@@ -38,10 +43,11 @@ public class SvgTemplateRenderer {
         String visual = image.isBlank()
                 ? "<rect x=\"" + (width * .15) + "\" y=\"" + (height * .25) + "\" width=\"" + (width * .70) + "\" height=\"" + (height * .42) + "\" rx=\"36\" fill=\"#F5F1E8\" opacity=\".16\"/>"
                 : "<image href=\"" + xml(image) + "\" x=\"" + (width * .15) + "\" y=\"" + (height * .21) + "\" width=\"" + (width * .70) + "\" height=\"" + (height * .48) + "\" preserveAspectRatio=\"xMidYMid meet\"/>";
+        BrandFrame brandFrame = brandFrame(brandLogoPlacement, width, height);
         String brandMark = !includeBrandLogo ? "" : hasHttpUrl(logoUrl)
-                ? "<image href=\"" + xml(logoUrl.trim()) + "\" x=\"" + (width * .78) + "\" y=\"" + (height * .05) + "\" width=\"" + (width * .14) + "\" height=\"" + (height * .08) + "\" preserveAspectRatio=\"xMaxYMid meet\"/>"
+                ? "<g><rect x=\"" + brandFrame.x() + "\" y=\"" + brandFrame.y() + "\" width=\"" + brandFrame.width() + "\" height=\"" + brandFrame.height() + "\" rx=\"16\" fill=\"#F5F1E8\" opacity=\".90\"/><image href=\"" + xml(logoUrl.trim()) + "\" x=\"" + (brandFrame.x() + brandFrame.padding()) + "\" y=\"" + (brandFrame.y() + brandFrame.padding()) + "\" width=\"" + (brandFrame.width() - brandFrame.padding() * 2) + "\" height=\"" + (brandFrame.height() - brandFrame.padding() * 2) + "\" preserveAspectRatio=\"xMidYMid meet\"/></g>"
                 : value(brandName).isBlank() ? ""
-                : "<text x=\"" + (width * .92) + "\" y=\"" + (height * .10) + "\" text-anchor=\"end\" fill=\"#F5F1E8\" font-family=\"Arial,sans-serif\" font-size=\"" + Math.max(12, width / 65) + "\" font-weight=\"700\" letter-spacing=\"2\">" + xml(brandName.trim()) + "</text>";
+                : "<g><rect x=\"" + brandFrame.x() + "\" y=\"" + brandFrame.y() + "\" width=\"" + brandFrame.width() + "\" height=\"" + brandFrame.height() + "\" rx=\"16\" fill=\"#F5F1E8\" opacity=\".90\"/><text x=\"" + (brandFrame.x() + brandFrame.width() / 2) + "\" y=\"" + (brandFrame.y() + brandFrame.height() / 2 + Math.max(12, width / 90)) + "\" text-anchor=\"middle\" fill=\"#11120F\" font-family=\"Arial,sans-serif\" font-size=\"" + Math.max(12, width / 65) + "\" font-weight=\"700\" letter-spacing=\"2\">" + xml(brandName.trim()) + "</text></g>";
         String svg = """
                 <svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d">
                   <rect width="100%%" height="100%%" fill="%s"/>
@@ -81,4 +87,21 @@ public class SvgTemplateRenderer {
     private String color(String value, String fallback) { return value != null && value.matches("#[0-9a-fA-F]{6}") ? value : fallback; }
     private boolean hasHttpUrl(String value) { return value != null && value.trim().matches("https?://.+"); }
     private String xml(String value) { return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;"); }
+
+    private BrandFrame brandFrame(String placement, int width, int height) {
+        int frameWidth = Math.max(150, (int) (width * .19));
+        int frameHeight = Math.max(56, (int) (height * .09));
+        int padding = Math.max(8, width / 100);
+        int margin = Math.max(28, width / 18);
+        int top = Math.max(28, height / 20);
+        int lower = (int) (height * .58);
+        return switch (placement == null ? "TOP_RIGHT" : placement.trim().toUpperCase()) {
+            case "TOP_LEFT" -> new BrandFrame(margin, Math.max((int) (height * .17), top), frameWidth, frameHeight, padding);
+            case "BOTTOM_LEFT" -> new BrandFrame(margin, lower, frameWidth, frameHeight, padding);
+            case "BOTTOM_RIGHT" -> new BrandFrame(width - margin - frameWidth, lower, frameWidth, frameHeight, padding);
+            default -> new BrandFrame(width - margin - frameWidth, top, frameWidth, frameHeight, padding);
+        };
+    }
+
+    private record BrandFrame(int x, int y, int width, int height, int padding) { }
 }

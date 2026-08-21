@@ -50,7 +50,7 @@ class ImageRenderServiceFallbackTest {
     @Test
     void doesNotPassASeededButUnconfiguredBrandToTheSvgMark() {
         SvgTemplateRenderer renderer = org.mockito.Mockito.mock(SvgTemplateRenderer.class);
-        when(renderer.render(any(), anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString(), anyString(), isNull(), anyBoolean()))
+        when(renderer.render(any(), anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString(), anyString(), isNull(), anyBoolean(), anyString()))
                 .thenReturn(new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47});
         ImageRenderService service = new ImageRenderService(imageGenerationProvider, renderer);
         BrandSettings seededBrand = BrandSettings.builder().name("STUDIO").configured(false).build();
@@ -60,7 +60,21 @@ class ImageRenderServiceFallbackTest {
 
         ArgumentCaptor<Boolean> includeBrandMark = ArgumentCaptor.forClass(Boolean.class);
         verify(renderer).render(eq(product), eq(768), eq(1344), eq("NEW"), eq("A neutral post"), eq("#D9FF4A"), eq("mint"),
-                eq("STUDIO"), isNull(), includeBrandMark.capture());
+                eq("STUDIO"), isNull(), includeBrandMark.capture(), eq("TOP_RIGHT"));
         assertThat(includeBrandMark.getValue()).isFalse();
+    }
+
+    @Test
+    void rendersAConfiguredBrandSignatureAtTheSelectedPlacement() {
+        ImageRenderService service = new ImageRenderService(imageGenerationProvider, new SvgTemplateRenderer());
+        BrandSettings configuredBrand = BrandSettings.builder().name("NOUR STUDIO").configured(true).build();
+        Product product = Product.builder().name("Signature product").build();
+
+        ImageRenderService.RenderedVisual result = service.render(
+                Template.builder().build(), product, "NEW", "Placed identity", "#D9FF4A", "moss",
+                configuredBrand, true, "BOTTOM_LEFT");
+
+        assertThat(result.generationMode()).isEqualTo(GenerationMode.TEMPLATE_COMPOSED);
+        assertThat(result.png()).startsWith((byte) 0x89, (byte) 0x50, (byte) 0x4E, (byte) 0x47);
     }
 }

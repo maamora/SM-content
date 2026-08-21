@@ -1,4 +1,4 @@
-import { apiFetch } from "./client";
+import { apiFetch, apiUpload } from "./client";
 
 export interface BrandSettings {
     id: string;
@@ -18,3 +18,11 @@ export const updateBrand = (input: BrandSettingsInput) => apiFetch<BrandSettings
     method: "PUT",
     body: JSON.stringify(input),
 });
+
+type UploadResponse = { url: string };
+
+/** Stores a Brand-page logo through the existing authenticated image-upload route. */
+export const uploadBrandLogo = async (file: File) => {
+    const upload = await apiUpload<UploadResponse>("/api/uploads/image", file);
+    return upload.url;
+};

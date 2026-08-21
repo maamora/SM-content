@@ -174,6 +174,12 @@
 - [x] Use the Brand page identity only when the user has configured it; render a neutral post otherwise.
 - [x] Validate configured and unconfigured brand states, then commit the refinement.
 
+## Brand-logo post composition
+- [x] Audit the current Brand logo upload path and local SVG composition handoff.
+- [x] Add clear logo placement controls that preserve a logo-free neutral post option.
+- [x] Render the selected Brand logo smoothly in previews and exported local SVG posts.
+- [x] Validate logo-enabled and logo-free output states, then commit the refinement.
+
 ## Deterministic Content Generation Engine
 - [x] Design a server-side template composition fallback for Product → branded social visual when image AI is unavailable.
 - [x] Design multilingual rule-based caption templates with safely selected variations for French, Arabic, and Darija.

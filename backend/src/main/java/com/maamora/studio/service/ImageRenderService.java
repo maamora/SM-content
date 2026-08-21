@@ -88,6 +88,12 @@ public class ImageRenderService {
     public RenderedVisual render(Template template, Product product,
             String badgeText, String promoText,
             String accentColor, String mood, BrandSettings brand, boolean includeBrandLogo) {
+        return render(template, product, badgeText, promoText, accentColor, mood, brand, includeBrandLogo, "TOP_RIGHT");
+    }
+
+    public RenderedVisual render(Template template, Product product,
+            String badgeText, String promoText,
+            String accentColor, String mood, BrandSettings brand, boolean includeBrandLogo, String brandLogoPlacement) {
         boolean isSquare = template.getFormat() != null
                 && template.getFormat().name().equals("SQUARE_POST");
         // SDXL only accepts a fixed set of width/height pairs; anything else is
@@ -107,7 +113,8 @@ public class ImageRenderService {
                 && ((brand.getLogoUrl() != null && !brand.getLogoUrl().isBlank())
                 || (brand.getName() != null && !brand.getName().isBlank()));
         byte[] png = svgTemplateRenderer.render(product, width, height, badgeText, promoText, accentColor, mood,
-                brand == null ? null : brand.getName(), brand == null ? null : brand.getLogoUrl(), hasConfiguredBrandMark);
+                brand == null ? null : brand.getName(), brand == null ? null : brand.getLogoUrl(),
+                hasConfiguredBrandMark, brandLogoPlacement);
         return new RenderedVisual(png, GenerationMode.TEMPLATE_COMPOSED,
                 "Created locally from the selected SVG template. No AI provider or image-generation API was used.");
     }

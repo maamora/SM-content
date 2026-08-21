@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
     ArrowUpRight, Bell, CalendarDays, Check, ChevronRight, CircleHelp, Clock3,
     Download, FileImage, FolderOpen, Layers3, LayoutDashboard, Loader2,
     Package, Palette, Plus, RefreshCw, Search, Settings2, ShieldCheck,
-    Sparkles, Store, Users2,
+    Sparkles, Store, UploadCloud, Users2,
 } from "lucide-react";
 import { StudioMark } from "./StudioShell";
 import CreativeStudio from "@/components/features/studio/CreativeStudio";
@@ -16,7 +16,7 @@ import { ProductForm } from "@/components/features/products/ProductForm";
 import ApprovalsQueue from "@/components/features/products/ApprovalsQueue";
 import { listProducts, type Product } from "@/lib/api/products";
 import { deletePost, exportPost, listPosts, type Post } from "@/lib/api/posts";
-import { getBrand, updateBrand, type BrandSettings, type BrandSettingsInput } from "@/lib/api/brand";
+import { getBrand, updateBrand, uploadBrandLogo, type BrandSettings, type BrandSettingsInput } from "@/lib/api/brand";
 import { listTemplates, type Template } from "@/lib/api/templates";
 import { getCurrentUser, type UserProfile } from "@/lib/api/auth";
 import { getSystemCapabilities, type SystemCapabilities } from "@/lib/api/system";
@@ -94,11 +94,21 @@ function Overview({ products, posts, refresh }: { products: Product[]; posts: Po
 function BrandSurface() {
     const [brand, setBrand] = useState<BrandSettings | null>(null);
     const [draft, setDraft] = useState<BrandSettingsInput>({ name: "", logoUrl: "", primaryColor: "#B9FF43", secondaryColor: "#11110F", fontFamily: "Space Grotesk", toneGuidelines: "" });
-    const [status, setStatus] = useState("Loading brand kit…"); const [saving, setSaving] = useState(false);
+    const [status, setStatus] = useState("Loading brand kit…"); const [saving, setSaving] = useState(false); const [uploadingLogo, setUploadingLogo] = useState(false);
+    const logoInputRef = useRef<HTMLInputElement>(null);
     useEffect(() => { getBrand().then((value) => { setBrand(value); setDraft(value.configured ? { name: value.name ?? "", logoUrl: value.logoUrl ?? "", primaryColor: value.primaryColor ?? "", secondaryColor: value.secondaryColor ?? "", fontFamily: value.fontFamily ?? "", toneGuidelines: value.toneGuidelines ?? "" } : { name: "", logoUrl: "", primaryColor: "#B9FF43", secondaryColor: "#11110F", fontFamily: "Space Grotesk", toneGuidelines: "" }); setStatus(""); }).catch((err) => setStatus(err instanceof Error ? err.message : "Unable to load brand kit")); }, []);
     const save = async () => { setSaving(true); setStatus(""); try { const value = await updateBrand(draft); setBrand(value); setStatus("Brand settings saved."); } catch (err) { setStatus(err instanceof Error ? err.message : "Unable to save brand kit"); } finally { setSaving(false); } };
+    const chooseLogo = async (file?: File) => {
+        if (!file) return;
+        if (!file.type.startsWith("image/")) { setStatus("Choose a PNG, JPG, WebP, or SVG logo."); return; }
+        if (file.size > 15 * 1024 * 1024) { setStatus("The logo must be 15 MB or smaller."); return; }
+        setUploadingLogo(true); setStatus("");
+        try { const logoUrl = await uploadBrandLogo(file); setDraft((current) => ({ ...current, logoUrl })); setStatus("Logo uploaded. Save the brand kit to use it in Studio."); }
+        catch (err) { setStatus(err instanceof Error ? err.message : "Unable to upload logo"); }
+        finally { setUploadingLogo(false); }
+    };
     if (!brand && status === "Loading brand kit…") return <div className="studio-loading"><Loader2 className="studio-spin" size={18} /> {status}</div>;
-    return <div className="studio-live-columns"><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">BRAND SETTINGS</span><h2>{brand?.configured && brand.name ? brand.name : "Set up your brand"}</h2></div><span className="studio-chip">LIVE API</span></div><div className="studio-form-grid">{([["name", "Brand name"], ["logoUrl", "Logo URL"], ["primaryColor", "Primary color"], ["secondaryColor", "Secondary color"], ["fontFamily", "Font family"]] as const).map(([key, label]) => <label key={key}>{label}<input value={draft[key] ?? ""} onChange={(event) => setDraft({ ...draft, [key]: event.target.value })} /></label>)}<label className="studio-form-grid__wide">Tone guidelines<textarea rows={5} value={draft.toneGuidelines ?? ""} onChange={(event) => setDraft({ ...draft, toneGuidelines: event.target.value })} /></label></div>{status && <p className="studio-inline-notice">{status}</p>}<button className="studio-button studio-button--dark" disabled={saving} onClick={() => void save()}>{saving ? <Loader2 className="studio-spin" size={15} /> : <Check size={15} />} Save brand kit</button></section><section className="studio-workspace-panel studio-workspace-panel--accent"><span className="studio-kicker studio-kicker--dark">STUDIO RULE</span><h2>{brand?.configured ? "Keep the source of truth close." : "Your posts start neutral."}</h2><p>{brand?.configured ? "Only this saved Brand kit can be added to a local template composition." : "Save a brand name or logo here, then choose whether to add it to each post in Studio."}</p><div className="studio-color-pair"><span style={{ background: draft.primaryColor || "#B9FF43" }} /><span style={{ background: draft.secondaryColor || "#11110F" }} /></div></section></div>;
+    return <div className="studio-live-columns"><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">BRAND SETTINGS</span><h2>{brand?.configured && brand.name ? brand.name : "Set up your brand"}</h2></div><span className="studio-chip">LIVE API</span></div><div className="studio-form-grid">{([["name", "Brand name"], ["primaryColor", "Primary color"], ["secondaryColor", "Secondary color"], ["fontFamily", "Font family"]] as const).map(([key, label]) => <label key={key}>{label}<input value={draft[key] ?? ""} onChange={(event) => setDraft({ ...draft, [key]: event.target.value })} /></label>)}<div className="studio-form-grid__wide space-y-3"><div className="flex items-center justify-between"><span className="text-xs font-black uppercase tracking-wide text-[#6f7068]">Brand logo</span>{draft.logoUrl && <span className="studio-chip">Ready</span>}</div><input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={(event) => void chooseLogo(event.target.files?.[0])} /><div className="flex flex-col gap-3 border border-dashed border-[#93a66d] bg-[#f6f8ee] p-3 sm:flex-row sm:items-center">{draft.logoUrl ? <img src={draft.logoUrl} alt="Brand logo preview" className="h-14 w-28 rounded-sm border border-[#d6d5cc] bg-white object-contain p-2" /> : <div className="flex h-14 w-28 items-center justify-center border border-[#d6d5cc] bg-[#faf9f4] text-[10px] font-bold uppercase tracking-wide text-[#8b8b83]">No logo</div>}<div className="min-w-0 flex-1"><p className="text-xs font-bold text-[var(--studio-ink)]">Upload a transparent logo for the cleanest post placement.</p><p className="mt-1 text-[11px] text-[#6f7068]">PNG, JPG, WebP, or SVG · max 15 MB</p></div><button type="button" className="studio-button studio-button--paper whitespace-nowrap" disabled={uploadingLogo} onClick={() => logoInputRef.current?.click()}>{uploadingLogo ? <Loader2 className="studio-spin" size={14} /> : <UploadCloud size={14} />}{uploadingLogo ? "Uploading…" : "Upload logo"}</button></div><label>Logo URL<input value={draft.logoUrl ?? ""} onChange={(event) => setDraft({ ...draft, logoUrl: event.target.value })} placeholder="Or paste a hosted image URL" /></label></div><label className="studio-form-grid__wide">Tone guidelines<textarea rows={5} value={draft.toneGuidelines ?? ""} onChange={(event) => setDraft({ ...draft, toneGuidelines: event.target.value })} /></label></div>{status && <p className="studio-inline-notice">{status}</p>}<button className="studio-button studio-button--dark" disabled={saving || uploadingLogo} onClick={() => void save()}>{saving ? <Loader2 className="studio-spin" size={15} /> : <Check size={15} />} Save brand kit</button></section><section className="studio-workspace-panel studio-workspace-panel--accent"><span className="studio-kicker studio-kicker--dark">STUDIO RULE</span><h2>{brand?.configured ? "Keep the source of truth close." : "Your posts start neutral."}</h2><p>{brand?.configured ? "This saved logo can be added in Studio, then placed where it supports the layout best." : "Upload a logo or save a brand name here, then choose whether to add it to each post in Studio."}</p><div className="studio-color-pair"><span style={{ background: draft.primaryColor || "#B9FF43" }} /><span style={{ background: draft.secondaryColor || "#11110F" }} /></div></section></div>;
 }
 
 function PostsSurface({ posts, refresh }: { posts: Post[]; refresh: () => void }) {

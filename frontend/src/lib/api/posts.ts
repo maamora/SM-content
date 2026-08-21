@@ -29,6 +29,7 @@ export const generateImage = (input: {
     accentColor?: string;
     mood?: string;
     includeBrandLogo?: boolean;
+    brandLogoPlacement?: "TOP_RIGHT" | "TOP_LEFT" | "BOTTOM_RIGHT" | "BOTTOM_LEFT";
 }) => apiFetch<Post>("/api/posts/generate-image", { method: "POST", body: JSON.stringify(input) });
 
 type UploadResponse = { url: string };
