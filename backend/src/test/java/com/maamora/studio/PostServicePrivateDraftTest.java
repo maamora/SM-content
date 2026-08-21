@@ -36,7 +36,8 @@ class PostServicePrivateDraftTest {
         var post = fixture.service.generateImage("creator-1", fixture.request);
 
         assertThat(post.getProduct()).isSameAs(fixture.product);
-        verify(fixture.renderService).render(eq(fixture.template), eq(fixture.product), any(), any(), any(), any(), eq(fixture.brand), eq(false), any());
+        verify(fixture.renderService).render(eq(fixture.template), eq(fixture.product), any(), any(), any(), any(), eq(fixture.brand), eq(false), any(),
+                any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -72,7 +73,8 @@ class PostServicePrivateDraftTest {
             when(brandService.getForUser(callerId)).thenReturn(brand);
             when(productService.getOwned(callerId, product.getId())).thenReturn(product);
             when(templateService.getById(template.getId())).thenReturn(template);
-            when(renderService.render(eq(template), eq(product), any(), any(), any(), any(), eq(brand), eq(false), any()))
+            when(renderService.render(eq(template), eq(product), any(), any(), any(), any(), eq(brand), eq(false), any(),
+                    any(), any(), any(), any(), any(), any()))
                     .thenReturn(new ImageRenderService.RenderedVisual(new byte[] {1, 2, 3}, GenerationMode.TEMPLATE_COMPOSED, "test"));
             when(storageService.upload(any(), any(), eq("image/png"))).thenReturn("https://assets.example.test/post.png");
             when(postRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));

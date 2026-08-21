@@ -50,7 +50,8 @@ class ImageRenderServiceFallbackTest {
     @Test
     void doesNotPassASeededButUnconfiguredBrandToTheSvgMark() {
         SvgTemplateRenderer renderer = org.mockito.Mockito.mock(SvgTemplateRenderer.class);
-        when(renderer.render(any(), anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString(), anyString(), isNull(), anyBoolean(), anyString()))
+        when(renderer.render(any(), anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString(), anyString(), isNull(), anyBoolean(), anyString(),
+                isNull(), isNull(), isNull(), isNull(), isNull(), isNull()))
                 .thenReturn(new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47});
         ImageRenderService service = new ImageRenderService(imageGenerationProvider, renderer);
         BrandSettings seededBrand = BrandSettings.builder().name("STUDIO").configured(false).build();
@@ -60,7 +61,7 @@ class ImageRenderServiceFallbackTest {
 
         ArgumentCaptor<Boolean> includeBrandMark = ArgumentCaptor.forClass(Boolean.class);
         verify(renderer).render(eq(product), eq(768), eq(1344), eq("NEW"), eq("A neutral post"), eq("#D9FF4A"), eq("mint"),
-                eq("STUDIO"), isNull(), includeBrandMark.capture(), eq("TOP_RIGHT"));
+                eq("STUDIO"), isNull(), includeBrandMark.capture(), eq("TOP_RIGHT"), isNull(), isNull(), isNull(), isNull(), isNull(), isNull());
         assertThat(includeBrandMark.getValue()).isFalse();
     }
 

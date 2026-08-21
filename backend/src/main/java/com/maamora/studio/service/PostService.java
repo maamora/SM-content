@@ -53,7 +53,8 @@ public class PostService {
         ImageRenderService.RenderedVisual renderedVisual = imageRenderService.render(
                 template, product, request.getBadgeText(), request.getPromoText(),
                 request.getAccentColor(), request.getMood(), brand, Boolean.TRUE.equals(request.getIncludeBrandLogo()),
-                request.getBrandLogoPlacement());
+                request.getBrandLogoPlacement(), request.getHeadline(), request.getSupportingText(), request.getCtaText(),
+                request.getLayoutStyle(), request.getProductFocus(), request.getTextAlignment());
 
         String path = "posts/" + UUID.randomUUID() + ".png";
         String imageUrl = storageService.upload(renderedVisual.png(), path, "image/png");

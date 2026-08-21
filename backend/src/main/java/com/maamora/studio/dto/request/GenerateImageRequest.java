@@ -16,6 +16,12 @@ public class GenerateImageRequest {
     private String accentColor;
     private Boolean includeBrandLogo;
     private String brandLogoPlacement;
+    private String headline;
+    private String supportingText;
+    private String ctaText;
+    private String layoutStyle;
+    private String productFocus;
+    private String textAlignment;
 
     /**
      * Mood / ambiance preset chosen by the user in the studio UI.

@@ -30,6 +30,12 @@ export const generateImage = (input: {
     mood?: string;
     includeBrandLogo?: boolean;
     brandLogoPlacement?: "TOP_RIGHT" | "TOP_LEFT" | "BOTTOM_RIGHT" | "BOTTOM_LEFT";
+    headline?: string;
+    supportingText?: string;
+    ctaText?: string;
+    layoutStyle?: "BOLD" | "MINIMAL" | "CATALOG" | "POSTER";
+    productFocus?: "CENTER" | "CLOSE_UP" | "FLOATING" | "WIDE";
+    textAlignment?: "LEFT" | "CENTER";
 }) => apiFetch<Post>("/api/posts/generate-image", { method: "POST", body: JSON.stringify(input) });
 
 type UploadResponse = { url: string };

@@ -27,6 +27,9 @@ interface CreativeStudioProps {
 type CaptionLang = "fr" | "ar" | "darija" | "en";
 type ComposerMode = "template" | "upload";
 type BrandLogoPlacement = "TOP_RIGHT" | "TOP_LEFT" | "BOTTOM_RIGHT" | "BOTTOM_LEFT";
+type LayoutStyle = "BOLD" | "MINIMAL" | "CATALOG" | "POSTER";
+type ProductFocus = "CENTER" | "CLOSE_UP" | "FLOATING" | "WIDE";
+type TextAlignment = "LEFT" | "CENTER";
 
 const moods = [
     { id: "sunset", label: "Sauge", color: "#D7FF97", ink: "#55712E" },
@@ -44,6 +47,15 @@ const languages: { id: CaptionLang; label: string }[] = [
 const brandLogoPlacements: { id: BrandLogoPlacement; label: string; grid: string }[] = [
     { id: "TOP_LEFT", label: "HG", grid: "haut gauche" }, { id: "TOP_RIGHT", label: "HD", grid: "haut droit" },
     { id: "BOTTOM_LEFT", label: "BG", grid: "bas gauche" }, { id: "BOTTOM_RIGHT", label: "BD", grid: "bas droit" },
+];
+
+const layoutStyles: { id: LayoutStyle; label: string }[] = [
+    { id: "BOLD", label: "Impact" }, { id: "MINIMAL", label: "Minimal" },
+    { id: "CATALOG", label: "Catalogue" }, { id: "POSTER", label: "Affiche" },
+];
+const productFocuses: { id: ProductFocus; label: string }[] = [
+    { id: "CENTER", label: "Centré" }, { id: "CLOSE_UP", label: "Gros plan" },
+    { id: "FLOATING", label: "Flottant" }, { id: "WIDE", label: "Panoramique" },
 ];
 
 function logoFrame(position: BrandLogoPlacement) {
@@ -78,6 +90,12 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const [accentColor, setAccentColor] = useState("#B9FF43");
     const [includeBrandLogo, setIncludeBrandLogo] = useState(false);
     const [brandLogoPlacement, setBrandLogoPlacement] = useState<BrandLogoPlacement>("TOP_RIGHT");
+    const [headline, setHeadline] = useState("");
+    const [supportingText, setSupportingText] = useState("");
+    const [ctaText, setCtaText] = useState("DÉCOUVRIR");
+    const [layoutStyle, setLayoutStyle] = useState<LayoutStyle>("BOLD");
+    const [productFocus, setProductFocus] = useState<ProductFocus>("CENTER");
+    const [textAlignment, setTextAlignment] = useState<TextAlignment>("LEFT");
     const [productQuery, setProductQuery] = useState("");
     const [productPickerOpen, setProductPickerOpen] = useState(false);
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -108,6 +126,12 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const canAddBrandMark = Boolean(brand?.configured && (brand.logoUrl || configuredBrandName));
     const previewBrandFrame = logoFrame(brandLogoPlacement);
     const isStory = format === "STORY";
+    const previewCopyX = textAlignment === "CENTER" ? 500 : 70;
+    const previewTextAnchor = textAlignment === "CENTER" ? "middle" : "start";
+    const previewProductBox = productFocus === "CLOSE_UP" ? { x: 80, y: 170, width: 840, height: 520, mode: "slice" }
+        : productFocus === "FLOATING" ? { x: 220, y: 180, width: 560, height: 470, mode: "meet" }
+            : productFocus === "WIDE" ? { x: 80, y: 250, width: 840, height: 390, mode: "meet" }
+                : { x: 150, y: 210, width: 700, height: 480, mode: "meet" };
 
     useEffect(() => {
         void Promise.all([listTemplates(), getBrand()])
@@ -137,7 +161,8 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const clearWorkingPost = () => { setPost(null); setError(null); };
     const resetDirection = () => {
         setMoodId("sunset"); setPromoText("OFFRE ÉDITION LIMITÉE"); setBadgeText("NOUVEAU");
-        setAccentColor("#B9FF43"); setIncludeBrandLogo(false); setBrandLogoPlacement("TOP_RIGHT"); clearWorkingPost();
+        setAccentColor("#B9FF43"); setIncludeBrandLogo(false); setBrandLogoPlacement("TOP_RIGHT");
+        setHeadline(""); setSupportingText(""); setCtaText("DÉCOUVRIR"); setLayoutStyle("BOLD"); setProductFocus("CENTER"); setTextAlignment("LEFT"); clearWorkingPost();
     };
     const chooseFile = (file?: File) => {
         if (!file) return;
@@ -150,7 +175,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
         if (!selectedProduct || !templateId) return;
         setBusy("render"); setError(null);
         try {
-            const result = await generateImage({ productId: selectedProduct.id, templateId, promoText, badgeText, accentColor, mood: moodId, includeBrandLogo: includeBrandLogo && canAddBrandMark, brandLogoPlacement });
+            const result = await generateImage({ productId: selectedProduct.id, templateId, promoText, badgeText, accentColor, mood: moodId, includeBrandLogo: includeBrandLogo && canAddBrandMark, brandLogoPlacement, headline, supportingText, ctaText, layoutStyle, productFocus, textAlignment });
             setPost(result); onPostChange?.();
         } catch (err) { setError(err instanceof Error ? err.message : "Le rendu local n’a pas abouti."); }
         finally { setBusy(null); }
@@ -249,9 +274,19 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                             <div className="mt-3 flex items-center justify-between border-t border-[#2e302a] pt-3"><span className="text-xs font-semibold text-[#d9dbd1]">Signal couleur</span><label className="flex items-center gap-2 text-[10px] font-mono uppercase text-[#9c9f94]"><span>{accentColor}</span><input type="color" value={accentColor} onChange={(event) => { setAccentColor(event.target.value); clearWorkingPost(); }} /></label></div>
                         </section>
                         <section className="studio-artboard-section">
-                            <Label>Texte dans le visuel</Label>
+                            <Label>Direction créative</Label>
+                            <p className="studio-artboard-hint">La composition est locale : style, cadrage et alignement changent réellement le PNG exporté.</p>
+                            <div className="mt-3"><Label>Structure</Label><div className="studio-artboard-choice-row mt-2">{layoutStyles.map((style) => <button key={style.id} type="button" aria-pressed={layoutStyle === style.id} onClick={() => { setLayoutStyle(style.id); clearWorkingPost(); }}>{style.label}</button>)}</div></div>
+                            <div className="mt-3"><Label>Cadrage produit</Label><div className="studio-artboard-choice-row mt-2">{productFocuses.map((focus) => <button key={focus.id} type="button" aria-pressed={productFocus === focus.id} onClick={() => { setProductFocus(focus.id); clearWorkingPost(); }}>{focus.label}</button>)}</div></div>
+                            <div className="mt-3 flex items-center justify-between border-t border-[#2e302a] pt-3"><Label>Alignement du texte</Label><div className="studio-artboard-choice-row"><button type="button" aria-pressed={textAlignment === "LEFT"} onClick={() => { setTextAlignment("LEFT"); clearWorkingPost(); }}>Gauche</button><button type="button" aria-pressed={textAlignment === "CENTER"} onClick={() => { setTextAlignment("CENTER"); clearWorkingPost(); }}>Centré</button></div></div>
+                        </section>
+                        <section className="studio-artboard-section">
+                            <Label>Copy & conversion</Label>
+                            <label className="studio-artboard-field">Titre principal<input value={headline} maxLength={46} placeholder={selectedProduct?.name || "Votre produit"} onChange={(event) => { setHeadline(event.target.value); clearWorkingPost(); }} /></label>
                             <label className="studio-artboard-field">Badge<input value={badgeText} maxLength={32} onChange={(event) => { setBadgeText(event.target.value.toUpperCase()); clearWorkingPost(); }} /></label>
                             <label className="studio-artboard-field">Message<input value={promoText} maxLength={80} onChange={(event) => { setPromoText(event.target.value.toUpperCase()); clearWorkingPost(); }} /></label>
+                            <label className="studio-artboard-field">Preuve / bénéfice<input value={supportingText} maxLength={86} placeholder={selectedProduct?.description || "Ce qui rend votre offre désirable"} onChange={(event) => { setSupportingText(event.target.value); clearWorkingPost(); }} /></label>
+                            <label className="studio-artboard-field">Appel à l’action<input value={ctaText} maxLength={28} onChange={(event) => { setCtaText(event.target.value.toUpperCase()); clearWorkingPost(); }} /></label>
                         </section>
                     </> : <section className="studio-artboard-section">
                         <Label>Votre visuel</Label>
@@ -265,7 +300,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                     <div className={`studio-artboard-canvas ${isStory ? "studio-artboard-canvas--story" : ""}`}>
                         <div className="studio-artboard-canvas__ruler studio-artboard-canvas__ruler--top" /><div className="studio-artboard-canvas__ruler studio-artboard-canvas__ruler--side" />
                         <div className="studio-artboard-canvas__paper">
-                            {previewImage ? <img src={previewImage} alt="Aperçu du post" /> : <svg viewBox="0 0 1000 1000" role="img" aria-label="Aperçu SVG du post"><rect width="1000" height="1000" fill={selectedMood.id === "eclipse" ? "#141512" : "#F4F1E8"} /><circle cx="790" cy="220" r="270" fill={selectedMood.color} opacity=".55" /><rect x="56" y="62" width="310" height="75" fill={accentColor} /><text x="80" y="110" fill="#10110f" fontSize="30" fontWeight="800" letterSpacing="4">{badgeText || "NOUVEAU"}</text>{includeBrandLogo && canAddBrandMark ? <g><rect x={previewBrandFrame.x} y={previewBrandFrame.y} width={previewBrandFrame.width} height={previewBrandFrame.height} rx="16" fill="#F5F1E8" opacity=".9" />{brand?.logoUrl ? <image href={brand.logoUrl} x={previewBrandFrame.x + previewBrandFrame.padding} y={previewBrandFrame.y + previewBrandFrame.padding} width={previewBrandFrame.width - previewBrandFrame.padding * 2} height={previewBrandFrame.height - previewBrandFrame.padding * 2} preserveAspectRatio="xMidYMid meet" /> : configuredBrandName ? <text x={previewBrandFrame.x + previewBrandFrame.width / 2} y={previewBrandFrame.y + 53} textAnchor="middle" fill="#11120f" fontSize="22" fontWeight="700" letterSpacing="2">{configuredBrandName}</text> : null}</g> : null}{selectedProduct?.imageUrl ? <image href={selectedProduct.imageUrl} x="180" y="175" width="640" height="460" preserveAspectRatio="xMidYMid meet" /> : <rect x="260" y="220" width="480" height="360" rx="40" fill="#c9c7bb" opacity=".55" />}<rect x="0" y="700" width="1000" height="300" fill="#11120f" opacity=".92" /><text x="70" y="800" fill="#F5F1E8" fontSize="62" fontWeight="800">{selectedProduct?.name || "VOTRE PRODUIT"}</text><text x="70" y="865" fill={accentColor} fontSize="30" fontWeight="700">{promoText || "Votre prochaine direction"}</text><text x="70" y="940" fill="#bdbdb4" fontSize="19" letterSpacing="3">LOCAL SVG TEMPLATE COMPOSITION</text></svg>}
+                            {previewImage ? <img src={previewImage} alt="Aperçu du post" /> : <svg viewBox="0 0 1000 1000" role="img" aria-label="Aperçu SVG du post"><rect width="1000" height="1000" fill={layoutStyle === "MINIMAL" ? "#F4F1E8" : layoutStyle === "CATALOG" ? "#DDE5D7" : selectedMood.id === "eclipse" ? "#141512" : "#1b201c"} />{layoutStyle === "MINIMAL" ? <path d="M0 120 L1000 40 V170 L0 250 Z" fill={accentColor} opacity=".45" /> : layoutStyle === "CATALOG" ? <rect x="50" y="50" width="900" height="900" rx="32" fill="none" stroke="#10110f" strokeOpacity=".18" strokeWidth="3" /> : <circle cx="790" cy="220" r="270" fill={accentColor} opacity={layoutStyle === "POSTER" ? ".20" : ".55"} />}{productFocus === "FLOATING" ? <rect x={previewProductBox.x - 18} y={previewProductBox.y - 14} width={previewProductBox.width + 36} height={previewProductBox.height + 30} rx="42" fill="#F5F1E8" opacity=".14" /> : null}<rect x="56" y="62" width="310" height="75" fill={accentColor} /><text x="80" y="110" fill="#10110f" fontSize="30" fontWeight="800" letterSpacing="4">{badgeText || "NOUVEAU"}</text>{includeBrandLogo && canAddBrandMark ? <g><rect x={previewBrandFrame.x} y={previewBrandFrame.y} width={previewBrandFrame.width} height={previewBrandFrame.height} rx="16" fill="#F5F1E8" opacity=".9" />{brand?.logoUrl ? <image href={brand.logoUrl} x={previewBrandFrame.x + previewBrandFrame.padding} y={previewBrandFrame.y + previewBrandFrame.padding} width={previewBrandFrame.width - previewBrandFrame.padding * 2} height={previewBrandFrame.height - previewBrandFrame.padding * 2} preserveAspectRatio="xMidYMid meet" /> : configuredBrandName ? <text x={previewBrandFrame.x + previewBrandFrame.width / 2} y={previewBrandFrame.y + 53} textAnchor="middle" fill="#11120f" fontSize="22" fontWeight="700" letterSpacing="2">{configuredBrandName}</text> : null}</g> : null}{selectedProduct?.imageUrl ? <image href={selectedProduct.imageUrl} x={previewProductBox.x} y={previewProductBox.y} width={previewProductBox.width} height={previewProductBox.height} preserveAspectRatio={`xMidYMid ${previewProductBox.mode}`} /> : <rect x={previewProductBox.x} y={previewProductBox.y} width={previewProductBox.width} height={previewProductBox.height} rx="40" fill="#c9c7bb" opacity=".55" />}<rect x="0" y="680" width="1000" height="320" fill={layoutStyle === "MINIMAL" ? "#F4F1E8" : layoutStyle === "CATALOG" ? "#EAF0E6" : "#11120f"} opacity={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? ".96" : ".88"} /><text x={previewCopyX} y="755" textAnchor={previewTextAnchor} fill={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? "#10110f" : "#F5F1E8"} fontSize="58" fontWeight="800">{headline || selectedProduct?.name || "VOTRE PRODUIT"}</text><text x={previewCopyX} y="815" textAnchor={previewTextAnchor} fill={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? "#10110f" : accentColor} fontSize="28" fontWeight="700">{promoText || "Votre prochaine direction"}</text><text x={previewCopyX} y="862" textAnchor={previewTextAnchor} fill={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? "#4a4d45" : "#bdbdb4"} fontSize="18">{supportingText || selectedProduct?.description || "Définissez votre bénéfice produit."}</text>{ctaText ? <g><rect x={textAlignment === "CENTER" ? 375 : 70} y="895" width="250" height="48" rx="24" fill={accentColor} /><text x={textAlignment === "CENTER" ? 500 : 195} y="926" textAnchor="middle" fill="#10110f" fontSize="16" fontWeight="700" letterSpacing="1">{ctaText}</text></g> : null}<text x={previewCopyX} y="978" textAnchor={previewTextAnchor} fill={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? "#4a4d45" : "#bdbdb4"} fontSize="14" letterSpacing="3">LOCAL SVG TEMPLATE COMPOSITION</text></svg>}
                         </div>
                     </div>
                     <div className="studio-artboard-renderbar"><div><span className="studio-artboard-renderbar__index">{mode === "template" ? "01" : "IMP"}</span><p><strong>{mode === "template" ? "Le rendu suivra cette direction." : uploadedFile ? "Le fichier est prêt à rejoindre la bibliothèque." : "Importez votre post final."}</strong><span>{mode === "template" ? "Les réglages de la colonne gauche s’appliquent au PNG local." : "Aucune retouche n’est appliquée à votre fichier."}</span></p></div><button type="button" disabled={!canCreate || busy !== null} onClick={() => void (mode === "template" ? renderTemplate() : saveUploadedPost())}>{busy === "render" || busy === "upload" ? <Loader2 className="h-4 w-4 animate-spin" /> : mode === "template" ? <Sparkles className="h-4 w-4" /> : <FileUp className="h-4 w-4" />}{busy === "render" ? "Rendu…" : busy === "upload" ? "Ajout…" : mode === "template" ? "Rendre le post" : "Ajouter au studio"}</button></div>

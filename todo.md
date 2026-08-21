@@ -747,3 +747,8 @@ The second attachment does not show an application compile or route error. `pnpm
 - [x] Add an explicit, repeat-safe testing catalog action that creates records only through the authenticated product API.
 - [x] Permit only a creator’s own pending products to produce private draft posts; preserve admin approval for shared catalog visibility.
 - [x] Validate the frontend build and document the creator-owned testing and approval boundaries.
+
+## Creative advertising controls
+- [x] Audit the current post composer, request contract, persistence model, and SVG renderer for controllable advertising parameters.
+- [x] Add coherent user-facing creative controls that the local renderer can faithfully honor.
+- [x] Validate the renderer, backend, and frontend builds before committing the expanded composer.
