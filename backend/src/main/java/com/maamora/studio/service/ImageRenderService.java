@@ -45,6 +45,7 @@ public class ImageRenderService {
     private String apiKey;
 
     private final ImageGenerationProvider imageGenerationProvider;
+    private final SvgTemplateRenderer svgTemplateRenderer;
 
     // Logo loaded from the classpath (placed in
     // src/main/resources/static/maamora-logo.png)
@@ -52,8 +53,9 @@ public class ImageRenderService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public ImageRenderService(ImageGenerationProvider imageGenerationProvider) {
+    public ImageRenderService(ImageGenerationProvider imageGenerationProvider, SvgTemplateRenderer svgTemplateRenderer) {
         this.imageGenerationProvider = imageGenerationProvider;
+        this.svgTemplateRenderer = svgTemplateRenderer;
     }
 
     // -----------------------------------------------------------------------
@@ -92,26 +94,9 @@ public class ImageRenderService {
         // DeAPI, and other providers whenever a product image and a Stability
         // key were present, so the UI could appear configured while calling the
         // legacy Stability-only path.
-        boolean hasProductImage = product.getImageUrl() != null && !product.getImageUrl().isBlank();
-        if (imageGenerationProvider.isConfigured()) {
-            try {
-                String prompt = buildPrompt(product.getName(), product.getDescription(), product.getSellingPoint(),
-                        badgeText, promoText, accentColor, mood);
-                List<String> references = hasProductImage ? List.of(product.getImageUrl()) : List.of();
-                byte[] aiPng = imageGenerationProvider.generateImage(prompt, isSquare ? "1:1" : "9:16", references);
-                return new RenderedVisual(
-                        compositeOverlays(aiPng, badgeText, promoText, accentColor, mood),
-                        GenerationMode.AI_GENERATED,
-                        null);
-            } catch (Exception e) {
-                log.warn("Managed image generation unavailable; creating deterministic template composition: {}", e.getMessage());
-                return deterministicVisual(product, width, height, badgeText, promoText, accentColor, mood,
-                        "AI visual generation is temporarily unavailable. A branded template composition was created from your product reference.");
-            }
-        }
-
-        return deterministicVisual(product, width, height, badgeText, promoText, accentColor, mood,
-                "AI visual generation is not configured. A branded template composition was created instead.");
+        byte[] png = svgTemplateRenderer.render(product, width, height, badgeText, promoText, accentColor, mood);
+        return new RenderedVisual(png, GenerationMode.TEMPLATE_COMPOSED,
+                "Created locally from the selected SVG template. No AI provider or image-generation API was used.");
     }
 
     private RenderedVisual deterministicVisual(Product product, int width, int height,

@@ -51,7 +51,7 @@ class GroqCaptionServiceTest {
     }
 
     @Test
-    void sendsCaptionPromptToGroqAndReturnsTheGeneratedText() {
+    void returnsALocalTemplateCaptionWithoutCallingGroq() {
         BrandSettings brand = BrandSettings.builder()
                 .name("STUDIO")
                 .toneGuidelines("warm, concise, editorial")
@@ -66,11 +66,11 @@ class GroqCaptionServiceTest {
 
         String caption = service.generateCaption(post, brand, "en");
 
-        assertThat(caption).isEqualTo("A clean launch caption. #studio");
-        assertThat(authorization.get()).isEqualTo("Bearer test-groq-key");
-        assertThat(requestBody.get())
-                .contains("\"model\":\"llama-3.3-70b-versatile\"")
+        assertThat(caption)
                 .contains("Cedar Eau de Parfum")
-                .contains("Write in English.");
+                .contains("Free delivery")
+                .contains("#CedarEaudeParfum");
+        assertThat(authorization.get()).isNull();
+        assertThat(requestBody.get()).isNull();
     }
 }

@@ -1,6 +1,6 @@
 # STUDIO local development guide
 
-> Studio workflow note: the authenticated Studio page submits the selected product, template, prompt, and references through the managed image provider. When image generation is temporarily unavailable—for example, Gemini HTTP 429 quota exhaustion—the backend produces a clearly labelled deterministic template composition instead of leaving the post or creative job stuck. When caption AI is unavailable, it supplies deterministic French, Arabic, and Darija caption templates. Configure a real provider for generative photoshoots and enhanced captions; deterministic output is a branded composition, not an AI photoshoot.
+> Studio workflow note: the authenticated Studio page now uses a **local SVG template engine**. It converts a selected product, campaign copy, brand styling, and available product/model references into a stored PNG composition without calling an AI model or external image API. Captions are generated locally from multilingual templates. Outputs are correctly labelled as template compositions, not AI photographs.
 
 
 This guide explains how to run the merged STUDIO application locally. The repository contains a **Next.js 16 frontend**, a **Spring Boot 3.3 backend**, and a **PostgreSQL database**. The browser talks to Spring Boot over HTTP; Spring Boot owns authentication, authorization, persistence, product workflows, brand settings, posts, templates, uploads, and the integration boundary for future AI and publishing providers.
@@ -99,7 +99,7 @@ cd backend
 cp .env.example .env
 ```
 
-Edit `backend/.env` and set at least a long random JWT secret and the provider keys needed by the features you intend to use. The local database values can remain as shown below:
+Edit `backend/.env` and set at least a long random JWT secret. The active Studio visual and caption workflows do **not** require API keys or an AI-provider balance. The local database values can remain as shown below:
 
 ```dotenv
 DB_HOST=localhost
@@ -113,67 +113,9 @@ DB_SSL_MODE=disable
 JWT_SECRET=replace-this-with-a-long-random-secret-at-least-32-characters
 JWT_EXPIRATION_MS=86400000
 
-# Gemini is the active server-side image provider. The key must remain in
-# backend/.env and must never be exposed through NEXT_PUBLIC_* values.
-IMAGE_PROVIDER=gemini
-IMAGE_PROVIDER_FALLBACK=disabled
-GEMINI_API_KEY=your-gemini-api-key
-GEMINI_IMAGE_MODEL=gemini-3.1-flash-image
-GEMINI_IMAGE_TIMEOUT_MS=180000
-GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
-
-# Cloudflare is intentionally disabled because its current account returned
-# temporary capacity code 3040 and safety code 3030 for the tested workflow.
-# Keep these values only if Cloudflare is re-enabled later; do not set
-# IMAGE_PROVIDER=cloudflare in the current configuration.
-# CLOUDFLARE_ACCOUNT_ID=
-# CLOUDFLARE_API_TOKEN=
-# CLOUDFLARE_AI_BASE_URL=https://api.cloudflare.com/client/v4
-# CLOUDFLARE_AI_MODEL=@cf/black-forest-labs/flux-2-dev
-# CLOUDFLARE_AI_RETRY_ATTEMPTS=3
-# CLOUDFLARE_AI_RETRY_BACKOFF_MS=1500
-# CLOUDFLARE_AI_TIMEOUT_MS=180000
-
-# Optional DeAPI alternative. To use it, replace IMAGE_PROVIDER=replicate with
-# IMAGE_PROVIDER=deapi and configure the variables below.
-# DEAPI_API_KEY=
-# DEAPI_BASE_URL=https://api.deapi.ai
-# DEAPI_IMAGE_MODEL=Flux1schnell
-# DEAPI_EDIT_MODEL=QwenImageEdit_Plus_NF4
-# DEAPI_STEPS=4
-# DEAPI_GUIDANCE=7.5
-# DEAPI_POLL_INTERVAL_MS=3000
-# DEAPI_TIMEOUT_MS=180000
-
-# Groq is the active caption provider. Create a key at https://console.groq.com/keys.
-# Keep this value in backend/.env only; never expose it to the frontend.
-CAPTION_PROVIDER=groq
-GROQ_API_KEY=your-groq-key
-GROQ_MODEL=llama-3.3-70b-versatile
-GROQ_BASE_URL=https://api.groq.com/openai/v1
-
-# Optional Gemini caption alternative. Select it with CAPTION_PROVIDER=gemini.
-# GEMINI_CAPTION_API_KEY=
-# GEMINI_MODEL=gemini-2.5-flash
-# GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
-# Optional video-only settings:
-# GEMINI_VIDEO_API_KEY=
-# GEMINI_VIDEO_MODEL=veo-3.1-generate-preview
-
-# Optional provider alternatives.
-ANTHROPIC_API_KEY=
-
-# Local caption fallback. Install Ollama and pull the model before enabling it.
-OLLAMA_ENABLED=false
-OLLAMA_MODEL=qwen2.5:7b
-OLLAMA_BASE_URL=http://localhost:11434/api
-
-# Higgsfield image generation. Keep both credentials server-side.
-# HIGGSFIELD_API_KEY_ID=
-# HIGGSFIELD_API_KEY_SECRET=
-# HIGGSFIELD_MODEL=flux-pro/kontext/max/text-to-image
-# HIGGSFIELD_TIMEOUT_MS=180000
-# HIGGSFIELD_POLL_INTERVAL_MS=3000
+# The active Studio engine is local and requires no managed AI provider.
+IMAGE_PROVIDER=local-svg
+CAPTION_PROVIDER=local-templates
 
 STORAGE_LOCAL_PATH=./uploads
 STORAGE_PUBLIC_BASE_URL=http://localhost:8080/files
@@ -205,21 +147,18 @@ cd backend
 ```
 
 If startup stops with `Duplicate key IMAGE_PROVIDER`, the backend `.env`
-contains that key more than once. Dotenv refuses to merge duplicate keys, so open `backend/.env`, keep exactly one `IMAGE_PROVIDER` line, and remove obsolete provider entries. For the current configuration, keep:
+contains that key more than once. Dotenv refuses to merge duplicate keys, so open `backend/.env`, keep exactly one entry for each local engine setting:
 
 ```dotenv
-IMAGE_PROVIDER=gemini
-IMAGE_PROVIDER_FALLBACK=disabled
-CAPTION_PROVIDER=groq
-GEMINI_IMAGE_MODEL=gemini-3.1-flash-image
-GROQ_MODEL=llama-3.3-70b-versatile
+IMAGE_PROVIDER=local-svg
+CAPTION_PROVIDER=local-templates
 ```
 
 
-You can locate all provider entries without displaying secret values with:
+You can locate the active local-engine entries without displaying secret values with:
 
 ```powershell
-Select-String -Path .\.env -Pattern '^(IMAGE_PROVIDER|CAPTION_PROVIDER|GROQ_API_KEY|GROQ_MODEL|GEMINI_API_KEY|GEMINI_IMAGE_MODEL|GEMINI_CAPTION_API_KEY|GEMINI_VIDEO_API_KEY)='
+Select-String -Path .\.env -Pattern '^(IMAGE_PROVIDER|CAPTION_PROVIDER|STORAGE_LOCAL_PATH|STORAGE_PUBLIC_BASE_URL)='
 ```
 
 Alternatively, use the committed Windows helper. It performs a local preflight without printing secret values, detects duplicate keys such as
@@ -254,15 +193,15 @@ Do not add `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, or
 `SPRING_DATASOURCE_PASSWORD`; STUDIO already derives its datasource from the
 six `DB_*` variables. Keep exactly one entry for every key, including `IMAGE_PROVIDER`, `IMAGE_PROVIDER_FALLBACK`, `CAPTION_PROVIDER`, and the selected image/caption provider variables. Duplicate keys are rejected before Spring Boot initializes.
 
-The API should become available at `http://localhost:8080`. Cloudflare Workers AI FLUX.2 [dev] uses a multipart inference request and supports up to four `input_image_N` references, each resized below 512px before submission. Product-plus-model shoots send the product and model references together. Groq captions use the OpenAI-compatible `/chat/completions` endpoint and validate a non-empty `choices[0].message.content`; rate-limited, malformed, or empty responses are treated as provider failures rather than returned to the frontend as blank captions.
+The API should become available at `http://localhost:8080`.
 
-### Provider-down deterministic fallback
+### Local SVG template engine
 
-STUDIO never fabricates a completed AI render when an upstream model fails. If the configured image provider is disabled, unavailable, rate-limited, or returns a quota error, the server instead creates a **template-composed** visual using the selected layout, product metadata, campaign text, brand colour, and available product/model references. The result is stored, approved, exported, and included in batch jobs through the same authenticated workflow as a provider render. Creative jobs expose the same provenance and recovery message in their polling response, so the interface can distinguish a template composition from an AI-generated image.
+STUDIO generates every active visual locally. The server applies the selected template, product metadata, campaign text, brand colour, and available product/model references to a sanitized SVG layout, rasterizes it to PNG with Apache Batik, then stores the result through the standard upload route. The result is persisted, approved, exported, and included in batch jobs through the same authenticated workflow as every other Studio post.
 
-The deterministic fallback is appropriate for branded product cards, campaign tiles, editorial product layouts, and product-plus-model reference boards. It cannot synthesize a new photographic scene, re-pose a model, or perform semantic retouching. These capabilities resume automatically on the next request once a configured image provider has quota and responds successfully; no database migration or user retry of the failed job is required.
+The local template engine is appropriate for branded product cards, campaign tiles, editorial layouts, and product-plus-model reference boards. It does not synthesize a new photographic scene, re-pose a model, remove objects, or perform semantic retouching. Those actions are presented as template compositions and are never labelled as AI image generation.
 
-Caption generation follows the same availability principle. A failed Groq or Gemini call returns selectable deterministic variations in French, Arabic, and Darija built from the stored product and brand fields. Review each caption before publishing, particularly translations, product claims, and region-specific phrasing.
+Captions are generated locally in selectable French, Arabic, and Darija variations based on the stored product and brand fields. Review each caption before publishing, particularly translations, product claims, and region-specific phrasing.
 
 The backend applies missing JPA schema objects with `ddl-auto: update`; this preserves existing rows while adding schema changes. Never use `create` or `create-drop` against a database containing real data.
 

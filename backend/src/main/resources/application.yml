@@ -34,7 +34,7 @@ spring:
 
 app:
   image:
-    provider: ${IMAGE_PROVIDER:gemini}
+    provider: ${IMAGE_PROVIDER:local-svg}
     fallback-provider: ${IMAGE_PROVIDER_FALLBACK:disabled}
 
   fal-reference-mode: ${FAL_REFERENCE_MODE:product-only}
@@ -70,7 +70,7 @@ app:
     api-secret: ${CLOUDINARY_API_SECRET:placeholder}
 
   caption:
-    provider: ${CAPTION_PROVIDER:groq}
+    provider: ${CAPTION_PROVIDER:local-templates}
 
   cloudflare:
     account-id: ${CLOUDFLARE_ACCOUNT_ID:}

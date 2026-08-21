@@ -142,6 +142,21 @@
 - [x] Classify provider unavailability through explicit template-composition output provenance and recovery messaging.
 - [x] Verify unaffected Studio pages remain usable when the configured image provider is temporarily unavailable.
 
+## Windows checkout reconciliation
+- [ ] Preserve a recoverable backup of the user’s locally modified backend provider files.
+- [ ] Replace the local versions with the pushed deterministic-fallback implementation and confirm the fast-forward pull succeeds.
+
+## Provider mock fallback regression
+- [x] Remove the active ImageGenerationProvider mock-image path by routing every Studio visual action through local deterministic output.
+- [x] Verify the Studio source contains no generation-page reload or refresh path and the frontend build remains functional.
+- [x] Exercise the local output API path through backend tests and verify `TEMPLATE_COMPOSED` provenance is preserved.
+
+## Local SVG template engine
+- [x] Remove managed AI/API image generation from the active Studio visual workflow while retaining persisted assets and user authentication.
+- [x] Add Apache Batik SVG composition with a reusable local template catalog that populates product data, campaign text, and brand styling.
+- [x] Route Generate Visual, Photo Shoot, Edit Image, and batch creation through deterministic local templates with clear output provenance.
+- [x] Replace AI caption requests with local multilingual template captions and validate storage, approval, export, and responsive Studio pages.
+
 ## Deterministic Content Generation Engine
 - [x] Design a server-side template composition fallback for Product → branded social visual when image AI is unavailable.
 - [x] Design multilingual rule-based caption templates with safely selected variations for French, Arabic, and Darija.

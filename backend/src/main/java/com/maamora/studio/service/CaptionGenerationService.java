@@ -112,28 +112,7 @@ public class CaptionGenerationService {
      * exhausts its retries doesn't cost the other languages their captions.
      */
     public String generateCaption(Post post, BrandSettings brand, String language) {
-        try {
-            if ("openrouter".equalsIgnoreCase(captionProvider)) {
-                return generateWithOpenRouter(post, brand, language);
-            }
-            if ("groq".equalsIgnoreCase(captionProvider)) {
-                return generateWithGroq(post, brand, language);
-            }
-            if ("openai".equalsIgnoreCase(captionProvider)) {
-                return generateWithOpenAi(post, brand, language);
-            }
-            if (!configured(apiKey)) {
-                if (!ollamaEnabled) {
-                    throw new IllegalStateException("No configured caption provider.");
-                }
-                return generateWithOllama(post, brand, language);
-            }
-            return generateWithGemini(post, brand, language);
-        } catch (Exception e) {
-            log.warn("Caption provider unavailable for post {} and language {}; using deterministic template: {}",
-                    post.getId(), language, e.getMessage());
-            return generateDeterministicCaption(post, brand, language);
-        }
+        return generateDeterministicCaption(post, brand, language);
     }
 
     private String generateDeterministicCaption(Post post, BrandSettings brand, String language) {

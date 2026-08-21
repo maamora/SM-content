@@ -5,6 +5,7 @@ import com.maamora.studio.model.Template;
 import com.maamora.studio.model.enums.GenerationMode;
 import com.maamora.studio.service.ImageGenerationProvider;
 import com.maamora.studio.service.ImageRenderService;
+import com.maamora.studio.service.SvgTemplateRenderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -22,18 +23,14 @@ class ImageRenderServiceFallbackTest {
     private ImageGenerationProvider imageGenerationProvider;
 
     @Test
-    void createsTemplateCompositionWhenConfiguredProviderReturnsQuotaError() {
-        ImageRenderService service = new ImageRenderService(imageGenerationProvider);
+    void createsTemplateCompositionWithoutCallingAProvider() {
+        ImageRenderService service = new ImageRenderService(imageGenerationProvider, new SvgTemplateRenderer());
         Product product = Product.builder()
                 .id("product-quota")
                 .name("Atlas Botanical Oil")
                 .description("Cold-pressed botanical oil")
                 .sellingPoint("A considered daily ritual")
                 .build();
-
-        when(imageGenerationProvider.isConfigured()).thenReturn(true);
-        when(imageGenerationProvider.generateImage(anyString(), anyString(), anyList()))
-                .thenThrow(new IllegalStateException("Gemini image generation failed with HTTP 429: quota exceeded"));
 
         ImageRenderService.RenderedVisual result = service.render(
                 Template.builder().id("template-quota").build(),
@@ -44,7 +41,7 @@ class ImageRenderServiceFallbackTest {
                 "mint");
 
         assertThat(result.generationMode()).isEqualTo(GenerationMode.TEMPLATE_COMPOSED);
-        assertThat(result.recoveryMessage()).contains("temporarily unavailable");
+        assertThat(result.recoveryMessage()).contains("No AI provider");
         assertThat(result.png()).startsWith((byte) 0x89, (byte) 0x50, (byte) 0x4E, (byte) 0x47);
     }
 }

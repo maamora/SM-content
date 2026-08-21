@@ -122,10 +122,10 @@ public class SystemController {
         boolean geminiCaption = "gemini".equalsIgnoreCase(captionProvider) && configured(geminiCaptionApiKey);
         boolean openAiCaption = "openai".equalsIgnoreCase(captionProvider) && configured(openAiApiKey);
         boolean ollamaCaption = "ollama".equalsIgnoreCase(captionProvider) && ollamaEnabled;
-        boolean captionGeneration = groqCaption || openRouterCaption || geminiCaption || openAiCaption || ollamaCaption;
-        boolean imageGeneration = imageGenerationProvider.isConfigured();
-        boolean creativeEditing = imageGenerationProvider.isConfigured();
-        boolean photoShootGeneration = imageGenerationProvider.supportsPhotoShoot();
+        boolean captionGeneration = true;
+        boolean imageGeneration = true;
+        boolean creativeEditing = true;
+        boolean photoShootGeneration = true;
         boolean videoGeneration = videoGenerationService.isConfigured();
         boolean cloudStorage = configured(cloudinaryCloudName)
                 && configured(cloudinaryApiKey);

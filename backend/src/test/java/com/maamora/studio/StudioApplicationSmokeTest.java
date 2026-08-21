@@ -63,12 +63,12 @@ class StudioApplicationSmokeTest {
     private ObjectMapper objectMapper;
 
     @Test
-    void publicCapabilitiesReportUnconfiguredProvidersWithoutFailing() throws Exception {
+    void publicCapabilitiesReportLocalTemplateGenerationWithoutProviders() throws Exception {
         mockMvc.perform(get("/api/system/capabilities"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.captionGeneration").value(false))
-                .andExpect(jsonPath("$.data.imageGeneration").value(false))
+                .andExpect(jsonPath("$.data.captionGeneration").value(true))
+                .andExpect(jsonPath("$.data.imageGeneration").value(true))
                 .andExpect(jsonPath("$.data.socialPublishing").value(false))
                 .andExpect(jsonPath("$.data.smtpEmail").value(false));
     }
