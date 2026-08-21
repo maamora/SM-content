@@ -191,6 +191,11 @@
 - [x] Add a safe idempotent migration that backfills the configured state before applying its not-null constraint.
 - [x] Validate backend startup, Brand seeding, and existing-brand reads, then commit the repair.
 
+## Windows datasource startup repair
+- [x] Audit why the Windows process does not receive its PostgreSQL datasource variables.
+- [x] Harden the local configuration path and document a safe first-start datasource setup.
+- [x] Validate the configuration contract, then commit any required repair.
+
 ## Deterministic Content Generation Engine
 - [x] Design a server-side template composition fallback for Product → branded social visual when image AI is unavailable.
 - [x] Design multilingual rule-based caption templates with safely selected variations for French, Arabic, and Darija.

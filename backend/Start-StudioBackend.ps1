@@ -30,14 +30,28 @@ foreach ($required in @("DB_HOST", "DB_PORT", "DB_NAME", "DB_USERNAME", "DB_PASS
     }
 }
 
+foreach ($entry in $settings.GetEnumerator()) {
+    $value = $entry.Value
+    if ($value.Length -ge 2 -and
+        (($value.StartsWith('"') -and $value.EndsWith('"')) -or
+         ($value.StartsWith("'") -and $value.EndsWith("'")))) {
+        $value = $value.Substring(1, $value.Length - 2)
+    }
+
+    [Environment]::SetEnvironmentVariable($entry.Key, $value, 'Process')
+}
+
 $jwtSecretLength = [System.Text.Encoding]::UTF8.GetByteCount($settings["JWT_SECRET"])
 if ($jwtSecretLength -lt 32) {
     throw "JWT_SECRET must contain at least 32 UTF-8 bytes for secure HS256 token signing. Replace it locally with a longer random server-only value."
 }
 
 foreach ($override in @("SPRING_DATASOURCE_URL", "SPRING_DATASOURCE_USERNAME", "SPRING_DATASOURCE_PASSWORD")) {
-    if ($settings.ContainsKey($override) -or -not [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($override))) {
-        throw "Remove '$override' from backend/.env and the current PowerShell environment. STUDIO uses DB_* variables only."
+    if ($settings.ContainsKey($override)) {
+        throw "Remove '$override' from backend/.env. STUDIO uses DB_* variables only."
+    }
+    if (Test-Path "Env:$override") {
+        Remove-Item "Env:$override" -ErrorAction Stop
     }
 }
 
@@ -49,7 +63,7 @@ if ($settings["DB_SSL_MODE"] -ne "require" -and $settings["DB_HOST"] -match '\.s
     throw "Set DB_SSL_MODE=require for a Supabase connection."
 }
 
-Write-Host "STUDIO configuration preflight passed. Starting Spring Boot on http://localhost:8080..." -ForegroundColor Green
+Write-Host "STUDIO configuration loaded from backend/.env. Starting Spring Boot on http://localhost:8080..." -ForegroundColor Green
 Push-Location $PSScriptRoot
 try {
     & .\mvnw.cmd spring-boot:run

@@ -161,8 +161,8 @@ You can locate the active local-engine entries without displaying secret values 
 Select-String -Path .\.env -Pattern '^(IMAGE_PROVIDER|CAPTION_PROVIDER|STORAGE_LOCAL_PATH|STORAGE_PUBLIC_BASE_URL)='
 ```
 
-Alternatively, use the committed Windows helper. It performs a local preflight without printing secret values, detects duplicate keys such as
-`HIGGSFIELD_MODEL`, rejects accidental `SPRING_DATASOURCE_*` overrides, and
+Alternatively, use the committed Windows helper. It loads `backend/.env` into the current PowerShell process without printing secret values, detects duplicate keys such as
+`HIGGSFIELD_MODEL`, clears inherited `SPRING_DATASOURCE_*` overrides that can suppress the derived connection URL, and
 checks the Supabase pooler username format before starting Spring Boot:
 
 ```powershell
