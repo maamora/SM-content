@@ -169,6 +169,11 @@
 - [x] Redesign account connection and scheduling as a guided step-by-step setup with honest unavailable states.
 - [x] Validate the new flows, production build, and backend tests before committing.
 
+## Brand-backed post composition
+- [x] Audit Brand page settings and identify all composer or renderer default-brand fallbacks.
+- [x] Use the Brand page identity only when the user has configured it; render a neutral post otherwise.
+- [x] Validate configured and unconfigured brand states, then commit the refinement.
+
 ## Deterministic Content Generation Engine
 - [x] Design a server-side template composition fallback for Product → branded social visual when image AI is unavailable.
 - [x] Design multilingual rule-based caption templates with safely selected variations for French, Arabic, and Darija.

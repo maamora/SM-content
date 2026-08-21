@@ -101,8 +101,13 @@ public class ImageRenderService {
         // DeAPI, and other providers whenever a product image and a Stability
         // key were present, so the UI could appear configured while calling the
         // legacy Stability-only path.
+        boolean hasConfiguredBrandMark = includeBrandLogo
+                && brand != null
+                && brand.isConfigured()
+                && ((brand.getLogoUrl() != null && !brand.getLogoUrl().isBlank())
+                || (brand.getName() != null && !brand.getName().isBlank()));
         byte[] png = svgTemplateRenderer.render(product, width, height, badgeText, promoText, accentColor, mood,
-                brand == null ? null : brand.getName(), brand == null ? null : brand.getLogoUrl(), includeBrandLogo);
+                brand == null ? null : brand.getName(), brand == null ? null : brand.getLogoUrl(), hasConfiguredBrandMark);
         return new RenderedVisual(png, GenerationMode.TEMPLATE_COMPOSED,
                 "Created locally from the selected SVG template. No AI provider or image-generation API was used.");
     }

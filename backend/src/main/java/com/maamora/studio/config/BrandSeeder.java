@@ -9,8 +9,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * Ensures the single, shared Maamora workspace exists before anything else
- * runs. Every registered user (USER or ADMIN) joins this one brand — there is
+ * Ensures the single, shared workspace exists before anything else runs. Every
+ * registered user (USER or ADMIN) joins this one brand — there is
  * no per-user workspace anymore, so the whole team shares one product
  * catalogue and one set of templates. Runs first (@Order(1)) so
  * TemplateSeeder and ProductSeeder always have a brand to attach to.
@@ -27,8 +27,8 @@ public class BrandSeeder implements ApplicationRunner {
         if (!brandSettingsRepository.findAll().isEmpty()) return;
 
         brandSettingsRepository.save(BrandSettings.builder()
-                .name("Maamora")
-                .primaryColor("#f97316")
+                .name("")
+                .configured(false)
                 .build());
     }
 }

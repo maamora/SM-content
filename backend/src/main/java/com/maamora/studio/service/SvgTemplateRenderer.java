@@ -40,7 +40,8 @@ public class SvgTemplateRenderer {
                 : "<image href=\"" + xml(image) + "\" x=\"" + (width * .15) + "\" y=\"" + (height * .21) + "\" width=\"" + (width * .70) + "\" height=\"" + (height * .48) + "\" preserveAspectRatio=\"xMidYMid meet\"/>";
         String brandMark = !includeBrandLogo ? "" : hasHttpUrl(logoUrl)
                 ? "<image href=\"" + xml(logoUrl.trim()) + "\" x=\"" + (width * .78) + "\" y=\"" + (height * .05) + "\" width=\"" + (width * .14) + "\" height=\"" + (height * .08) + "\" preserveAspectRatio=\"xMaxYMid meet\"/>"
-                : "<text x=\"" + (width * .92) + "\" y=\"" + (height * .10) + "\" text-anchor=\"end\" fill=\"#F5F1E8\" font-family=\"Arial,sans-serif\" font-size=\"" + Math.max(12, width / 65) + "\" font-weight=\"700\" letter-spacing=\"2\">" + xml(text(brandName, "STUDIO")) + "</text>";
+                : value(brandName).isBlank() ? ""
+                : "<text x=\"" + (width * .92) + "\" y=\"" + (height * .10) + "\" text-anchor=\"end\" fill=\"#F5F1E8\" font-family=\"Arial,sans-serif\" font-size=\"" + Math.max(12, width / 65) + "\" font-weight=\"700\" letter-spacing=\"2\">" + xml(brandName.trim()) + "</text>";
         String svg = """
                 <svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d">
                   <rect width="100%%" height="100%%" fill="%s"/>
@@ -53,7 +54,7 @@ public class SvgTemplateRenderer {
                   <text x="%d" y="%d" fill="#fff" font-family="Arial,sans-serif" font-size="%d" font-weight="700">%s</text>
                   <text x="%d" y="%d" fill="#E8E4DB" font-family="Arial,sans-serif" font-size="%d">%s</text>
                   <text x="%d" y="%d" fill="%s" font-family="Arial,sans-serif" font-size="%d" font-weight="700">%s</text>
-                  <text x="%d" y="%d" fill="#E8E4DB" font-family="Arial,sans-serif" font-size="%d" letter-spacing="3">STUDIO / TEMPLATE COMPOSITION</text>
+                  <text x="%d" y="%d" fill="#E8E4DB" font-family="Arial,sans-serif" font-size="%d" letter-spacing="3">LOCAL TEMPLATE COMPOSITION</text>
                 </svg>
                 """.formatted(width, height, width, height, background, width * 3 / 4, height / 4, width / 3, safeAccent,
                 width / 12, height / 12, width / 3, height / 13, safeAccent,

@@ -22,6 +22,14 @@ public class BrandSettings {
     @Column(nullable = false)
     private String name;
 
+    /**
+     * Seeded workspace records exist so products and templates have an owner, but
+     * must not be treated as a user-confirmed brand identity until Brand Settings
+     * has been saved at least once.
+     */
+    @Builder.Default
+    private boolean configured = false;
+
     private String logoUrl;
     private String primaryColor;
     private String secondaryColor;

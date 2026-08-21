@@ -63,6 +63,7 @@ public class BrandSettingsService {
         if (request.getSecondaryColor() != null) brand.setSecondaryColor(request.getSecondaryColor());
         if (request.getFontFamily() != null) brand.setFontFamily(request.getFontFamily());
         if (request.getToneGuidelines() != null) brand.setToneGuidelines(request.getToneGuidelines());
+        brand.setConfigured(true);
         return brandSettingsRepository.save(brand);
     }
 }

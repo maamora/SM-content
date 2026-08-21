@@ -7,6 +7,7 @@ import lombok.Getter;
 public class BrandSettingsResponse {
     private final String id;
     private final String name;
+    private final boolean configured;
     private final String logoUrl;
     private final String primaryColor;
     private final String secondaryColor;
@@ -16,6 +17,7 @@ public class BrandSettingsResponse {
     public BrandSettingsResponse(BrandSettings b) {
         this.id = b.getId();
         this.name = b.getName();
+        this.configured = b.isConfigured();
         this.logoUrl = b.getLogoUrl();
         this.primaryColor = b.getPrimaryColor();
         this.secondaryColor = b.getSecondaryColor();
