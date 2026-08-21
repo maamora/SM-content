@@ -180,6 +180,12 @@
 - [x] Render the selected Brand logo smoothly in previews and exported local SVG posts.
 - [x] Validate logo-enabled and logo-free output states, then commit the refinement.
 
+## Post artboard design overhaul
+- [x] Audit the current Studio composer for hierarchy, visual readability, and missing post controls.
+- [x] Define an artboard-and-inspector layout that keeps all visual, copy, brand, caption, and scheduling controls accessible.
+- [x] Implement the redesigned composer with deliberate post-control interactions and responsive behavior.
+- [x] Validate the desktop and mobile composer, frontend build, and backend contracts before committing.
+
 ## Deterministic Content Generation Engine
 - [x] Design a server-side template composition fallback for Product → branded social visual when image AI is unavailable.
 - [x] Design multilingual rule-based caption templates with safely selected variations for French, Arabic, and Darija.
