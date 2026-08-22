@@ -9,9 +9,6 @@ import com.maamora.studio.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class BrandSettingsService {
@@ -19,40 +16,28 @@ public class BrandSettingsService {
     private final BrandSettingsRepository brandSettingsRepository;
     private final UserRepository userRepository;
 
-    /** Every user belongs to the same shared Maamora workspace. */
+    /**
+     * Every account owns a dedicated neutral workspace. Historical accounts without
+     * a brand are repaired lazily rather than being silently attached to another
+     * user's workspace.
+     */
     public BrandSettings getForUser(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found."));
         if (user.getBrand() == null) {
-            throw new ResourceNotFoundException("No brand configured for this account.");
+            BrandSettings neutralBrand = createNeutralBrand();
+            user.setBrand(neutralBrand);
+            userRepository.save(user);
         }
         return user.getBrand();
     }
 
-    /**
-     * Used by AuthService (new user registration) and the startup seeders.
-     * There's supposed to be only one row, but historical data issues have
-     * left duplicate "Maamora" rows in some databases — picking one via an
-     * unordered findFirst() risked silently assigning new users to a "ghost"
-     * brand that no one else's data lives on (their products would never show
-     * up for anyone else, including admin approval counts). Instead, pick the
-     * row that's actually in use — the one with the most users attached —
-     * and break ties by id so every call agrees on the same row.
-     */
-    public BrandSettings getSharedBrand() {
-        List<BrandSettings> brands = brandSettingsRepository.findAll();
-        if (brands.isEmpty()) {
-            throw new IllegalStateException(
-                    "No brand has been seeded yet. Restart the backend so BrandSeeder can create one.");
-        }
-        if (brands.size() == 1) {
-            return brands.get(0);
-        }
-        return brands.stream()
-                .max(Comparator
-                        .comparingLong((BrandSettings b) -> userRepository.countByBrand_Id(b.getId()))
-                        .thenComparing(BrandSettings::getId))
-                .orElseThrow();
+    /** Creates an intentionally anonymous workspace. Saving Brand settings is the opt-in identity event. */
+    public BrandSettings createNeutralBrand() {
+        return brandSettingsRepository.save(BrandSettings.builder()
+                .name("")
+                .configured(false)
+                .build());
     }
 
     public BrandSettings update(String userId, BrandSettingsRequest request) {

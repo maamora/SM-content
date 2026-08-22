@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { ArrowRight, ArrowUpRight, Menu, X } from "lucide-react";
+import { requestPasswordRecovery, resetPassword } from "@/lib/api/auth";
 
 export const studioImages = {
   mark: "/studio/logo-mark.png",
@@ -75,17 +76,35 @@ export const marketingData = {
 
 export function MarketingPage({ slug }: { slug: keyof typeof marketingData }) {
   const data = marketingData[slug];
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
-  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setSent(true); };
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const subject = encodeURIComponent("STUDIO / New conversation");
+    const body = encodeURIComponent(`Reply to: ${email}\n\n${message}`);
+    window.location.assign(`mailto:hello@studio.local?subject=${subject}&body=${body}`);
+    setSent(true);
+  };
   return (
     <main className="studio-site studio-page"><StudioHeader />
       <section className="studio-page-hero studio-starfield"><div className="studio-shell studio-page-hero__inner"><p className="studio-kicker">{data.eyebrow} / STUDIO</p><h1>{data.title}<br /><em>{data.accent}</em></h1><p>{data.body}</p>
-        {slug === "contact" ? <form className="studio-contact-form" onSubmit={submit}><input required type="email" placeholder="you@team.com" aria-label="Email" /><textarea required placeholder="What are you trying to make?" aria-label="Message" rows={4} /><button className="studio-button studio-button--lime" type="submit">{sent ? "Message queued" : "Start the conversation"} <ArrowUpRight size={15} /></button></form> : <Link href="/register" className="studio-button studio-button--lime studio-button--large">Explore STUDIO <ArrowUpRight size={16} /></Link>}
+        {slug === "contact" ? <form className="studio-contact-form" onSubmit={submit}><input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@team.com" aria-label="Email" /><textarea required value={message} onChange={(event) => setMessage(event.target.value)} placeholder="What are you trying to make?" aria-label="Message" rows={4} /><button className="studio-button studio-button--lime" type="submit">Start the conversation <ArrowUpRight size={15} /></button>{sent && <p className="studio-contact-form__status">Your email app has been opened with the conversation drafted. Send it when you are ready.</p>}</form> : <div className="studio-page-hero__actions"><Link href="/register" className="studio-button studio-button--lime studio-button--large">Explore STUDIO <ArrowUpRight size={16} /></Link>{slug === "pricing" && <a href="mailto:hello@studio.local?subject=STUDIO%20/%20Pricing%20conversation" className="studio-button studio-button--outline studio-button--large">Talk about Studio</a>}</div>}
       </div></section>
-      <section className="studio-light-section studio-page-grid-section"><div className="studio-shell studio-page-grid">{data.items.map(([title, text, index]) => <article key={title} className="studio-page-card"><span className="studio-page-card__index">{index}</span><h2>{title}</h2><p>{text}</p><ArrowRight size={17} /></article>)}</div></section>
+      <section className="studio-light-section studio-page-grid-section"><div className="studio-shell studio-page-grid">{data.items.map(([title, text, index]) => <article key={title} className="studio-page-card"><span className="studio-page-card__index">{index}</span><h2>{title}</h2><p>{text}</p><ArrowRight size={17} /></article>)}</div><div className="studio-shell studio-page-proof"><span>STUDIO METHOD</span><p>Every surface keeps the hand-off visible: <b>source</b> → <b>direction</b> → <b>approval</b> → <b>delivery</b>.</p></div></section>
       <StudioFooter />
     </main>
   );
+}
+
+export function LegalPage() {
+  const sections = [
+    ["Product boundary", "STUDIO creates local SVG template compositions from the product and copy selected in your workspace. It does not present those compositions as AI photography."],
+    ["Your workspace", "You remain responsible for the product references, brand assets, captions, and publishing permissions you add to STUDIO."],
+    ["Connected channels", "Social delivery becomes available only after an OAuth connection is configured. Until then, STUDIO shows the connection as unavailable rather than simulating publication."],
+    ["Contact", "For product and account questions, use the contact page to open a drafted email from your own email application."],
+  ];
+  return <main className="studio-site studio-page"><StudioHeader /><section className="studio-page-hero studio-starfield"><div className="studio-shell studio-page-hero__inner"><p className="studio-kicker">STUDIO / PRODUCT NOTICE</p><h1>Clear tools need<br /><em>clear boundaries.</em></h1><p>This short product notice explains what STUDIO does today and how core workspace data is treated in the interface.</p></div></section><section className="studio-light-section studio-page-grid-section"><div className="studio-shell studio-legal-grid">{sections.map(([title, body], index) => <article key={title}><span>{String(index + 1).padStart(2, "0")}</span><h2>{title}</h2><p>{body}</p></article>)}</div></section><StudioFooter /></main>;
 }
 
 export function UtilityPage({ title, body, action = "Continue" }: { title: string; body: string; action?: string }) {
@@ -99,9 +118,29 @@ export function RecoveryPage({ mode }: { mode: "forgot" | "reset" }) {
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [status, setStatus] = useState("");
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setStatus(isForgot ? "Password recovery is not configured on this backend yet." : "Password reset is not configured on this backend yet.");
+    setError("");
+    if (!isForgot && password !== confirmation) {
+      setError("The passwords do not match.");
+      return;
+    }
+    const token = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("token");
+    if (!isForgot && !token) {
+      setError("This reset link is incomplete. Request a fresh link to continue.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = isForgot ? await requestPasswordRecovery(email) : await resetPassword(token!, password);
+      setStatus(result);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "We could not complete that request. Try again.");
+    } finally {
+      setLoading(false);
+    }
   };
-  return <main className="studio-utility"><div className="studio-utility__grid"><Link href="/" className="studio-utility__back">← STUDIO</Link><div className="studio-utility__card"><StudioMark /><span className="studio-kicker studio-kicker--dark">STUDIO / NEXT STEP</span><h1>{isForgot ? "Find your way back in." : "A fresh start for the workspace."}</h1><p>{isForgot ? "Enter the email attached to your workspace. We will confirm recovery availability before sending anything." : "Choose and confirm a new password for the next draft."}</p><form className="studio-auth-form" onSubmit={submit}>{isForgot ? <label>Email<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@team.com" autoComplete="email" /></label> : <><label>New password<input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="8 characters minimum" autoComplete="new-password" /></label><label>Confirm password<input required minLength={8} type="password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Repeat your password" autoComplete="new-password" /></label></>}{status && <p className="studio-form-error" role="alert">{status}</p>}<button className="studio-button studio-button--lime studio-button--large" type="submit">{status ? "Unavailable" : isForgot ? "Send reset link" : "Set new password"} <ArrowUpRight size={16} /></button></form><div className="studio-utility__progress"><span /><span /><span className={status ? "is-active" : ""} /></div></div><span className="studio-utility__foot">A living production system for the next draft.</span></div></main>;
+  return <main className="studio-utility"><div className="studio-utility__grid"><Link href="/" className="studio-utility__back">← STUDIO</Link><div className="studio-utility__card"><StudioMark /><span className="studio-kicker studio-kicker--dark">STUDIO / NEXT STEP</span><h1>{isForgot ? "Find your way back in." : "A fresh start for the workspace."}</h1><p>{isForgot ? "Enter the email attached to your workspace. If it exists, we will send one secure reset link." : "Choose and confirm a new password for the next draft."}</p><form className="studio-auth-form" onSubmit={submit}>{isForgot ? <label>Email<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@team.com" autoComplete="email" disabled={loading || Boolean(status)} /></label> : <><label>New password<input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="8 characters minimum" autoComplete="new-password" disabled={loading || Boolean(status)} /></label><label>Confirm password<input required minLength={8} type="password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Repeat your password" autoComplete="new-password" disabled={loading || Boolean(status)} /></label></>}{error && <p className="studio-form-error" role="alert">{error}</p>}{status && <p className="studio-form-success" role="status">{status}</p>}{!status && <button disabled={loading} className="studio-button studio-button--lime studio-button--large" type="submit">{loading ? "Working…" : isForgot ? "Send reset link" : "Set new password"} <ArrowUpRight size={16} /></button>}{status && <Link href={isForgot ? "/login" : "/login"} className="studio-button studio-button--outline studio-button--large">Back to sign in <ArrowUpRight size={16} /></Link>}</form><div className="studio-utility__progress"><span /><span /><span className={status ? "is-active" : ""} /></div></div><span className="studio-utility__foot">A living production system for the next draft.</span></div></main>;
 }

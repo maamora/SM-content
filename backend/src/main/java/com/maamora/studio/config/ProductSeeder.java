@@ -17,8 +17,8 @@ import java.util.List;
  * Drops a handful of ready-to-use demo products into any brand that doesn't
  * have any yet, so the Content Studio has something to work with immediately
  * after registering — no manual data entry required. Runs once at startup for
- * existing brands, and is also called directly from AuthService right after a
- * new brand is created so future signups get the same head start.
+ * existing brands, and is called directly from AuthService after a new neutral
+ * workspace is created so each account gets the same isolated test catalogue.
  */
 @Component
 @RequiredArgsConstructor

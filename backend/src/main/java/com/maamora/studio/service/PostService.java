@@ -30,7 +30,7 @@ public class PostService {
     private final CaptionGenerationService captionGenerationService;
     private final StorageService storageService;
 
-    /** Every post in the shared workspace — powers the dashboard's real stats. */
+    /** Every post in the current account's workspace — powers its real dashboard stats. */
     public List<Post> listForUser(String userId) {
         BrandSettings brand = brandSettingsService.getForUser(userId);
         return postRepository.findByProduct_Brand_IdOrderByCreatedAtDesc(brand.getId());

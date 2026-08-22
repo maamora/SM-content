@@ -9,11 +9,9 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * Ensures the single, shared workspace exists before anything else runs. Every
- * registered user (USER or ADMIN) joins this one brand — there is
- * no per-user workspace anymore, so the whole team shares one product
- * catalogue and one set of templates. Runs first (@Order(1)) so
- * TemplateSeeder and ProductSeeder always have a brand to attach to.
+ * Preserves the bootstrap ordering of historical deployments. New workspaces
+ * are now created per account by AuthService and AdminSeeder, so this runner
+ * intentionally does not introduce a default brand identity.
  */
 @Component
 @RequiredArgsConstructor
@@ -24,11 +22,6 @@ public class BrandSeeder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        if (!brandSettingsRepository.findAll().isEmpty()) return;
-
-        brandSettingsRepository.save(BrandSettings.builder()
-                .name("")
-                .configured(false)
-                .build());
+        // Existing brands remain untouched. New accounts receive their own neutral row.
     }
 }

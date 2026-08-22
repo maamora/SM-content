@@ -20,8 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
  * this runs every time — giving a predictable admin login without any
  * manual registration step.
  *
- * Runs at @Order(2), after BrandSeeder (@Order(1)) has ensured the shared
- * brand workspace already exists.
+ * The seeded administrator receives its own neutral workspace. Saving the
+ * Brand page remains the explicit moment an identity becomes configured.
  */
 @Component
 @RequiredArgsConstructor
@@ -46,7 +46,7 @@ public class AdminSeeder implements ApplicationRunner {
             return;
         }
 
-        BrandSettings brand = brandSettingsService.getSharedBrand();
+        BrandSettings brand = brandSettingsService.createNeutralBrand();
 
         User admin = User.builder()
                 .name("Admin")

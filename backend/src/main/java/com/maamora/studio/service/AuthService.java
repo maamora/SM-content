@@ -8,6 +8,7 @@ import com.maamora.studio.exception.UnauthorizedException;
 import com.maamora.studio.model.BrandSettings;
 import com.maamora.studio.model.User;
 import com.maamora.studio.model.enums.Role;
+import com.maamora.studio.config.ProductSeeder;
 import com.maamora.studio.repository.UserRepository;
 import com.maamora.studio.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -26,8 +27,9 @@ public class AuthService {
     private final BrandSettingsService brandSettingsService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final ProductSeeder productSeeder;
 
-    /** Every new account joins the single shared Maamora workspace — nobody creates their own brand anymore. */
+    /** Each account begins with its own neutral workspace and starter test catalogue. */
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         String email = normalizeEmail(request.getEmail());
@@ -35,7 +37,7 @@ public class AuthService {
             throw new UnauthorizedException("An account with this email already exists.");
         }
 
-        BrandSettings brand = brandSettingsService.getSharedBrand();
+        BrandSettings brand = brandSettingsService.createNeutralBrand();
 
         User user = User.builder()
                 .name(request.getName())
@@ -45,6 +47,7 @@ public class AuthService {
                 .brand(brand)
                 .build();
         userRepository.save(user);
+        productSeeder.seedFor(brand);
 
         String token = jwtService.generateToken(user.getId(), user.getEmail());
         return new AuthResponse(token, user.getEmail(), brand.getId(), user.getRole().name());
@@ -54,7 +57,7 @@ public class AuthService {
     public AuthResponse loginOrCreateGoogle(String email, String name) {
         String normalizedEmail = normalizeEmail(email);
         User user = userRepository.findByEmailIgnoreCase(normalizedEmail).orElseGet(() -> {
-            BrandSettings brand = brandSettingsService.getSharedBrand();
+            BrandSettings brand = brandSettingsService.createNeutralBrand();
             User created = User.builder()
                     .name(name == null || name.isBlank() ? normalizedEmail : name)
                     .email(normalizedEmail)
@@ -62,10 +65,15 @@ public class AuthService {
                     .role(Role.USER)
                     .brand(brand)
                     .build();
-            return userRepository.save(created);
+            User saved = userRepository.save(created);
+            productSeeder.seedFor(brand);
+            return saved;
         });
 
-        if (user.getBrand() == null) user.setBrand(brandSettingsService.getSharedBrand());
+        if (user.getBrand() == null) {
+            user.setBrand(brandSettingsService.createNeutralBrand());
+            userRepository.save(user);
+        }
         String token = jwtService.generateToken(user.getId(), user.getEmail());
         return new AuthResponse(token, user.getEmail(), user.getBrand().getId(), user.getRole().name());
     }
@@ -79,7 +87,8 @@ public class AuthService {
         }
 
         if (user.getBrand() == null) {
-            throw new UnauthorizedException("No brand configured for this account.");
+            user.setBrand(brandSettingsService.createNeutralBrand());
+            userRepository.save(user);
         }
 
         String token = jwtService.generateToken(user.getId(), user.getEmail());

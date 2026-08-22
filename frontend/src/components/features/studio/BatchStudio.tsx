@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
-/* STUDIO editorial refresh: batch work is presented as a quiet production board with lime controls. */
-import { Layers, Loader2 } from "lucide-react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+/* STUDIO batch: state-led local composition flow that keeps selected source material and completed outputs visible. */
+import { ArrowRight, Layers, Loader2 } from "lucide-react";
 import { type Product } from "@/lib/api/products";
 import { listTemplates, type Template } from "@/lib/api/templates";
 import { type Post } from "@/lib/api/posts";
@@ -34,7 +34,7 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
             .catch(err => setErrorMsg(err instanceof Error ? err.message : "Failed to load templates"));
     }, []);
 
-    const templatesForFormat = templates.filter(t => t.format === selectedFormat);
+    const templatesForFormat = useMemo(() => templates.filter(t => t.format === selectedFormat), [templates, selectedFormat]);
 
     useEffect(() => {
         if (templatesForFormat.length > 0 && !templatesForFormat.some(t => t.id === selectedTemplateId)) {
@@ -67,7 +67,7 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
 
             onBatchChange?.();
             if (batch.status === "DONE") {
-                setStatusMsg("Batch visuals and multilingual captions are ready.");
+                setStatusMsg(`${batch.posts.length} local template composition${batch.posts.length === 1 ? " is" : "s are"} ready for review.`);
             } else {
                 setErrorMsg(batch.posts.length > 0
                     ? "Le traitement du lot s’est terminé avec une ou plusieurs erreurs. Les compositions terminées restent disponibles ci-dessous."
@@ -92,7 +92,7 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                 templateId: selectedTemplateId,
             });
             setActiveBatch(batch);
-            setStatusMsg("Lot lancé. STUDIO rend les compositions et prépare les légendes multilingues en arrière-plan.");
+            setStatusMsg(`${chosen.length} source ${chosen.length === 1 ? "reference is" : "references are"} in the render queue. This page will update as each composition completes.`);
             void pollBatch(batch.id);
         } catch (err) {
             setErrorMsg(err instanceof Error ? err.message : "Failed to start batch");
@@ -103,16 +103,10 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
 
 
     return (
-        <div className="space-y-8 select-none">
-            <div>
-                <h2 className="flex items-center gap-2 font-serif text-2xl font-normal tracking-tight text-[var(--studio-ink)]">
-                    <Layers className="h-5 w-5 text-[#5f762a]" />
-                    Génération en Lot (Batch)
-                </h2>
-                <p className="mt-1 text-xs font-medium text-[#777870]">
-                    Générez des visuels et légendes multilingues pour plusieurs produits en même temps.
-                </p>
-                <p className="mt-4 text-[10px] font-black uppercase tracking-[0.18em] text-[#777870]">Visual batch workspace</p>
+            <div className="space-y-8 select-none">
+            <div className="studio-batch-intro">
+                <div><span className="studio-kicker">BATCH COMPOSITOR / LOCAL</span><h2><Layers size={21} /> Build one family of directions.</h2><p>Select approved product references, choose a template format, and receive a reviewable group of local template compositions with multilingual caption drafts.</p></div>
+                <div className="studio-batch-intro__counter"><b>{selectedProducts.size}</b><span>SELECTED<br />SOURCES</span></div>
             </div>
 
             {errorMsg && (
@@ -120,25 +114,26 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                     {errorMsg}
                 </div>
             )}
-            {statusMsg && <p className="studio-inline-notice">{statusMsg}</p>}
+            {statusMsg && <p className="studio-inline-notice" role="status">{statusMsg}</p>}
 
             {activeBatch?.status === "PROCESSING" ? (
-                <div className="studio-creative-card p-6" aria-live="polite">
+                <div className="studio-creative-card studio-batch-progress p-6" aria-live="polite">
                     <div className="flex items-start gap-4">
                         <div className="studio-creative-status__icon"><Loader2 className="h-5 w-5 animate-spin" /></div>
                         <div>
                             <p className="studio-kicker">BATCH IN PROGRESS</p>
-                            <h3 className="mt-2 font-serif text-2xl font-normal text-[var(--studio-ink)]">Composition de votre campagne</h3>
-                            <p className="mt-2 max-w-lg text-xs leading-6 text-[#777870]">Chaque produit approuvé reçoit une composition de modèle et des légendes multilingues. Gardez cette page ouverte pendant la mise à jour du lot.</p>
+                            <h3>Composing your campaign family.</h3>
+                            <p>Each approved product receives the chosen template treatment and its multilingual caption draft. The result list appears here as the server updates the batch.</p>
+                            <div className="studio-batch-progress__line"><i /><span>{generatedPosts.length} / {selectedProducts.size || activeBatch.posts.length} outputs received</span></div>
                         </div>
                     </div>
                 </div>
             ) : generatedPosts.length > 0 ? (
-                <div className="studio-creative-card space-y-6 p-6">
+                <div className="studio-creative-card studio-batch-output space-y-6 p-6">
                     <div className="flex items-center justify-between gap-4">
                         <div>
                             <p className="studio-kicker">VISUELS GÉNÉRÉS</p>
-                            <h3 className="font-serif text-2xl font-normal text-[var(--studio-ink)]">Batch visuel</h3>
+                            <h3>Review the batch.</h3>
                         </div>
                         <button type="button" className="studio-text-button" onClick={() => { setGeneratedPosts([]); setActiveBatch(null); setStatusMsg(null); }}>Nouveau lot</button>
                     </div>
@@ -149,7 +144,7 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                                 <img src={output.imageUrl || ""} alt={`Composition de marque pour ${output.productName}`} className={`w-full object-cover ${selectedFormat === "SQUARE_POST" ? "aspect-square" : "aspect-[9/16]"}`} />
                                 <div className="mt-3 flex items-center justify-between gap-2">
                                     <span className="truncate text-xs font-bold text-[var(--studio-ink)]">{output.productName}</span>
-                                    {output.imageUrl && <a className="studio-text-button shrink-0" href={output.imageUrl} download={`studio-${output.productName}.png`}>Télécharger</a>}
+                                    {output.imageUrl && <a className="studio-text-button shrink-0" href={output.imageUrl} download={`studio-${output.productName}.png`}>Download</a>}
                                 </div>
                             </div>
                         ))}
@@ -157,8 +152,8 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                 </div>
             ) : (
                 <div className="studio-live-columns">
-                    <div className="studio-creative-card p-6">
-                        <h3 className="mb-4 block text-sm font-black text-[var(--studio-ink)]">Produits à inclure</h3>
+                    <div className="studio-creative-card studio-batch-source p-6">
+                        <div className="studio-batch-section-heading"><div><span className="studio-kicker">STEP 01 / SOURCE</span><h3>Choose approved products.</h3></div><span>{approvedProducts.length} READY</span></div>
                         <div className="max-h-64 space-y-2 overflow-y-auto pr-2">
                             {approvedProducts.map(p => (
                                 <label key={p.id} className="flex cursor-pointer items-center gap-3 border border-[#deddd5] p-3 transition-colors hover:border-[var(--studio-ink)]">
@@ -175,14 +170,14 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                                 </label>
                             ))}
                             {approvedProducts.length === 0 && (
-                                <p className="py-4 text-center text-xs font-medium text-[#91918b]">Aucun produit approuvé disponible.</p>
+                                <p className="py-4 text-center text-xs font-medium text-[#91918b]">No approved products are ready yet. Approve source material before opening a batch.</p>
                             )}
                         </div>
                     </div>
 
-                    <div className="studio-creative-card space-y-6 p-6">
+                    <div className="studio-creative-card studio-batch-config space-y-6 p-6">
                         <div className="space-y-2">
-                            <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Format d&apos;export</span>
+                            <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">STEP 02 / FORMAT</span>
                             <div className="flex gap-2">
                                 {[
                                     { id: "SQUARE_POST" as const, name: "SQUARE" },
@@ -201,14 +196,14 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                         </div>
 
                         <div className="space-y-2">
-                            <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Modèle</span>
+                            <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">STEP 03 / TEMPLATE</span>
                             {/* Each format currently maps to exactly one design template, so this
                                 renders as buttons (like the Atelier Créatif tab) rather than a
                                 dropdown — a dropdown implies there's more than one option to pick
                                 between, which isn't the case yet. Scales automatically if more
                                 templates get added per format later. */}
                             {templatesForFormat.length === 0 ? (
-                                <p className="text-[11px] font-medium text-[#91918b]">Aucun modèle disponible pour ce format.</p>
+                                <p className="text-[11px] font-medium text-[#91918b]">No local template is available for this format.</p>
                             ) : (
                                 <div className="grid grid-cols-2 gap-2">
                                     {templatesForFormat.map(t => (
@@ -233,8 +228,8 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                             disabled={isStartingBatch || selectedProducts.size === 0 || !selectedTemplateId}
                             className="studio-button studio-button--lime studio-button--large w-full disabled:opacity-50"
                         >
-                            {isStartingBatch && <Loader2 className="h-4 w-4 animate-spin" />}
-                            Lancer le rendu ({selectedProducts.size} éléments)
+                            {isStartingBatch ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                            {isStartingBatch ? "Starting local batch…" : `Compose ${selectedProducts.size} direction${selectedProducts.size === 1 ? "" : "s"}`}
                         </button>
                     </div>
                 </div>
