@@ -1,5 +1,8 @@
 # STUDIO persistent database setup
 
+## Landing canvas focus adjustment
+- [x] Simplify the specified landing canvas so the model visual is its only image focal point, retaining the editorial copy and call to action.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.
