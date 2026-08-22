@@ -123,7 +123,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     );
     const previewImage = post?.imageUrl ?? (mode === "upload" ? uploadPreview : null);
     const configuredBrandName = brand?.configured && brand.name.trim() ? brand.name.trim() : null;
-    const canAddBrandMark = Boolean(brand?.configured && (brand.logoUrl || configuredBrandName));
+    const canAddBrandMark = Boolean(brand?.configured && brand.logoUrl);
     const previewBrandFrame = logoFrame(brandLogoPlacement);
     const isStory = format === "STORY";
     const previewCopyX = textAlignment === "CENTER" ? 500 : 70;
@@ -183,7 +183,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const saveUploadedPost = async () => {
         if (!selectedProduct || !templateId || !uploadedFile) return;
         setBusy("upload"); setError(null);
-        try { const result = await createBrowserVisualPost({ productId: selectedProduct.id, templateId, image: uploadedFile, promoText, badgeText, headline, supportingText, ctaText, layoutStyle, productFocus, textAlignment }); setPost(result); onPostChange?.(); }
+        try { const result = await createBrowserVisualPost({ productId: selectedProduct.id, templateId, image: uploadedFile, promoText, badgeText, headline, supportingText, ctaText, layoutStyle, productFocus, textAlignment, includeBrandLogo: includeBrandLogo && canAddBrandMark, brandLogoPlacement }); setPost(result); onPostChange?.(); }
         catch (err) { setError(err instanceof Error ? err.message : "Impossible d’ajouter ce visuel à la bibliothèque."); }
         finally { setBusy(null); }
     };
@@ -310,8 +310,8 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                 <aside className="studio-artboard-publish" aria-label="Contrôles de marque et publication">
                     <div className="studio-artboard-inspector__title"><div><AlignLeft className="h-4 w-4" /><span>Finition</span></div><span>04—04</span></div>
                     <section className="studio-artboard-section">
-                        <div className="flex items-start justify-between gap-4"><div><Label>Marque</Label><p className="mt-1 text-xs leading-relaxed text-[#aeb0a7]">{canAddBrandMark ? "Ajoutez le logo enregistré dans Brand à cette direction." : "Aucune marque configurée. Le post restera neutre."}</p></div><Stamp className="mt-1 h-4 w-4 shrink-0 text-[#c6ff5e]" /></div>
-                        {canAddBrandMark ? <><label className="studio-artboard-brand-toggle"><span><strong>{brand?.logoUrl ? "Inclure le logo" : "Inclure la signature"}</strong><small>{configuredBrandName}</small></span><input type="checkbox" checked={includeBrandLogo} onChange={(event) => { setIncludeBrandLogo(event.target.checked); clearWorkingPost(); }} /></label>{includeBrandLogo && <div className="mt-3"><Label>Placement du logo</Label><div className="studio-artboard-logo-grid">{brandLogoPlacements.map((placement) => <button key={placement.id} type="button" title={placement.grid} aria-pressed={brandLogoPlacement === placement.id} onClick={() => { setBrandLogoPlacement(placement.id); clearWorkingPost(); }}><span className={`studio-artboard-logo-grid__marker studio-artboard-logo-grid__marker--${placement.id.toLowerCase().replace("_", "-")}`} />{placement.label}</button>)}</div></div>}</> : <div className="studio-artboard-empty-brand"><Stamp className="h-4 w-4" /><span>Configurer dans Brand</span></div>}
+                        <div className="flex items-start justify-between gap-4"><div><Label>Marque</Label><p className="mt-1 text-xs leading-relaxed text-[#aeb0a7]">{canAddBrandMark ? "Ajoutez le logo enregistré dans Brand à ce post, y compris après un import." : "Aucun logo de marque configuré. Le post restera neutre."}</p></div><Stamp className="mt-1 h-4 w-4 shrink-0 text-[#c6ff5e]" /></div>
+                        {canAddBrandMark ? <><label className="studio-artboard-brand-toggle"><span><strong>Inclure le logo</strong><small>{configuredBrandName}</small></span><input type="checkbox" checked={includeBrandLogo} onChange={(event) => { setIncludeBrandLogo(event.target.checked); clearWorkingPost(); }} /></label>{includeBrandLogo && <div className="mt-3"><Label>Placement du logo</Label><div className="studio-artboard-logo-grid">{brandLogoPlacements.map((placement) => <button key={placement.id} type="button" title={placement.grid} aria-pressed={brandLogoPlacement === placement.id} onClick={() => { setBrandLogoPlacement(placement.id); clearWorkingPost(); }}><span className={`studio-artboard-logo-grid__marker studio-artboard-logo-grid__marker--${placement.id.toLowerCase().replace("_", "-")}`} />{placement.label}</button>)}</div></div>}</> : <div className="studio-artboard-empty-brand"><Stamp className="h-4 w-4" /><span>Ajoutez un logo dans Brand</span></div>}
                     </section>
 
                     <section className="studio-artboard-section">

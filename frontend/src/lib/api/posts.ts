@@ -52,6 +52,8 @@ export const createBrowserVisualPost = async (input: {
     layoutStyle?: "BOLD" | "MINIMAL" | "CATALOG" | "POSTER";
     productFocus?: "CENTER" | "CLOSE_UP" | "FLOATING" | "WIDE";
     textAlignment?: "LEFT" | "CENTER";
+    includeBrandLogo?: boolean;
+    brandLogoPlacement?: "TOP_RIGHT" | "TOP_LEFT" | "BOTTOM_RIGHT" | "BOTTOM_LEFT";
 }) => {
     const contentType = input.image.type.startsWith("image/") ? input.image.type : "image/png";
     const extension = contentType === "image/jpeg" ? "jpg" : contentType === "image/webp" ? "webp" : "png";
@@ -72,6 +74,8 @@ export const createBrowserVisualPost = async (input: {
             layoutStyle: input.layoutStyle,
             productFocus: input.productFocus,
             textAlignment: input.textAlignment,
+            includeBrandLogo: input.includeBrandLogo,
+            brandLogoPlacement: input.brandLogoPlacement,
         }),
     });
 };

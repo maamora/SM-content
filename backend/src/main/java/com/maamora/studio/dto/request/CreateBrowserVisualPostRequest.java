@@ -29,4 +29,6 @@ public class CreateBrowserVisualPostRequest {
     private String layoutStyle;
     private String productFocus;
     private String textAlignment;
+    private Boolean includeBrandLogo;
+    private String brandLogoPlacement;
 }

@@ -782,3 +782,8 @@ The second attachment does not show an application compile or route error. `pnpm
 - [x] Inspect current multilingual caption templates for repetition, punctuation, blank fallback, and language-mixing defects.
 - [x] Refine fact selection and copy structure for concise product-aware captions.
 - [x] Validate French, Arabic, Darija, and English captions before publishing the repair.
+
+## Neutral brand and uploaded-logo workflow
+- [x] Audit default brand creation, visual/caption fallbacks, and logo options for template and uploaded posts.
+- [x] Keep unconfigured workspaces neutral and remove any default Maamora identity from generated visuals and captions.
+- [x] Add explicit configured-brand logo placement to uploaded posts and validate both neutral and configured flows.

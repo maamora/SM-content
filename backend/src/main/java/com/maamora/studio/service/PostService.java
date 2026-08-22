@@ -86,15 +86,23 @@ public class PostService {
      * caption editor and every downstream post action connected to the visual.
      */
     public Post createFromBrowserVisual(String userId, CreateBrowserVisualPostRequest request) {
+        BrandSettings brand = brandSettingsService.getForUser(userId);
         Product product = productService.getOwned(userId, request.getProductId());
         assertCanCreatePrivateDraft(userId, product);
         Template template = templateService.getById(request.getTemplateId());
+        String imageUrl = request.getImageUrl();
+        if (Boolean.TRUE.equals(request.getIncludeBrandLogo())
+                && brand.isConfigured()
+                && brand.getLogoUrl() != null && !brand.getLogoUrl().isBlank()) {
+            byte[] brandedImage = imageRenderService.overlayConfiguredLogo(imageUrl, brand.getLogoUrl(), request.getBrandLogoPlacement());
+            imageUrl = storageService.upload(brandedImage, "browser-visual-branded-" + UUID.randomUUID() + ".png", "image/png");
+        }
 
         Post post = Post.builder()
                 .product(product)
                 .template(template)
                 .format(template.getFormat())
-                .imageUrl(request.getImageUrl())
+                .imageUrl(imageUrl)
                 .badgeText(request.getBadgeText())
                 .promoText(request.getPromoText())
                 .headline(request.getHeadline())

@@ -130,7 +130,7 @@ public class CaptionGenerationService {
         String productName = clean(product == null ? null : product.getName());
         String description = clean(product == null ? null : product.getDescription());
         String sellingPoint = clean(product == null ? null : product.getSellingPoint());
-        String brandName = textOr(clean(brand == null ? null : brand.getName()), "STUDIO");
+        String brandName = brand != null && brand.isConfigured() ? clean(brand.getName()) : "";
         String headline = textOr(clean(post.getHeadline()), productName);
         String supporting = clean(post.getSupportingText());
         String promo = clean(post.getPromoText());
@@ -143,7 +143,7 @@ public class CaptionGenerationService {
     private String frenchCaption(CaptionBrief brief) {
         return caption(
                 campaignLead(brief),
-                brief.productName() + " · " + brief.brandName(),
+                productIdentity(brief),
                 productFacts(brief),
                 campaignMessage(brief),
                 labeled(brief.promo(), "Offre"),
@@ -155,7 +155,7 @@ public class CaptionGenerationService {
     private String englishCaption(CaptionBrief brief) {
         return caption(
                 campaignLead(brief),
-                brief.productName() + " · " + brief.brandName(),
+                productIdentity(brief),
                 productFacts(brief),
                 campaignMessage(brief),
                 labeled(brief.promo(), "Offer"),
@@ -167,7 +167,7 @@ public class CaptionGenerationService {
     private String arabicCaption(CaptionBrief brief) {
         return caption(
                 campaignLead(brief),
-                brief.productName() + " من " + brief.brandName(),
+                productIdentityArabic(brief),
                 productFacts(brief),
                 campaignMessage(brief),
                 labeled(brief.promo(), "العرض"),
@@ -179,7 +179,7 @@ public class CaptionGenerationService {
     private String darijaCaption(CaptionBrief brief) {
         return caption(
                 campaignLead(brief),
-                brief.productName() + " من " + brief.brandName(),
+                productIdentityArabic(brief),
                 productFacts(brief),
                 campaignMessage(brief),
                 labeled(brief.promo(), "العرض"),
@@ -198,6 +198,14 @@ public class CaptionGenerationService {
 
     private String productFacts(CaptionBrief brief) {
         return distinctSentence(brief.description(), brief.sellingPoint());
+    }
+
+    private String productIdentity(CaptionBrief brief) {
+        return brief.brandName().isBlank() ? brief.productName() : brief.productName() + " · " + brief.brandName();
+    }
+
+    private String productIdentityArabic(CaptionBrief brief) {
+        return brief.brandName().isBlank() ? brief.productName() : brief.productName() + " من " + brief.brandName();
     }
 
     private String campaignMessage(CaptionBrief brief) {

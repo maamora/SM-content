@@ -9,6 +9,7 @@ import com.maamora.studio.service.ImageRenderService;
 import com.maamora.studio.service.SvgTemplateRenderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -17,6 +18,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import javax.imageio.ImageIO;
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @ExtendWith(MockitoExtension.class)
 class ImageRenderServiceFallbackTest {
@@ -77,5 +85,30 @@ class ImageRenderServiceFallbackTest {
 
         assertThat(result.generationMode()).isEqualTo(GenerationMode.TEMPLATE_COMPOSED);
         assertThat(result.png()).startsWith((byte) 0x89, (byte) 0x50, (byte) 0x4E, (byte) 0x47);
+    }
+
+    @Test
+    void appliesOnlyTheConfiguredLogoToAnUploadedVisual(@TempDir Path temporaryDirectory) throws Exception {
+        ImageRenderService service = new ImageRenderService(imageGenerationProvider, new SvgTemplateRenderer());
+        Path visualFile = temporaryDirectory.resolve("uploaded.png");
+        Path logoFile = temporaryDirectory.resolve("configured-logo.png");
+        writeSolidImage(visualFile, 400, 300, new Color(28, 36, 33));
+        writeSolidImage(logoFile, 90, 40, new Color(198, 255, 94));
+
+        byte[] output = service.overlayConfiguredLogo(visualFile.toUri().toString(), logoFile.toUri().toString(), "BOTTOM_LEFT");
+        BufferedImage rendered = ImageIO.read(new ByteArrayInputStream(output));
+
+        assertThat(output).startsWith((byte) 0x89, (byte) 0x50, (byte) 0x4E, (byte) 0x47);
+        assertThat(rendered.getRGB(72, 250)).isNotEqualTo(new Color(28, 36, 33).getRGB());
+    }
+
+    private void writeSolidImage(Path path, int width, int height, Color color) throws Exception {
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) image.setRGB(x, y, color.getRGB());
+        }
+        try (var output = Files.newOutputStream(path)) {
+            assertThat(ImageIO.write(image, "png", output)).isTrue();
+        }
     }
 }
