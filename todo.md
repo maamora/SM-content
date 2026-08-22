@@ -3,6 +3,9 @@
 ## Landing canvas focus adjustment
 - [x] Simplify the specified landing canvas so the model visual is its only image focal point, retaining the editorial copy and call to action.
 
+## Caption language separation
+- [x] Present generated captions as separate French, English, Arabic, and Darija blocks with independent copy actions.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

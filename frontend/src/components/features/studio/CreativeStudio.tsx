@@ -1,6 +1,6 @@
 "use client";
 
-/* STUDIO POST ARTBOARD: dark editorial control room; every persisted visual, copy, brand, caption, and delivery control stays visible without a form-first layout. */
+/* STUDIO POST ARTBOARD: dark editorial control room; every persisted visual, brand, and independently usable multilingual caption stays visible without a form-first layout. */
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
     AlignLeft, Check, CheckCircle2, Copy, Download, Eye, FileUp, Frame,
@@ -39,9 +39,11 @@ const moods = [
     { id: "eclipse", label: "Nuit", color: "#191A18", ink: "#B9FF43" },
 ] as const;
 
-const languages: { id: CaptionLang; label: string }[] = [
-    { id: "darija", label: "Darija" }, { id: "fr", label: "Français" },
-    { id: "ar", label: "العربية" }, { id: "en", label: "English" },
+const languages: { id: CaptionLang; label: string; shortLabel: string; direction?: "rtl" }[] = [
+    { id: "fr", label: "Français", shortLabel: "FR" },
+    { id: "en", label: "English", shortLabel: "EN" },
+    { id: "ar", label: "العربية", shortLabel: "AR", direction: "rtl" },
+    { id: "darija", label: "Darija", shortLabel: "DJ" },
 ];
 
 const brandLogoPlacements: { id: BrandLogoPlacement; label: string; grid: string }[] = [
@@ -64,13 +66,6 @@ function logoFrame(position: BrandLogoPlacement) {
         BOTTOM_RIGHT: { x: 755, y: 580 }, BOTTOM_LEFT: { x: 55, y: 580 },
     };
     return { ...frames[position], width: 190, height: 90, padding: 12 };
-}
-
-function captionFor(post: Post, language: CaptionLang) {
-    if (language === "fr") return post.captionFr;
-    if (language === "ar") return post.captionAr;
-    if (language === "en") return post.captionEn;
-    return post.captionDarija;
 }
 
 function Label({ children }: { children: React.ReactNode }) {
@@ -101,10 +96,10 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
     const [uploadPreview, setUploadPreview] = useState<string | null>(null);
     const [post, setPost] = useState<Post | null>(null);
-    const [captionLanguage, setCaptionLanguage] = useState<CaptionLang>("darija");
-    const [captionDraft, setCaptionDraft] = useState("");
+    const [captionDrafts, setCaptionDrafts] = useState<Record<CaptionLang, string>>({ fr: "", en: "", ar: "", darija: "" });
     const [error, setError] = useState<string | null>(null);
-    const [copied, setCopied] = useState(false);
+    const [copiedLanguage, setCopiedLanguage] = useState<CaptionLang | null>(null);
+    const [savingCaptionLanguage, setSavingCaptionLanguage] = useState<CaptionLang | null>(null);
     const [busy, setBusy] = useState<"render" | "upload" | "captions" | "approve" | "export" | null>(null);
     const pickerRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -156,7 +151,14 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
         return () => document.removeEventListener("mousedown", close);
     }, [selectedProduct?.name]);
     useEffect(() => () => { if (uploadPreview) URL.revokeObjectURL(uploadPreview); }, [uploadPreview]);
-    useEffect(() => { setCaptionDraft(post ? captionFor(post, captionLanguage) ?? "" : ""); }, [post, captionLanguage]);
+    useEffect(() => {
+        setCaptionDrafts({
+            fr: post?.captionFr ?? "",
+            en: post?.captionEn ?? "",
+            ar: post?.captionAr ?? "",
+            darija: post?.captionDarija ?? "",
+        });
+    }, [post]);
 
     const clearWorkingPost = () => { setPost(null); setError(null); };
     const resetDirection = () => {
@@ -194,10 +196,12 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
         catch (err) { setError(err instanceof Error ? err.message : "Impossible de rédiger les légendes."); }
         finally { setBusy(null); }
     };
-    const saveCaption = async () => {
+    const saveCaption = async (language: CaptionLang) => {
         if (!post) return;
-        try { setPost(await editCaption(post.id, captionLanguage, captionDraft)); }
+        setSavingCaptionLanguage(language);
+        try { setPost(await editCaption(post.id, language, captionDrafts[language])); onPostChange?.(); }
         catch (err) { setError(err instanceof Error ? err.message : "Impossible d’enregistrer cette légende."); }
+        finally { setSavingCaptionLanguage(null); }
     };
     const approve = async () => {
         if (!post) return;
@@ -216,9 +220,17 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
         } catch (err) { setError(err instanceof Error ? err.message : "Impossible d’exporter ce post."); }
         finally { setBusy(null); }
     };
-    const copyCaption = async () => {
-        if (!captionDraft) return;
-        await navigator.clipboard.writeText(captionDraft); setCopied(true); window.setTimeout(() => setCopied(false), 1800);
+    const copyCaption = async (language: CaptionLang) => {
+        const caption = captionDrafts[language].trim();
+        if (!caption) return;
+        try {
+            await navigator.clipboard.writeText(caption);
+        } catch {
+            const fallback = document.createElement("textarea");
+            fallback.value = caption; fallback.style.position = "fixed"; fallback.style.opacity = "0";
+            document.body.appendChild(fallback); fallback.select(); document.execCommand("copy"); fallback.remove();
+        }
+        setCopiedLanguage(language); window.setTimeout(() => setCopiedLanguage((current) => current === language ? null : current), 1800);
     };
 
     const canCreate = Boolean(selectedProduct && templateId && (mode === "template" || uploadedFile));
@@ -315,12 +327,22 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                     </section>
 
                     <section className="studio-artboard-section">
-                        <div className="flex items-center justify-between"><Label>Légende</Label><span className="text-[10px] font-mono text-[#9c9f94]">{captionDraft.length} car.</span></div>
-                        <p className="studio-artboard-hint">Basée sur {selectedProduct?.name ?? "le produit sélectionné"}, sa description, son bénéfice, son prix et votre direction de campagne.</p>
-                        {!post && <p className="studio-artboard-hint"><strong>Étape suivante :</strong> rendez ou importez d’abord le visuel. La génération de légende devient disponible dès que le post est sauvegardé.</p>}
-                        <div className="studio-artboard-language-tabs" role="tablist">{languages.map((language) => <button key={language.id} type="button" role="tab" aria-selected={captionLanguage === language.id} onClick={() => setCaptionLanguage(language.id)}>{language.label}</button>)}</div>
-                        <textarea value={captionDraft} onChange={(event) => setCaptionDraft(event.target.value)} onBlur={() => void saveCaption()} disabled={!post} placeholder={post ? "Rédigez la légende de ce post." : "Rendez ou importez le post pour écrire sa légende."} />
-                        <div className="mt-2 grid grid-cols-2 gap-2"><button type="button" onClick={() => void createCaptions()} disabled={!canGenerateCaptions} title={post ? "Générer les légendes du post" : "Rendez ou importez le post avant de générer une légende"} className="studio-artboard-secondary">{busy === "captions" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{post ? "Générer" : "Rendre le post d’abord"}</button><button type="button" onClick={() => void copyCaption()} disabled={!captionDraft} className="studio-artboard-secondary">{copied ? <Check className="h-3.5 w-3.5 text-[#c6ff5e]" /> : <Copy className="h-3.5 w-3.5" />}{copied ? "Copié" : "Copier"}</button></div>
+                        <div className="flex items-center justify-between gap-3"><div><Label>Légendes séparées</Label><p className="mt-1 text-xs leading-relaxed text-[#aeb0a7]">Français, English, العربية et Darija restent indépendants : révisez et copiez chaque version sans mélanger les langues.</p></div><span className="shrink-0 text-[10px] font-mono text-[#c6ff5e]">04 / LANG</span></div>
+                        <p className="studio-artboard-hint">Basées sur {selectedProduct?.name ?? "le produit sélectionné"}, sa description, son bénéfice, son prix et votre direction de campagne.</p>
+                        {!post && <p className="studio-artboard-hint"><strong>Étape suivante :</strong> rendez ou importez d’abord le visuel. Les quatre légendes deviennent disponibles une fois le post sauvegardé.</p>}
+                        <button type="button" onClick={() => void createCaptions()} disabled={!canGenerateCaptions} title={post ? "Générer les quatre légendes du post" : "Rendez ou importez le post avant de générer les légendes"} className="studio-artboard-secondary mt-3 w-full">{busy === "captions" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{post ? "Générer les 4 légendes" : "Rendre le post d’abord"}</button>
+                        <div className="mt-3 space-y-2.5" aria-label="Légendes séparées par langue">
+                            {languages.map((language) => {
+                                const caption = captionDrafts[language.id];
+                                const isCopied = copiedLanguage === language.id;
+                                const isSaving = savingCaptionLanguage === language.id;
+                                return <article key={language.id} className="border border-white/15 bg-black/15 p-2.5 transition-colors hover:border-[#c6ff5e]/55">
+                                    <div className="mb-2 flex items-center justify-between gap-3"><div className="flex items-center gap-2"><span className="border border-[#c6ff5e]/50 px-1.5 py-0.5 text-[9px] font-black tracking-[.14em] text-[#c6ff5e]">{language.shortLabel}</span><strong className="text-[11px] text-[#f1f2ec]">{language.label}</strong></div><span className="text-[9px] font-mono text-[#92958b]">{caption.length} car.</span></div>
+                                    <textarea dir={language.direction} lang={language.id === "darija" ? "ary" : language.id} value={caption} onChange={(event) => setCaptionDrafts((current) => ({ ...current, [language.id]: event.target.value }))} onBlur={() => void saveCaption(language.id)} disabled={!post} placeholder={post ? `Légende ${language.label}` : "Rendez ou importez le post pour écrire cette légende."} className="min-h-24 text-xs leading-relaxed" />
+                                    <div className="mt-2 flex items-center justify-between gap-2"><span className="text-[9px] text-[#92958b]">{isSaving ? "Enregistrement…" : "Enregistrée à la sortie du champ"}</span><button type="button" onClick={() => void copyCaption(language.id)} disabled={!caption.trim()} className="studio-artboard-secondary !min-h-0 !px-2 !py-1.5 text-[10px]">{isCopied ? <Check className="h-3 w-3 text-[#c6ff5e]" /> : <Copy className="h-3 w-3" />}{isCopied ? "Copié" : `Copier ${language.shortLabel}`}</button></div>
+                                </article>;
+                            })}
+                        </div>
                     </section>
 
                     <section className="studio-artboard-delivery">
