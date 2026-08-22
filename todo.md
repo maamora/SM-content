@@ -762,3 +762,8 @@ The second attachment does not show an application compile or route error. `pnpm
 - [x] Inspect the Studio caption button’s disabled condition and its required product/post state.
 - [x] Restore a usable caption-generation path without bypassing the authenticated post workflow.
 - [x] Validate the repaired interaction, production build, and publish the correction.
+
+## Cross-format local SVG renderer repair
+- [x] Reproduce the reported local SVG rendering failure and identify its exact SVG generation cause.
+- [x] Repair deterministic rendering for square and story compositions across all creative controls.
+- [x] Validate raster output and full regression/build checks before publishing the repair.

@@ -4,11 +4,17 @@ import com.maamora.studio.model.Product;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 /**
  * Local, deterministic product visual renderer. Every studio control maps to a
@@ -16,6 +22,9 @@ import java.nio.charset.StandardCharsets;
  */
 @Service
 public class SvgTemplateRenderer {
+
+    private static final Logger log = LoggerFactory.getLogger(SvgTemplateRenderer.class);
+    private static final int MAX_EMBEDDED_IMAGE_BYTES = 5 * 1024 * 1024;
 
     public byte[] render(Product product, int width, int height, String badge, String promo, String accent, String mood) {
         return render(product, width, height, badge, promo, accent, mood, null, null, false);
@@ -59,10 +68,11 @@ public class SvgTemplateRenderer {
         String visualSupporting = compact(supportingText, sellingPoint, 86);
         String visualCta = compact(ctaText, "", 28);
         String image = product == null ? "" : value(product.getImageUrl());
+        String embeddedProductImage = inlineImage(image, "product");
         ImageFrame imageFrame = imageFrame(focus, width, height);
-        String visual = image.isBlank()
-                ? "<rect x=\"" + imageFrame.x() + "\" y=\"" + imageFrame.y() + "\" width=\"" + imageFrame.width() + "\" height=\"" + imageFrame.height() + "\" rx=\"36\" fill=\"#F5F1E8\" opacity=\".16\"/>"
-                : "<image href=\"" + xml(image) + "\" x=\"" + imageFrame.x() + "\" y=\"" + imageFrame.y() + "\" width=\"" + imageFrame.width() + "\" height=\"" + imageFrame.height() + "\" preserveAspectRatio=\"" + imageFrame.preserveAspectRatio() + "\"/>";
+        String visual = embeddedProductImage.isBlank()
+                ? "<g><rect x=\"" + imageFrame.x() + "\" y=\"" + imageFrame.y() + "\" width=\"" + imageFrame.width() + "\" height=\"" + imageFrame.height() + "\" rx=\"36\" fill=\"#F5F1E8\" opacity=\".16\"/><text x=\"" + (imageFrame.x() + imageFrame.width() / 2) + "\" y=\"" + (imageFrame.y() + imageFrame.height() / 2) + "\" text-anchor=\"middle\" fill=\"#F5F1E8\" opacity=\".84\" font-family=\"Arial,sans-serif\" font-size=\"" + Math.max(14, width / 46) + "\" font-weight=\"700\" letter-spacing=\"2\">PRODUCT ASSET</text></g>"
+                : "<image href=\"" + xml(embeddedProductImage) + "\" x=\"" + imageFrame.x() + "\" y=\"" + imageFrame.y() + "\" width=\"" + imageFrame.width() + "\" height=\"" + imageFrame.height() + "\" preserveAspectRatio=\"" + imageFrame.preserveAspectRatio() + "\"/>";
         String visualFrame = "FLOATING".equals(focus)
                 ? "<rect x=\"" + (imageFrame.x() - width / 50) + "\" y=\"" + (imageFrame.y() - height / 65) + "\" width=\"" + (imageFrame.width() + width / 25) + "\" height=\"" + (imageFrame.height() + height / 32) + "\" rx=\"42\" fill=\"#F5F1E8\" opacity=\".14\"/>"
                 : "";
@@ -73,8 +83,9 @@ public class SvgTemplateRenderer {
             default -> "<circle cx=\"" + (width * 3 / 4) + "\" cy=\"" + (height / 4) + "\" r=\"" + (width / 3) + "\" fill=\"" + safeAccent + "\" opacity=\".16\"/>";
         };
         BrandFrame brandFrame = brandFrame(brandLogoPlacement, width, height);
-        String brandMark = !includeBrandLogo ? "" : hasHttpUrl(logoUrl)
-                ? "<g><rect x=\"" + brandFrame.x() + "\" y=\"" + brandFrame.y() + "\" width=\"" + brandFrame.width() + "\" height=\"" + brandFrame.height() + "\" rx=\"16\" fill=\"#F5F1E8\" opacity=\".90\"/><image href=\"" + xml(logoUrl.trim()) + "\" x=\"" + (brandFrame.x() + brandFrame.padding()) + "\" y=\"" + (brandFrame.y() + brandFrame.padding()) + "\" width=\"" + (brandFrame.width() - brandFrame.padding() * 2) + "\" height=\"" + (brandFrame.height() - brandFrame.padding() * 2) + "\" preserveAspectRatio=\"xMidYMid meet\"/></g>"
+        String embeddedBrandLogo = inlineImage(value(logoUrl), "brand logo");
+        String brandMark = !includeBrandLogo ? "" : !embeddedBrandLogo.isBlank()
+                ? "<g><rect x=\"" + brandFrame.x() + "\" y=\"" + brandFrame.y() + "\" width=\"" + brandFrame.width() + "\" height=\"" + brandFrame.height() + "\" rx=\"16\" fill=\"#F5F1E8\" opacity=\".90\"/><image href=\"" + xml(embeddedBrandLogo) + "\" x=\"" + (brandFrame.x() + brandFrame.padding()) + "\" y=\"" + (brandFrame.y() + brandFrame.padding()) + "\" width=\"" + (brandFrame.width() - brandFrame.padding() * 2) + "\" height=\"" + (brandFrame.height() - brandFrame.padding() * 2) + "\" preserveAspectRatio=\"xMidYMid meet\"/></g>"
                 : value(brandName).isBlank() ? ""
                 : "<g><rect x=\"" + brandFrame.x() + "\" y=\"" + brandFrame.y() + "\" width=\"" + brandFrame.width() + "\" height=\"" + brandFrame.height() + "\" rx=\"16\" fill=\"#F5F1E8\" opacity=\".90\"/><text x=\"" + (brandFrame.x() + brandFrame.width() / 2) + "\" y=\"" + (brandFrame.y() + brandFrame.height() / 2 + Math.max(12, width / 90)) + "\" text-anchor=\"middle\" fill=\"#11120F\" font-family=\"Arial,sans-serif\" font-size=\"" + Math.max(12, width / 65) + "\" font-weight=\"700\" letter-spacing=\"2\">" + xml(brandName.trim()) + "</text></g>";
         int margin = width / 12;
@@ -117,7 +128,7 @@ public class SvgTemplateRenderer {
             transcoder.transcode(new TranscoderInput(new ByteArrayInputStream(svg.getBytes(StandardCharsets.UTF_8))), new TranscoderOutput(out));
             return out.toByteArray();
         } catch (Exception e) {
-            throw new IllegalStateException("Local SVG template rendering failed", e);
+            throw new IllegalStateException("Local SVG template rendering failed: " + rootMessage(e), e);
         }
     }
 
@@ -134,7 +145,51 @@ public class SvgTemplateRenderer {
         for (String option : options) if (option.equals(candidate)) return candidate;
         return fallback;
     }
-    private boolean hasHttpUrl(String value) { return value != null && value.trim().matches("https?://.+"); }
+    private String inlineImage(String source, String label) {
+        if (source == null || source.isBlank()) return "";
+        String trimmed = source.trim();
+        if (trimmed.startsWith("data:image/")) return trimmed;
+        if (!trimmed.matches("https?://.+")) return "";
+
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) URI.create(trimmed).toURL().openConnection();
+            connection.setConnectTimeout(3000);
+            connection.setReadTimeout(5000);
+            connection.setInstanceFollowRedirects(true);
+            connection.setRequestProperty("User-Agent", "STUDIO-LocalRenderer/1.0");
+            int status = connection.getResponseCode();
+            if (status < 200 || status >= 300) {
+                log.warn("Skipping unavailable {} image during local composition (HTTP {})", label, status);
+                return "";
+            }
+            String contentType = connection.getContentType();
+            if (contentType == null || !contentType.toLowerCase().startsWith("image/")) {
+                log.warn("Skipping non-image {} asset during local composition", label);
+                return "";
+            }
+            try (InputStream stream = connection.getInputStream()) {
+                byte[] bytes = stream.readNBytes(MAX_EMBEDDED_IMAGE_BYTES + 1);
+                if (bytes.length == 0 || bytes.length > MAX_EMBEDDED_IMAGE_BYTES) {
+                    log.warn("Skipping {} image outside the supported local composition size", label);
+                    return "";
+                }
+                String mimeType = contentType.split(";", 2)[0].trim();
+                return "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(bytes);
+            }
+        } catch (Exception exception) {
+            log.warn("Skipping unavailable {} image during local composition: {}", label, rootMessage(exception));
+            return "";
+        } finally {
+            if (connection != null) connection.disconnect();
+        }
+    }
+
+    private String rootMessage(Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null) current = current.getCause();
+        return current.getMessage() == null ? current.getClass().getSimpleName() : current.getMessage();
+    }
     private String xml(String value) { return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;"); }
 
     private ImageFrame imageFrame(String focus, int width, int height) {
