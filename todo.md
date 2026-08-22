@@ -6,6 +6,9 @@
 ## Restored model-led landing composition
 - [x] Restore the earlier layered landing composition while replacing the post and brand imagery with the model image as its central visual.
 
+## Exact showcase restoration
+- [x] Restore the original product-card, template-card, post-set, variations, and direction-control composition; replace only the second template-and-brand artwork with the model image.
+
 ## Caption language separation
 - [x] Present generated captions as separate French, English, Arabic, and Darija blocks with independent copy actions.
 
