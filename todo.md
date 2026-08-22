@@ -767,3 +767,8 @@ The second attachment does not show an application compile or route error. `pnpm
 - [x] Reproduce the reported local SVG rendering failure and identify its exact SVG generation cause.
 - [x] Repair deterministic rendering for square and story compositions across all creative controls.
 - [x] Validate raster output and full regression/build checks before publishing the repair.
+
+## SVG image-format compatibility repair
+- [x] Reproduce the required `xlink:href` failure from the local SVG rasterizer.
+- [x] Embed every supported product and brand asset with an SVG 1.1-compatible image reference.
+- [x] Validate JPEG, PNG, GIF, WebP, and SVG assets in square and story templates before publishing.
