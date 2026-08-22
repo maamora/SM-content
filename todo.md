@@ -25,6 +25,16 @@
 - [x] Redesign every authenticated STUDIO page with a cohesive professional system while preserving its existing workflows and API behavior; leave the landing page untouched.
 - [x] Validate responsive interaction, accessibility, production build, and existing functional flows before publishing.
 
+## STUDIO inspiration board
+- [x] Research high-quality creative-studio interfaces and recommend a STUDIO-specific visual direction without changing the product.
+
+## Generated STUDIO design concept
+- [x] Generate a professional visual design target for the existing STUDIO workflow: source, composition, multilingual captions, approval, export, and delivery.
+- [x] Display the completed generated STUDIO design concept directly in the chat.
+
+## Botanical landing artwork
+- [x] Replace the referenced landing showcase artwork with the user-supplied botanical creative-system image while preserving layout and interaction behavior.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.
