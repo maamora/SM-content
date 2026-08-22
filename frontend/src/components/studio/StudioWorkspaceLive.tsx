@@ -117,11 +117,12 @@ function useLiveWorkspace() {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const reload = useCallback(async () => {
-        setLoading(true); setError(null);
+    const reload = useCallback(async ({ background = false }: { background?: boolean } = {}) => {
+        if (!background) setLoading(true);
+        setError(null);
         try { const [nextProducts, nextPosts] = await Promise.all([listProducts(), listPosts()]); setProducts(nextProducts); setPosts(nextPosts); }
         catch (err) { setError(err instanceof Error ? err.message : "Unable to load workspace data"); }
-        finally { setLoading(false); }
+        finally { if (!background) setLoading(false); }
     }, []);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial fetch intentionally hydrates this client surface.
     useEffect(() => { void reload(); }, [reload]);
@@ -227,11 +228,11 @@ function SettingsSurface() {
 
 function Unavailable({ label, reason }: { label: string; reason: string }) { return <Notice title={`${label} is ready for its backend route.`} detail={reason} action={<Link className="studio-button studio-button--dark" href="/contact">Talk to the team <ArrowUpRight size={14} /></Link>} />; }
 
-function Surface({ mode, products, posts, refresh }: { mode: WorkspaceMode; products: Product[]; posts: Post[]; refresh: () => void }) {
+function Surface({ mode, products, posts, refresh, onStudioPostChange }: { mode: WorkspaceMode; products: Product[]; posts: Post[]; refresh: () => void; onStudioPostChange: () => void }) {
     if (mode === "dashboard") return <Overview products={products} posts={posts} refresh={refresh} />;
     if (mode === "products") return <div className="studio-live-columns"><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">SOURCE MATERIAL</span><h2>Products</h2></div><span className="studio-chip">{products.length} total</span></div><ProductList products={products} onProductDeleted={refresh} /></section><section className="studio-workspace-panel studio-workspace-panel--accent"><span className="studio-kicker studio-kicker--dark">NEW INPUT</span><h2>Add a product reference.</h2><p>Upload source material that powers your creative directions.</p><ProductForm onCreated={refresh} /><TestingCatalog products={products} onCreated={refresh} /></section></div>;
     if (mode === "brand") return <BrandSurface />;
-    if (mode === "studio") return <section className="studio-workspace-panel studio-workspace-panel--wide"><CreativeStudio products={products} onPostChange={refresh} /></section>;
+    if (mode === "studio") return <section className="studio-workspace-panel studio-workspace-panel--wide"><CreativeStudio products={products} onPostChange={onStudioPostChange} /></section>;
     if (mode === "batch") return <section className="studio-workspace-panel studio-workspace-panel--wide"><BatchStudio products={products} onBatchChange={refresh} /></section>;
     if (mode === "posts") return <PostsSurface posts={posts} refresh={refresh} />;
     if (mode === "assets") return <AssetsSurface products={products} posts={posts} />;
@@ -244,7 +245,7 @@ function Surface({ mode, products, posts, refresh }: { mode: WorkspaceMode; prod
 export function WorkspacePage({ mode }: { mode: WorkspaceMode }) {
     const [label, title, description, Icon] = workspaceData[mode];
     const { products, posts, loading, error, reload } = useLiveWorkspace();
-    return <main className="studio-app"><WorkspaceSidebar active={mode} /><div className="studio-workspace-main"><header className="studio-workspace-topbar"><div><span className="studio-kicker studio-kicker--dark">WORKSPACE / {label.toUpperCase()}</span><h1>{title}</h1><p>{description}</p></div><div className="studio-workspace-actions"><button className="studio-icon-button" aria-label="Search"><Search size={17} /></button><Link href="/dashboard/studio" className="studio-button studio-button--dark"><Plus size={15} /> New direction</Link></div></header><section className="studio-workspace-content"><div className="studio-command-row"><div className="studio-route-title"><Icon size={20} /><span>{label}</span></div><label className="studio-search"><Search size={15} /><input placeholder={`Search ${label.toLowerCase()}`} /></label></div>{error && <div className="studio-form-error"><strong>Live data unavailable.</strong> {error} <button onClick={() => void reload()}>Retry</button></div>}{loading ? <div className="studio-loading"><Loader2 className="studio-spin" size={18} /> Loading live workspace data…</div> : <Surface mode={mode} products={products} posts={posts} refresh={() => void reload()} />}</section></div></main>;
+    return <main className="studio-app"><WorkspaceSidebar active={mode} /><div className="studio-workspace-main"><header className="studio-workspace-topbar"><div><span className="studio-kicker studio-kicker--dark">WORKSPACE / {label.toUpperCase()}</span><h1>{title}</h1><p>{description}</p></div><div className="studio-workspace-actions"><button className="studio-icon-button" aria-label="Search"><Search size={17} /></button><Link href="/dashboard/studio" className="studio-button studio-button--dark"><Plus size={15} /> New direction</Link></div></header><section className="studio-workspace-content"><div className="studio-command-row"><div className="studio-route-title"><Icon size={20} /><span>{label}</span></div><label className="studio-search"><Search size={15} /><input placeholder={`Search ${label.toLowerCase()}`} /></label></div>{error && <div className="studio-form-error"><strong>Live data unavailable.</strong> {error} <button onClick={() => void reload()}>Retry</button></div>}{loading ? <div className="studio-loading"><Loader2 className="studio-spin" size={18} /> Loading live workspace data…</div> : <Surface mode={mode} products={products} posts={posts} refresh={() => void reload()} onStudioPostChange={() => void reload({ background: true })} />}</section></div></main>;
 }
 
 function AdminSurface({ mode, products, posts, templates, summary, capabilities }: { mode: AdminMode; products: Product[]; posts: Post[]; templates: Template[]; summary: AdminSummary | null; capabilities: SystemCapabilities | null }) {
