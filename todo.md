@@ -777,3 +777,8 @@ The second attachment does not show an application compile or route error. `pnpm
 - [x] Trace the render request, page refresh, API response, and post-state hydration path.
 - [x] Preserve the newly created post in Studio so the caption action is available immediately after render or import.
 - [x] Validate the full render-to-caption path and publish the repair.
+
+## Caption quality repair
+- [x] Inspect current multilingual caption templates for repetition, punctuation, blank fallback, and language-mixing defects.
+- [x] Refine fact selection and copy structure for concise product-aware captions.
+- [x] Validate French, Arabic, Darija, and English captions before publishing the repair.

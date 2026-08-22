@@ -79,6 +79,8 @@ class GroqCaptionServiceTest {
                 .contains("A confident scent that stays with you.")
                 .contains("Shop the scent")
                 .contains("#CedarEaudeParfum");
+        assertThat(caption).doesNotContain("Long-lasting Long-lasting").doesNotContain("..")
+                .doesNotContain("A confident scent that stays with you. A confident scent that stays with you.");
         assertThat(authorization.get()).isNull();
         assertThat(requestBody.get()).isNull();
     }
@@ -102,6 +104,18 @@ class GroqCaptionServiceTest {
                     .contains("Run lighter")
                     .contains("Designed for the last kilometre")
                     .contains("Explore the collection");
+            assertThat(caption).doesNotContain("..")
+                    .doesNotContain("Responsive foam cushioning Responsive foam cushioning");
         }
+    }
+
+    @Test
+    void omitsMissingProductFactsInsteadOfInventingGenericClaims() {
+        Product product = Product.builder().name("Mono Mug").build();
+        Post post = Post.builder().id("caption-missing-facts").product(product).headline("Quiet ritual").build();
+
+        String caption = service.generateCaption(post, BrandSettings.builder().name("ATELIER").build(), "fr");
+
+        assertThat(caption).contains("Quiet ritual").contains("Mono Mug").doesNotContain("considered release").doesNotContain("Made for");
     }
 }
