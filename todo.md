@@ -3,6 +3,9 @@
 ## Landing canvas focus adjustment
 - [x] Simplify the specified landing canvas so the model visual is its only image focal point, retaining the editorial copy and call to action.
 
+## Restored model-led landing composition
+- [x] Restore the earlier layered landing composition while replacing the post and brand imagery with the model image as its central visual.
+
 ## Caption language separation
 - [x] Present generated captions as separate French, English, Arabic, and Darija blocks with independent copy actions.
 
