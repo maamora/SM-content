@@ -17,6 +17,9 @@
 - [x] Reduce Studio control density while retaining essential product, copy, brand, output, caption, and delivery controls.
 - [x] Guarantee that French, English, Arabic, and Darija caption outputs are distinct and never fall back to repeated French text.
 
+## Natural caption voice
+- [x] Rewrite the deterministic French, English, Arabic, and Darija captions as natural social-native copy rather than visibly labeled translation blocks.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

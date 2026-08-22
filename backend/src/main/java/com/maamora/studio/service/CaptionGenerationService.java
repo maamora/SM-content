@@ -142,50 +142,114 @@ public class CaptionGenerationService {
 
     private String frenchCaption(CaptionBrief brief) {
         return caption(
-                campaignLead(brief),
-                "Découvrez " + productIdentity(brief) + ".",
-                productFacts(brief).isBlank() ? "" : "L’essentiel : " + productFacts(brief),
-                campaignMessage(brief),
-                labeled(brief.promo(), "Offre"),
-                labeled(brief.price(), "Prix"),
-                textOr(brief.cta(), "Découvrez-le aujourd’hui"),
+                frenchOpening(brief),
+                frenchStory(brief),
+                frenchClose(brief),
                 tags(brief));
     }
 
     private String englishCaption(CaptionBrief brief) {
         return caption(
-                "Meet " + productIdentity(brief) + ".",
-                brief.badge().isBlank() ? brief.headline() : brief.headline() + " · " + brief.badge(),
-                productFacts(brief).isBlank() ? "" : "Why it stands out: " + productFacts(brief),
-                campaignMessage(brief).isBlank() ? "" : "Campaign note: " + campaignMessage(brief),
-                labeled(brief.promo(), "Offer"),
-                labeled(brief.price(), "Price"),
-                textOr(brief.cta(), "Discover it today"),
+                englishOpening(brief),
+                englishStory(brief),
+                englishClose(brief),
                 tags(brief));
     }
 
     private String arabicCaption(CaptionBrief brief) {
         return caption(
-                "اكتشف " + productIdentityArabic(brief) + ".",
-                brief.badge().isBlank() ? brief.headline() : brief.headline() + " · " + brief.badge(),
-                productFacts(brief).isBlank() ? "" : "تفاصيل المنتج: " + productFacts(brief),
-                campaignMessage(brief).isBlank() ? "" : "لمسة الحملة: " + campaignMessage(brief),
-                labeled(brief.promo(), "العرض"),
-                labeled(brief.price(), "السعر"),
-                textOr(brief.cta(), "اكتشفه اليوم"),
+                arabicOpening(brief),
+                arabicStory(brief),
+                arabicClose(brief),
                 tags(brief));
     }
 
     private String darijaCaption(CaptionBrief brief) {
         return caption(
-                "تعرّف على " + productIdentityArabic(brief) + ".",
-                brief.badge().isBlank() ? brief.headline() : brief.headline() + " · " + brief.badge(),
-                productFacts(brief).isBlank() ? "" : "شنو فيه: " + productFacts(brief),
-                campaignMessage(brief).isBlank() ? "" : "فكرة الحملة: " + campaignMessage(brief),
-                labeled(brief.promo(), "العرض"),
-                labeled(brief.price(), "الثمن"),
-                textOr(brief.cta(), "اكتشفو دابا"),
+                darijaOpening(brief),
+                darijaStory(brief),
+                darijaClose(brief),
                 tags(brief));
+    }
+
+    private String frenchOpening(CaptionBrief brief) {
+        String identity = productIdentity(brief);
+        if (!brief.headline().isBlank()) return brief.headline() + ".\n\n" + identity + " prend sa place.";
+        return brief.badge().isBlank() ? identity + " prend sa place." : brief.badge() + " — " + identity + " prend sa place.";
+    }
+
+    private String frenchStory(CaptionBrief brief) {
+        String facts = productFacts(brief);
+        if (facts.isBlank()) return campaignMessage(brief);
+        return campaignMessage(brief).isBlank() ? facts + "." : facts + ". " + campaignMessage(brief);
+    }
+
+    private String frenchClose(CaptionBrief brief) {
+        List<String> closing = new ArrayList<>();
+        if (!brief.promo().isBlank()) closing.add(brief.promo() + ".");
+        if (!brief.price().isBlank()) closing.add("Disponible à " + brief.price() + ".");
+        closing.add(textOr(brief.cta(), "À découvrir dès maintenant.") + endMark(textOr(brief.cta(), "")));
+        return String.join(" ", closing);
+    }
+
+    private String englishOpening(CaptionBrief brief) {
+        String identity = productIdentity(brief);
+        if (!brief.headline().isBlank()) return brief.headline() + ".\n\n" + identity + ", made for the moment.";
+        return brief.badge().isBlank() ? "Introducing " + identity + "." : brief.badge() + " — introducing " + identity + ".";
+    }
+
+    private String englishStory(CaptionBrief brief) {
+        String facts = productFacts(brief);
+        if (facts.isBlank()) return campaignMessage(brief);
+        return campaignMessage(brief).isBlank() ? facts + "." : facts + ". " + campaignMessage(brief);
+    }
+
+    private String englishClose(CaptionBrief brief) {
+        List<String> closing = new ArrayList<>();
+        if (!brief.promo().isBlank()) closing.add(brief.promo() + ".");
+        if (!brief.price().isBlank()) closing.add("Available at " + brief.price() + ".");
+        closing.add(textOr(brief.cta(), "Discover it today.") + endMark(textOr(brief.cta(), "")));
+        return String.join(" ", closing);
+    }
+
+    private String arabicOpening(CaptionBrief brief) {
+        String identity = productIdentityArabic(brief);
+        if (!brief.headline().isBlank()) return brief.headline() + "\n\n" + identity + "، بتفاصيل تترك أثرها.";
+        return brief.badge().isBlank() ? "اكتشف " + identity + "، بتفاصيل تترك أثرها." : brief.badge() + " — اكتشف " + identity + "، بتفاصيل تترك أثرها.";
+    }
+
+    private String arabicStory(CaptionBrief brief) {
+        String facts = productFacts(brief);
+        if (facts.isBlank()) return campaignMessage(brief);
+        return campaignMessage(brief).isBlank() ? facts + "." : facts + ". " + campaignMessage(brief);
+    }
+
+    private String arabicClose(CaptionBrief brief) {
+        List<String> closing = new ArrayList<>();
+        if (!brief.promo().isBlank()) closing.add(brief.promo() + ".");
+        if (!brief.price().isBlank()) closing.add("متوفر بسعر " + brief.price() + ".");
+        closing.add(textOr(brief.cta(), "اكتشفه الآن.") + endMark(textOr(brief.cta(), "")));
+        return String.join(" ", closing);
+    }
+
+    private String darijaOpening(CaptionBrief brief) {
+        String identity = productIdentityArabic(brief);
+        if (!brief.headline().isBlank()) return brief.headline() + "\n\n" + identity + "، تفاصيل كتخلي الفرق يبان.";
+        return brief.badge().isBlank() ? "تعرّف على " + identity + "، تفاصيل كتخلي الفرق يبان." : brief.badge() + " — تعرّف على " + identity + "، تفاصيل كتخلي الفرق يبان.";
+    }
+
+    private String darijaStory(CaptionBrief brief) {
+        String facts = productFacts(brief);
+        if (facts.isBlank()) return campaignMessage(brief);
+        return campaignMessage(brief).isBlank() ? facts + "." : facts + ". " + campaignMessage(brief);
+    }
+
+    private String darijaClose(CaptionBrief brief) {
+        List<String> closing = new ArrayList<>();
+        if (!brief.promo().isBlank()) closing.add(brief.promo() + ".");
+        if (!brief.price().isBlank()) closing.add("متوفر بـ " + brief.price() + ".");
+        closing.add(textOr(brief.cta(), "شوفو دابا.") + endMark(textOr(brief.cta(), "")));
+        return String.join(" ", closing);
     }
 
     private String caption(String... blocks) {
@@ -220,6 +284,10 @@ public class CaptionGenerationService {
 
     private String labeled(String value, String label) { return value.isBlank() ? "" : label + " : " + value; }
     private boolean isDuplicate(String first, String second) { return !first.isBlank() && first.equalsIgnoreCase(second); }
+    private String endMark(String value) {
+        String trimmed = clean(value);
+        return trimmed.isBlank() || trimmed.matches(".*[.!?؟]$") ? "" : ".";
+    }
     private String trimPrice(Double price) { return Math.rint(price) == price ? String.valueOf(price.longValue()) : String.format(java.util.Locale.ROOT, "%.2f", price); }
     private String tags(CaptionBrief brief) {
         return List.of(tag(brief.productName()), tag(brief.brandName()), tag(brief.badge())).stream()

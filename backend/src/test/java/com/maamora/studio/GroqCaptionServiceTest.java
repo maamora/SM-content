@@ -109,10 +109,11 @@ class GroqCaptionServiceTest {
             assertThat(caption).doesNotContain("..")
                     .doesNotContain("Responsive foam cushioning Responsive foam cushioning");
         }
-        assertThat(captions.get("fr")).contains("Découvrez").contains("L’essentiel");
-        assertThat(captions.get("en")).contains("Meet").contains("Why it stands out");
-        assertThat(captions.get("ar")).contains("اكتشف").contains("تفاصيل المنتج");
-        assertThat(captions.get("darija")).contains("تعرّف").contains("شنو فيه");
+        assertThat(captions.get("fr")).contains("Arc Runner prend sa place").contains("Disponible à 890 MAD");
+        assertThat(captions.get("en")).contains("Arc Runner, made for the moment").contains("Available at 890 MAD");
+        assertThat(captions.get("ar")).contains("Arc Runner").contains("متوفر بسعر 890 MAD");
+        assertThat(captions.get("darija")).contains("Arc Runner").contains("متوفر بـ 890 MAD");
+        assertThat(captions.values()).noneMatch(caption -> caption.contains("Offer :") || caption.contains("Price :") || caption.contains("العرض :"));
         assertThat(captions.values()).doesNotHaveDuplicates();
     }
 
