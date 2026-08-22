@@ -12,6 +12,11 @@
 ## Caption language separation
 - [x] Present generated captions as separate French, English, Arabic, and Darija blocks with independent copy actions.
 
+## Professional post outputs and minimal Studio
+- [x] Refine local SVG post compositions into a restrained, art-directed professional template system.
+- [x] Reduce Studio control density while retaining essential product, copy, brand, output, caption, and delivery controls.
+- [x] Guarantee that French, English, Arabic, and Darija caption outputs are distinct and never fall back to repeated French text.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

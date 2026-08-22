@@ -78,11 +78,16 @@ public class SvgTemplateRenderer {
         String visualFrame = "FLOATING".equals(focus)
                 ? "<rect x=\"" + (imageFrame.x() - width / 50) + "\" y=\"" + (imageFrame.y() - height / 65) + "\" width=\"" + (imageFrame.width() + width / 25) + "\" height=\"" + (imageFrame.height() + height / 32) + "\" rx=\"42\" fill=\"#F5F1E8\" opacity=\".14\"/>"
                 : "";
+        int margin = Math.max(42, width / 13);
+        int copyPanelX = margin;
+        int copyPanelY = (int) (height * .665);
+        int copyPanelWidth = width - margin * 2;
+        int copyPanelHeight = (int) (height * .275);
         String backgroundArt = switch (layout) {
-            case "MINIMAL" -> "<path d=\"M0 " + (height * .12) + " L" + width + " " + (height * .04) + " L" + width + " " + (height * .17) + " L0 " + (height * .25) + " Z\" fill=\"" + safeAccent + "\" opacity=\".45\"/>";
-            case "CATALOG" -> "<rect x=\"" + (width / 20) + "\" y=\"" + (height / 20) + "\" width=\"" + (width * 9 / 10) + "\" height=\"" + (height * 9 / 10) + "\" rx=\"32\" fill=\"none\" stroke=\"#10110F\" stroke-opacity=\".18\" stroke-width=\"3\"/>";
-            case "POSTER" -> "<path d=\"M0 0 H" + width + " V" + (height * .14) + " L0 " + (height * .34) + " Z\" fill=\"" + safeAccent + "\" opacity=\".18\"/>";
-            default -> "<circle cx=\"" + (width * 3 / 4) + "\" cy=\"" + (height / 4) + "\" r=\"" + (width / 3) + "\" fill=\"" + safeAccent + "\" opacity=\".16\"/>";
+            case "MINIMAL" -> "<path d=\"M0 " + (height * .10) + " L" + width + " " + (height * .03) + " L" + width + " " + (height * .12) + " L0 " + (height * .19) + " Z\" fill=\"" + safeAccent + "\" opacity=\".32\"/><path d=\"M" + margin + " " + (height * .18) + " H" + (width - margin) + "\" stroke=\"#10110F\" stroke-opacity=\".18\" stroke-width=\"2\"/>";
+            case "CATALOG" -> "<rect x=\"" + margin + "\" y=\"" + margin + "\" width=\"" + (width - margin * 2) + "\" height=\"" + (height - margin * 2) + "\" rx=\"0\" fill=\"none\" stroke=\"#10110F\" stroke-opacity=\".24\" stroke-width=\"2\"/><path d=\"M" + (width / 2) + " " + margin + " V" + (height - margin) + "\" stroke=\"#10110F\" stroke-opacity=\".10\" stroke-width=\"2\"/>";
+            case "POSTER" -> "<rect x=\"0\" y=\"0\" width=\"" + (width * .18) + "\" height=\"" + height + "\" fill=\"" + safeAccent + "\" opacity=\".86\"/><path d=\"M" + (width * .12) + " 0 L" + (width * .53) + " 0 L" + (width * .27) + " " + height + " L0 " + height + " Z\" fill=\"#10110F\" opacity=\".18\"/>";
+            default -> "<rect x=\"" + margin + "\" y=\"" + margin + "\" width=\"" + (width - margin * 2) + "\" height=\"" + (height - margin * 2) + "\" rx=\"0\" fill=\"none\" stroke=\"#FFFFFF\" stroke-opacity=\".16\" stroke-width=\"2\"/><circle cx=\"" + (width * .78) + "\" cy=\"" + (height * .25) + "\" r=\"" + (width / 5) + "\" fill=\"" + safeAccent + "\" opacity=\".14\"/>";
         };
         BrandFrame brandFrame = brandFrame(brandLogoPlacement, width, height);
         String embeddedBrandLogo = inlineImage(value(logoUrl), "brand logo");
@@ -90,38 +95,37 @@ public class SvgTemplateRenderer {
                 ? "<g><rect x=\"" + brandFrame.x() + "\" y=\"" + brandFrame.y() + "\" width=\"" + brandFrame.width() + "\" height=\"" + brandFrame.height() + "\" rx=\"16\" fill=\"#F5F1E8\" opacity=\".90\"/>" + imageElement(embeddedBrandLogo, brandFrame.x() + brandFrame.padding(), brandFrame.y() + brandFrame.padding(), brandFrame.width() - brandFrame.padding() * 2, brandFrame.height() - brandFrame.padding() * 2, "xMidYMid meet") + "</g>"
                 : value(brandName).isBlank() ? ""
                 : "<g><rect x=\"" + brandFrame.x() + "\" y=\"" + brandFrame.y() + "\" width=\"" + brandFrame.width() + "\" height=\"" + brandFrame.height() + "\" rx=\"16\" fill=\"#F5F1E8\" opacity=\".90\"/><text x=\"" + (brandFrame.x() + brandFrame.width() / 2) + "\" y=\"" + (brandFrame.y() + brandFrame.height() / 2 + Math.max(12, width / 90)) + "\" text-anchor=\"middle\" fill=\"#11120F\" font-family=\"Arial,sans-serif\" font-size=\"" + Math.max(12, width / 65) + "\" font-weight=\"700\" letter-spacing=\"2\">" + xml(brandName.trim()) + "</text></g>";
-        int margin = width / 12;
         int copyX = "CENTER".equals(alignment) ? width / 2 : margin;
         String textAnchor = "CENTER".equals(alignment) ? "middle" : "start";
         int ctaWidth = Math.max(150, width / 4);
         int ctaHeight = Math.max(42, height / 22);
         int ctaX = "CENTER".equals(alignment) ? (width - ctaWidth) / 2 : margin;
         int ctaY = (int) (height * .905);
-        String cta = visualCta.isBlank() ? "" : "<g><rect x=\"" + ctaX + "\" y=\"" + ctaY + "\" width=\"" + ctaWidth + "\" height=\"" + ctaHeight + "\" rx=\"" + (ctaHeight / 2) + "\" fill=\"" + safeAccent + "\"/><text x=\"" + (ctaX + ctaWidth / 2) + "\" y=\"" + (ctaY + ctaHeight / 2 + Math.max(7, width / 110)) + "\" text-anchor=\"middle\" fill=\"#10110F\" font-family=\"Arial,sans-serif\" font-size=\"" + Math.max(12, width / 70) + "\" font-weight=\"700\" letter-spacing=\"1\">" + xml(visualCta) + "</text></g>";
+        String cta = visualCta.isBlank() ? "" : "<g><rect x=\"" + ctaX + "\" y=\"" + ctaY + "\" width=\"" + ctaWidth + "\" height=\"" + ctaHeight + "\" rx=\"0\" fill=\"" + safeAccent + "\"/><text x=\"" + (ctaX + ctaWidth / 2) + "\" y=\"" + (ctaY + ctaHeight / 2 + Math.max(7, width / 110)) + "\" text-anchor=\"middle\" fill=\"#10110F\" font-family=\"Arial,sans-serif\" font-size=\"" + Math.max(12, width / 70) + "\" font-weight=\"700\" letter-spacing=\"1\">" + xml(visualCta) + "</text></g>";
         String svg = """
                 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="%d" height="%d" viewBox="0 0 %d %d">
                   <rect width="100%%" height="100%%" fill="%s"/>
                   %s
-                  <rect x="%d" y="%d" width="%d" height="%d" rx="22" fill="%s"/>
+                  <rect x="%d" y="%d" width="%d" height="%d" rx="0" fill="%s"/>
                   <text x="%d" y="%d" fill="#111" font-family="Arial,sans-serif" font-size="%d" font-weight="700" letter-spacing="2">%s</text>
                   %s
                   %s
                   %s
-                  <rect x="0" y="%d" width="%d" height="%d" fill="%s" opacity="%s"/>
+                  <rect x="%d" y="%d" width="%d" height="%d" fill="%s" opacity="%s"/>
                   <text x="%d" y="%d" text-anchor="%s" fill="%s" font-family="Arial,sans-serif" font-size="%d" font-weight="700">%s</text>
                   <text x="%d" y="%d" text-anchor="%s" fill="%s" font-family="Arial,sans-serif" font-size="%d">%s</text>
                   <text x="%d" y="%d" text-anchor="%s" fill="%s" font-family="Arial,sans-serif" font-size="%d">%s</text>
                   %s
-                  <text x="%d" y="%d" text-anchor="%s" fill="%s" font-family="Arial,sans-serif" font-size="%d" letter-spacing="3">LOCAL TEMPLATE COMPOSITION</text>
+                  <text x="%d" y="%d" text-anchor="%s" fill="%s" font-family="Arial,sans-serif" font-size="%d" letter-spacing="3">STUDIO / LOCAL COMPOSITION</text>
                 </svg>
                 """.formatted(width, height, width, height, background, backgroundArt,
-                margin, height / 12, width / 3, height / 13, safeAccent,
+                margin, height / 12, Math.min(width / 3, Math.max(210, width / 4)), height / 15, safeAccent,
                 margin + 24, height / 12 + height / 21, Math.max(18, width / 42), xml(compact(badge, "PRODUCT VISUAL", 32)),
                 visualFrame, visual, brandMark,
-                (int) (height * .68), width, (int) (height * .32), panelFill, panelOpacity,
-                copyX, (int) (height * .755), textAnchor, primaryInk, Math.max(26, width / 21), xml(visualHeadline),
-                copyX, (int) (height * .815), textAnchor, primaryInk, Math.max(16, width / 47), xml(visualPromo),
-                copyX, (int) (height * .862), textAnchor, secondaryInk, Math.max(14, width / 58), xml(visualSupporting),
+                copyPanelX, copyPanelY, copyPanelWidth, copyPanelHeight, panelFill, panelOpacity,
+                copyX, (int) (height * .745), textAnchor, primaryInk, Math.max(26, width / 23), xml(visualHeadline),
+                copyX, (int) (height * .802), textAnchor, primaryInk, Math.max(16, width / 49), xml(visualPromo),
+                copyX, (int) (height * .848), textAnchor, secondaryInk, Math.max(14, width / 60), xml(visualSupporting),
                 cta,
                 copyX, (int) (height * .975), textAnchor, secondaryInk, Math.max(10, width / 82));
         try {

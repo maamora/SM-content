@@ -282,24 +282,31 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
 
                     {mode === "template" ? <>
                         <section className="studio-artboard-section">
-                            <Label>Atmosphère & couleur</Label>
+                            <Label>Atmosphère</Label>
                             <div className="studio-artboard-moods">{moods.map((mood) => <button key={mood.id} type="button" aria-pressed={moodId === mood.id} onClick={() => { setMoodId(mood.id); clearWorkingPost(); }} title={mood.label} style={{ "--mood": mood.color } as React.CSSProperties}><span>{mood.label}</span></button>)}</div>
-                            <div className="mt-3 flex items-center justify-between border-t border-[#2e302a] pt-3"><span className="text-xs font-semibold text-[#d9dbd1]">Signal couleur</span><label className="flex items-center gap-2 text-[10px] font-mono uppercase text-[#9c9f94]"><span>{accentColor}</span><input type="color" value={accentColor} onChange={(event) => { setAccentColor(event.target.value); clearWorkingPost(); }} /></label></div>
+                            <p className="studio-artboard-hint">Choisissez d’abord une atmosphère. Les réglages de précision restent disponibles ci-dessous.</p>
                         </section>
                         <section className="studio-artboard-section">
-                            <Label>Direction créative</Label>
-                            <p className="studio-artboard-hint">La composition est locale : style, cadrage et alignement changent réellement le PNG exporté.</p>
+                            <Label>Direction</Label>
                             <div className="mt-3"><Label>Structure</Label><div className="studio-artboard-choice-row mt-2">{layoutStyles.map((style) => <button key={style.id} type="button" aria-pressed={layoutStyle === style.id} onClick={() => { setLayoutStyle(style.id); clearWorkingPost(); }}>{style.label}</button>)}</div></div>
-                            <div className="mt-3"><Label>Cadrage produit</Label><div className="studio-artboard-choice-row mt-2">{productFocuses.map((focus) => <button key={focus.id} type="button" aria-pressed={productFocus === focus.id} onClick={() => { setProductFocus(focus.id); clearWorkingPost(); }}>{focus.label}</button>)}</div></div>
-                            <div className="mt-3 flex items-center justify-between border-t border-[#2e302a] pt-3"><Label>Alignement du texte</Label><div className="studio-artboard-choice-row"><button type="button" aria-pressed={textAlignment === "LEFT"} onClick={() => { setTextAlignment("LEFT"); clearWorkingPost(); }}>Gauche</button><button type="button" aria-pressed={textAlignment === "CENTER"} onClick={() => { setTextAlignment("CENTER"); clearWorkingPost(); }}>Centré</button></div></div>
+                            <details className="mt-4 border-t border-[#2e302a] pt-3 text-xs text-[#aeb0a7]">
+                                <summary className="cursor-pointer font-semibold text-[#e8e9e1] marker:text-[#c6ff5e]">Réglages de composition</summary>
+                                <p className="studio-artboard-hint mt-2">Cadrage, alignement et couleur signal modifient le PNG local sans ajouter de complexité au flux principal.</p>
+                                <div className="mt-3"><Label>Cadrage produit</Label><div className="studio-artboard-choice-row mt-2">{productFocuses.map((focus) => <button key={focus.id} type="button" aria-pressed={productFocus === focus.id} onClick={() => { setProductFocus(focus.id); clearWorkingPost(); }}>{focus.label}</button>)}</div></div>
+                                <div className="mt-3 flex items-center justify-between"><Label>Alignement du texte</Label><div className="studio-artboard-choice-row"><button type="button" aria-pressed={textAlignment === "LEFT"} onClick={() => { setTextAlignment("LEFT"); clearWorkingPost(); }}>Gauche</button><button type="button" aria-pressed={textAlignment === "CENTER"} onClick={() => { setTextAlignment("CENTER"); clearWorkingPost(); }}>Centré</button></div></div>
+                                <div className="mt-3 flex items-center justify-between"><span className="text-xs font-semibold text-[#d9dbd1]">Signal couleur</span><label className="flex items-center gap-2 text-[10px] font-mono uppercase text-[#9c9f94]"><span>{accentColor}</span><input type="color" value={accentColor} onChange={(event) => { setAccentColor(event.target.value); clearWorkingPost(); }} /></label></div>
+                            </details>
                         </section>
                         <section className="studio-artboard-section">
-                            <Label>Copy & conversion</Label>
+                            <Label>Message</Label>
                             <label className="studio-artboard-field">Titre principal<input value={headline} maxLength={46} placeholder={selectedProduct?.name || "Votre produit"} onChange={(event) => { setHeadline(event.target.value); clearWorkingPost(); }} /></label>
-                            <label className="studio-artboard-field">Badge<input value={badgeText} maxLength={32} onChange={(event) => { setBadgeText(event.target.value.toUpperCase()); clearWorkingPost(); }} /></label>
                             <label className="studio-artboard-field">Message<input value={promoText} maxLength={80} onChange={(event) => { setPromoText(event.target.value.toUpperCase()); clearWorkingPost(); }} /></label>
-                            <label className="studio-artboard-field">Preuve / bénéfice<input value={supportingText} maxLength={86} placeholder={selectedProduct?.description || "Ce qui rend votre offre désirable"} onChange={(event) => { setSupportingText(event.target.value); clearWorkingPost(); }} /></label>
                             <label className="studio-artboard-field">Appel à l’action<input value={ctaText} maxLength={28} onChange={(event) => { setCtaText(event.target.value.toUpperCase()); clearWorkingPost(); }} /></label>
+                            <details className="mt-4 border-t border-[#2e302a] pt-3 text-xs text-[#aeb0a7]">
+                                <summary className="cursor-pointer font-semibold text-[#e8e9e1] marker:text-[#c6ff5e]">Ajouter badge ou preuve</summary>
+                                <div className="mt-3"><label className="studio-artboard-field">Badge<input value={badgeText} maxLength={32} onChange={(event) => { setBadgeText(event.target.value.toUpperCase()); clearWorkingPost(); }} /></label></div>
+                                <label className="studio-artboard-field">Preuve / bénéfice<input value={supportingText} maxLength={86} placeholder={selectedProduct?.description || "Ce qui rend votre offre désirable"} onChange={(event) => { setSupportingText(event.target.value); clearWorkingPost(); }} /></label>
+                            </details>
                         </section>
                     </> : <section className="studio-artboard-section">
                         <Label>Votre visuel</Label>

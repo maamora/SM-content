@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Slf4j
@@ -157,10 +158,15 @@ public class PostService {
         int generatedCount = 0;
         String lastError = null;
         for (String lang : request.getLanguages()) {
+            String normalizedLanguage = lang == null ? "fr" : lang.trim().toLowerCase(Locale.ROOT);
+            if (!List.of("fr", "en", "ar", "darija").contains(normalizedLanguage)) {
+                log.warn("Ignoring unsupported caption language '{}' for post {}", lang, post.getId());
+                continue;
+            }
             try {
-                String caption = captionGenerationService.generateCaption(post, brand, lang);
+                String caption = captionGenerationService.generateCaption(post, brand, normalizedLanguage);
                 generatedCount++;
-                switch (lang) {
+                switch (normalizedLanguage) {
                     case "en" -> post.setCaptionEn(caption);
                     case "ar" -> post.setCaptionAr(caption);
                     case "darija" -> post.setCaptionDarija(caption);
@@ -168,7 +174,7 @@ public class PostService {
                 }
             } catch (Exception e) {
                 lastError = e.getMessage();
-                log.error("Caption generation failed for post {} lang {}: {}", post.getId(), lang, e.getMessage(), e);
+                log.error("Caption generation failed for post {} lang {}: {}", post.getId(), normalizedLanguage, e.getMessage(), e);
             }
         }
 

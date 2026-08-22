@@ -143,8 +143,8 @@ public class CaptionGenerationService {
     private String frenchCaption(CaptionBrief brief) {
         return caption(
                 campaignLead(brief),
-                productIdentity(brief),
-                productFacts(brief),
+                "Découvrez " + productIdentity(brief) + ".",
+                productFacts(brief).isBlank() ? "" : "L’essentiel : " + productFacts(brief),
                 campaignMessage(brief),
                 labeled(brief.promo(), "Offre"),
                 labeled(brief.price(), "Prix"),
@@ -154,10 +154,10 @@ public class CaptionGenerationService {
 
     private String englishCaption(CaptionBrief brief) {
         return caption(
-                campaignLead(brief),
-                productIdentity(brief),
-                productFacts(brief),
-                campaignMessage(brief),
+                "Meet " + productIdentity(brief) + ".",
+                brief.badge().isBlank() ? brief.headline() : brief.headline() + " · " + brief.badge(),
+                productFacts(brief).isBlank() ? "" : "Why it stands out: " + productFacts(brief),
+                campaignMessage(brief).isBlank() ? "" : "Campaign note: " + campaignMessage(brief),
                 labeled(brief.promo(), "Offer"),
                 labeled(brief.price(), "Price"),
                 textOr(brief.cta(), "Discover it today"),
@@ -166,10 +166,10 @@ public class CaptionGenerationService {
 
     private String arabicCaption(CaptionBrief brief) {
         return caption(
-                campaignLead(brief),
-                productIdentityArabic(brief),
-                productFacts(brief),
-                campaignMessage(brief),
+                "اكتشف " + productIdentityArabic(brief) + ".",
+                brief.badge().isBlank() ? brief.headline() : brief.headline() + " · " + brief.badge(),
+                productFacts(brief).isBlank() ? "" : "تفاصيل المنتج: " + productFacts(brief),
+                campaignMessage(brief).isBlank() ? "" : "لمسة الحملة: " + campaignMessage(brief),
                 labeled(brief.promo(), "العرض"),
                 labeled(brief.price(), "السعر"),
                 textOr(brief.cta(), "اكتشفه اليوم"),
@@ -178,10 +178,10 @@ public class CaptionGenerationService {
 
     private String darijaCaption(CaptionBrief brief) {
         return caption(
-                campaignLead(brief),
-                productIdentityArabic(brief),
-                productFacts(brief),
-                campaignMessage(brief),
+                "تعرّف على " + productIdentityArabic(brief) + ".",
+                brief.badge().isBlank() ? brief.headline() : brief.headline() + " · " + brief.badge(),
+                productFacts(brief).isBlank() ? "" : "شنو فيه: " + productFacts(brief),
+                campaignMessage(brief).isBlank() ? "" : "فكرة الحملة: " + campaignMessage(brief),
                 labeled(brief.promo(), "العرض"),
                 labeled(brief.price(), "الثمن"),
                 textOr(brief.cta(), "اكتشفو دابا"),

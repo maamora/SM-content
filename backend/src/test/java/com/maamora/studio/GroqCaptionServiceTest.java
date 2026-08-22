@@ -94,8 +94,10 @@ class GroqCaptionServiceTest {
                 .promoText("Free delivery this week").headline("Run lighter")
                 .supportingText("Designed for the last kilometre").ctaText("Explore the collection").build();
 
+        java.util.Map<String, String> captions = new java.util.LinkedHashMap<>();
         for (String language : new String[]{"fr", "ar", "darija", "en"}) {
             String caption = service.generateCaption(post, brand, language);
+            captions.put(language, caption);
             assertThat(caption)
                     .contains("Arc Runner")
                     .contains("Breathable daily trainers")
@@ -107,6 +109,11 @@ class GroqCaptionServiceTest {
             assertThat(caption).doesNotContain("..")
                     .doesNotContain("Responsive foam cushioning Responsive foam cushioning");
         }
+        assertThat(captions.get("fr")).contains("Découvrez").contains("L’essentiel");
+        assertThat(captions.get("en")).contains("Meet").contains("Why it stands out");
+        assertThat(captions.get("ar")).contains("اكتشف").contains("تفاصيل المنتج");
+        assertThat(captions.get("darija")).contains("تعرّف").contains("شنو فيه");
+        assertThat(captions.values()).doesNotHaveDuplicates();
     }
 
     @Test
