@@ -1,4 +1,5 @@
 "use client";
+/* AUTHENTICATED STUDIO SYSTEM: a quiet creative-operations shell with grouped navigation, restrained depth, and no changes to workspace API behavior. */
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
@@ -43,6 +44,12 @@ const workspaceNav: [WorkspaceMode, string, typeof LayoutDashboard][] = [
     ["studio", "Studio", Sparkles], ["batch", "Batch", Layers3], ["assets", "Assets", FolderOpen],
     ["posts", "Posts", FileImage], ["calendar", "Calendar", CalendarDays], ["social", "Social", Store],
     ["notifications", "Notifications", Bell], ["settings", "Settings", Settings2],
+];
+
+const workspaceNavSections: { label: string; keys: WorkspaceMode[] }[] = [
+    { label: "Create", keys: ["dashboard", "products", "brand", "studio", "batch"] },
+    { label: "Library", keys: ["assets", "posts", "calendar"] },
+    { label: "Delivery", keys: ["social", "notifications", "settings"] },
 ];
 
 const adminData = {
@@ -109,7 +116,8 @@ function TestingCatalog({ products, onCreated }: { products: Product[]; onCreate
 }
 
 function WorkspaceSidebar({ active }: { active: WorkspaceMode }) {
-    return <aside className="studio-workspace-sidebar"><div className="studio-workspace-sidebar__brand"><StudioMark compact /><span>WORKSPACE / LIVE</span></div><nav>{workspaceNav.map(([key, label, Icon]) => <Link key={key} href={`/dashboard/${key}`} className={active === key ? "is-active" : ""}><Icon size={16} />{label}</Link>)}</nav><div className="studio-workspace-sidebar__bottom"><Link href="/contact"><CircleHelp size={15} />Need a hand?</Link><Link href="/">← Back to site</Link></div></aside>;
+    const entries = new Map(workspaceNav.map(([key, label, Icon]) => [key, { label, Icon }]));
+    return <aside className="studio-workspace-sidebar"><div className="studio-workspace-sidebar__brand"><StudioMark compact /><span>CREATIVE OPERATIONS</span></div><nav>{workspaceNavSections.map((section) => <div className="studio-workspace-nav__section" key={section.label}><span>{section.label}</span>{section.keys.map((key) => { const entry = entries.get(key)!; const Icon = entry.Icon; return <Link key={key} href={`/dashboard/${key}`} className={active === key ? "is-active" : ""}><Icon size={16} />{entry.label}</Link>; })}</div>)}</nav><div className="studio-workspace-sidebar__bottom"><Link href="/contact"><CircleHelp size={15} />Support</Link><Link href="/">← Back to site</Link></div></aside>;
 }
 
 function useLiveWorkspace() {

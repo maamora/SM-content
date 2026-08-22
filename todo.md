@@ -20,6 +20,11 @@
 ## Natural caption voice
 - [x] Rewrite the deterministic French, English, Arabic, and Darija captions as natural social-native copy rather than visibly labeled translation blocks.
 
+## Professional authenticated-product redesign
+- [x] Audit ReactBits references and available 21st.dev integration resources for reusable interaction and component patterns.
+- [x] Redesign every authenticated STUDIO page with a cohesive professional system while preserving its existing workflows and API behavior; leave the landing page untouched.
+- [x] Validate responsive interaction, accessibility, production build, and existing functional flows before publishing.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.
