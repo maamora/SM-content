@@ -757,3 +757,8 @@ The second attachment does not show an application compile or route error. `pnpm
 - [x] Audit current caption request inputs, product fields, caption service templates, and Studio interaction.
 - [x] Generate captions from the selected product data plus the user’s campaign direction in French, Arabic, Darija, and English.
 - [x] Validate the API contract, multilingual output, and frontend caption interaction before committing.
+
+## Caption action availability repair
+- [x] Inspect the Studio caption button’s disabled condition and its required product/post state.
+- [x] Restore a usable caption-generation path without bypassing the authenticated post workflow.
+- [x] Validate the repaired interaction, production build, and publish the correction.
