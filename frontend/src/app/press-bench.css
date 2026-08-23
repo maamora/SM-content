@@ -1,14 +1,15 @@
-/* PRESS BENCH / AUTHENTICATED PRODUCT ONLY: a tactile production board with a compact tool dock, job strip, and route-specific work fields. Public marketing is never selected here. */
+/* PRESS BENCH / AUTHENTICATED PRODUCT ONLY: a tactile production board using STUDIO landing charcoal, paper, olive, and lime tokens. Public marketing is never selected here. */
 
 .studio-app--press-bench {
-  --bench-ink: #11110f;
-  --bench-panel: #1d1e19;
-  --bench-paper: #eceae2;
-  --bench-stock: #d9d6ca;
-  --bench-sage: #9dad88;
-  --bench-lime: #c6ff5e;
+  --bench-ink: #11130f;
+  --bench-panel: #1a1c19;
+  --bench-paper: #faf9f4;
+  --bench-stock: #f4f3ed;
+  --bench-sage: #5f762a;
+  --bench-lime: #b9dd45;
   --bench-red: #ef7f61;
-  --bench-line: #b9b6aa;
+  --bench-line: #c5c4bb;
+  --bench-muted: #777870;
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr);
   min-height: 100vh;
@@ -25,7 +26,7 @@
   min-height: 100vh;
   flex-direction: column;
   overflow: visible;
-  border-right: 1px solid #353630;
+  border-right: 1px solid #343832;
   background: var(--bench-ink);
   box-shadow: none;
   z-index: 20;
@@ -36,7 +37,7 @@
   min-height: 68px;
   place-items: center;
   padding: 0;
-  border-bottom: 1px solid #353630;
+  border-bottom: 1px solid #343832;
 }
 .studio-app--press-bench .studio-bench-dock__brand .studio-mark__word,
 .studio-app--press-bench .studio-bench-dock__brand > span { display: none; }
@@ -62,7 +63,7 @@
   border: 1px solid transparent;
   border-radius: 3px;
   background: transparent;
-  color: #9a9a90;
+  color: #85857e;
   transform: none;
 }
 .studio-app--press-bench .studio-bench-dock nav a > span { display: none; }
@@ -72,11 +73,11 @@
   left: calc(100% + 11px);
   display: none;
   padding: 7px 9px;
-  border: 1px solid #45463e;
+  border: 1px solid #343832;
   border-radius: 2px;
-  background: #20211d;
+  background: var(--bench-panel);
   box-shadow: 4px 4px 0 rgb(0 0 0 / 24%);
-  color: #f3f1e8;
+  color: var(--bench-paper);
   content: attr(data-label);
   font-size: 11px;
   font-weight: 800;
@@ -99,7 +100,7 @@
   min-width: 0;
   min-height: 100vh;
   background-color: var(--bench-paper);
-  background-image: linear-gradient(90deg, rgb(17 17 15 / 4%) 1px, transparent 1px), linear-gradient(rgb(17 17 15 / 4%) 1px, transparent 1px);
+  background-image: linear-gradient(90deg, rgb(17 19 15 / 4%) 1px, transparent 1px), linear-gradient(rgb(17 19 15 / 4%) 1px, transparent 1px);
   background-size: 36px 36px;
 }
 
@@ -108,7 +109,7 @@
   margin: 0;
   padding: 0;
   border-bottom: 1px solid var(--bench-line);
-  background: rgb(236 234 226 / 96%);
+  background: rgb(250 249 244 / 96%);
 }
 .studio-app--press-bench .studio-route-masthead,
 .studio-app--press-bench .studio-worktable__masthead,
@@ -306,18 +307,46 @@
 .studio-app--press-bench .studio-artboard-publish { border-left-color: #383a32; }
 
 /* Separate governance plane remains distinct, but uses the same durable paper and lead rules. */
-.studio-admin-app { grid-template-columns: 214px minmax(0, 1fr); background: #e8e8e1; color: #1d211f; }
-.studio-admin-rail { background: #182321; border-right-color: #36514a; }
-.studio-admin-rail__brand,.studio-admin-rail footer { border-color: #36514a; }
-.studio-admin-rail__status { border-color: #46736a; background: #20312d; color: #bce6dc; }
+.studio-admin-app { grid-template-columns: 214px minmax(0, 1fr); background: #f8f7f1; color: #171916; }
+.studio-admin-rail { background: #171916; border-right-color: #343832; }
+.studio-admin-rail__brand,.studio-admin-rail footer { border-color: #343832; }
+.studio-admin-rail__status { border-color: #5f762a; background: #20221f; color: #faf9f4; }
 .studio-admin-rail nav a { border-radius: 1px; }
-.studio-admin-rail nav a.is-active { border-left-color: #b8f2a0; background: #315047; color: #eff7e9; }
-.studio-admin-main { background-color: #e8e8e1; background-image: linear-gradient(90deg, rgb(24 35 33 / 5%) 1px,transparent 1px),linear-gradient(rgb(24 35 33 / 5%) 1px,transparent 1px); }
-.studio-admin-header { min-height: 114px; border-bottom-color: #acb5af; }
-.studio-admin-header h1 { color: #182321; font-family: Georgia, "Times New Roman", serif; font-size: clamp(30px, 4vw, 48px); }
-.studio-admin-commandbar { border-bottom-color: #acb5af; }
-.studio-admin-app .studio-workspace-panel { border-color: #aeb7b0; border-radius: 2px; background: #f5f4ed; box-shadow: 5px 5px 0 rgb(24 35 33 / 11%); color: #1d211f; }
-.studio-admin-app .studio-workspace-panel--accent { background: #d6efc0; }
+.studio-admin-rail nav a.is-active { border-left-color: #b9dd45; background: #343832; color: #faf9f4; }
+.studio-admin-main { background-color: #f8f7f1; background-image: linear-gradient(90deg, rgb(23 25 22 / 5%) 1px,transparent 1px),linear-gradient(rgb(23 25 22 / 5%) 1px,transparent 1px); }
+.studio-admin-header { min-height: 114px; border-bottom-color: #c5c4bb; }
+.studio-admin-header h1 { color: #171916; font-family: Georgia, "Times New Roman", serif; font-size: clamp(30px, 4vw, 48px); }
+.studio-admin-commandbar { border-bottom-color: #c5c4bb; }
+.studio-admin-app .studio-workspace-panel { border-color: #c5c4bb; border-radius: 2px; background: #faf9f4; box-shadow: 5px 5px 0 rgb(23 25 22 / 11%); color: #171916; }
+.studio-admin-app .studio-workspace-panel--accent { background: #e8e7df; }
+
+/* Landing-color alignment for all member work surfaces. Structural rules remain intentionally untouched. */
+.studio-app--press-bench .studio-route-controlbar { background: var(--bench-stock); }
+.studio-app--press-bench .studio-search { border-color: var(--bench-line); background: var(--bench-paper); }
+.studio-app--press-bench .studio-search:focus-within { box-shadow: 3px 3px 0 rgb(185 221 69 / 55%); }
+.studio-app--press-bench .studio-icon-button:hover { background: var(--bench-stock); }
+.studio-app--press-bench button:focus-visible,.studio-app--press-bench a:focus-visible,.studio-app--press-bench input:focus-visible,.studio-app--press-bench textarea:focus-visible,.studio-app--press-bench select:focus-visible { outline-color: var(--bench-sage); }
+.studio-app--press-bench .studio-workspace-panel,
+.studio-app--press-bench .studio-work-sheet,
+.studio-app--press-bench .studio-overview-stats,
+.studio-app--press-bench .studio-overview-runway,
+.studio-app--press-bench .studio-analysis-panel { background: var(--bench-paper); }
+.studio-app--press-bench .studio-workspace-panel,
+.studio-app--press-bench .studio-work-sheet,
+.studio-app--press-bench .studio-overview-stats,
+.studio-app--press-bench .studio-analysis-panel { box-shadow: 5px 5px 0 rgb(17 19 15 / 10%); }
+.studio-app--press-bench .studio-workspace-panel:hover { box-shadow: 5px 5px 0 rgb(17 19 15 / 14%); }
+.studio-app--press-bench .studio-overview-runway__card,
+.studio-app--press-bench .studio-overview-flow__asset,
+.studio-app--press-bench .studio-data-row:hover { background: var(--bench-stock); }
+.studio-app--press-bench .studio-kicker,
+.studio-app--press-bench .studio-kicker--dark,
+.studio-app--press-bench .studio-route-controlbar__label svg { color: var(--bench-sage); }
+.studio-app--press-bench .studio-job-strip__record .studio-kicker,
+.studio-app--press-bench .studio-route-masthead p,
+.studio-app--press-bench .studio-analysis-funnel span,
+.studio-app--press-bench .studio-analysis-funnel small,
+.studio-app--press-bench .studio-analysis-panel--quality dt { color: var(--bench-muted); }
 
 @media (max-width: 860px) {
   .studio-app--press-bench .studio-artboard-workspace { grid-template-columns: 238px minmax(380px, 1fr) 276px; }

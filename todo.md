@@ -162,6 +162,11 @@
 - [x] Adapt only the suitable supplied interaction pattern to existing real product/post records, reduced motion, and current dependencies.
 - [x] Validate the resulting inner-page integration for accessibility, mobile behavior, workflow preservation, and production build.
 
+## Landing-color inner-page alignment
+- [x] Map the public landing’s color tokens and semantic contrast rules to member and Admin inner-page surfaces.
+- [x] Apply the landing-aligned palette without changing Press Bench navigation, workflows, or public landing code.
+- [x] Validate contrast, desktop/mobile presentation, public landing isolation, and production build before committing.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.
