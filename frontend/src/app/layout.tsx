@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./signal-press.css";
+/* QUIET STUDIO: authenticated-only minimal product system, loaded after legacy and Signal Press layers. */
+import "./quiet-studio.css";
 
 export const metadata: Metadata = {
   title: "STUDIO | Creative operations in motion",

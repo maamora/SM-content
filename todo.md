@@ -72,6 +72,12 @@
 - [x] Assess compatibility, safety, and concrete value for the active application.
 - [x] Import selected local-skill guidance into the project quality workflow and document exclusions.
 
+## Minimal authenticated-product redesign
+- [x] Extract the full feature and workflow inventory from authenticated STUDIO routes without changing the landing page.
+- [x] Research and document a new minimal, modern, professional, eye-resting product design system.
+- [x] Implement the new shared shell and route surfaces while preserving every real action and workflow.
+- [x] Verify responsive design, keyboard access, unavailable-data states, and production build before committing.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.
