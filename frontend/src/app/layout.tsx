@@ -5,6 +5,8 @@ import "./signal-press.css";
 import "./quiet-studio.css";
 /* EDITION DESK: final authenticated-only proofing-desk system; scoped to .studio-app so marketing remains untouched. */
 import "./edition-desk.css";
+/* SIGNAL WORKSTATION: final authenticated-only creative-app layer, aligned to the public landing palette. */
+import "./signal-workstation.css";
 
 export const metadata: Metadata = {
   title: "STUDIO | Creative operations in motion",

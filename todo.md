@@ -109,6 +109,11 @@
 - [x] Rebuild the Overview, Products, Brand, Studio, Batch, Library, Delivery, Settings, and Admin page structures around the new reusable layout primitives.
 - [x] Validate real workflows, responsive sequencing, accessibility, production build, and public landing isolation before committing.
 
+## Landing-color creative workstation replacement
+- [x] Replace the authenticated visual system with a Photoshop-like workspace using the public landing’s charcoal, black, warm-paper, sage, and acid-lime direction.
+- [x] Recompose core authoring, source-library, overview, delivery, and admin surfaces around toolbars, artboards, inspectors, and production panels without removing real workflows.
+- [x] Validate color continuity with the landing page, mobile sequencing, accessibility, truthful fallback states, and production build before committing.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

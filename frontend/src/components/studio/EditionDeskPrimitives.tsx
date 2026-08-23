@@ -1,5 +1,5 @@
 "use client";
-/* EDITION DESK PRIMITIVES: authenticated-only layout architecture built from a quiet index rail, a single route thesis, operational controls, and durable work sheets. These components are presentational and never replace data, API behavior, or honest unavailable states. */
+/* SIGNAL WORKSTATION PRIMITIVES: authenticated-only layout architecture built from a tool shelf, route thesis, operational controls, and durable canvas sheets. These components are presentational and never replace data, API behavior, or honest unavailable states. */
 
 import type { ReactNode } from "react";
 import Link from "next/link";

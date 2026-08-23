@@ -1,0 +1,643 @@
+/* SIGNAL WORKSTATION / AUTHENTICATED PRODUCT ONLY: a Photoshop-like creative-production environment that inherits the public landing palette—studio ink, warm paper, muted sage, and acid lime. The layer is scoped to .studio-app so marketing pages remain unchanged. */
+
+:root {
+  --signal-ink: #0a0a0a;
+  --signal-ink-soft: #141414;
+  --signal-panel: #1b1b19;
+  --signal-panel-soft: #20201e;
+  --signal-paper: #f0efe9;
+  --signal-paper-deep: #dfded6;
+  --signal-paper-muted: #c7c6bd;
+  --signal-lime: #b9ff43;
+  --signal-lime-soft: #d7ff97;
+  --signal-sage: #8aa65a;
+  --signal-muted: #91918b;
+  --signal-line: rgba(255, 255, 255, 0.16);
+  --signal-line-dark: #bdbcb4;
+  --signal-danger: #ff7e69;
+  --signal-ease: cubic-bezier(.23, 1, .32, 1);
+}
+
+.studio-app {
+  display: grid;
+  grid-template-columns: 238px minmax(0, 1fr);
+  min-height: 100vh;
+  background: var(--signal-ink);
+  color: var(--signal-paper);
+}
+
+.studio-app .studio-workspace-sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  overflow-y: auto;
+  background: #11110f;
+  border-right: 1px solid var(--signal-line);
+  box-shadow: none;
+}
+
+.studio-app .studio-workspace-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 76px;
+  padding: 20px 18px;
+  border-bottom: 1px solid var(--signal-line);
+}
+
+.studio-app .studio-workspace-sidebar__brand > span {
+  margin-left: auto;
+  color: #7a7a72;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.studio-app .studio-workspace-sidebar nav {
+  padding: 19px 12px;
+}
+
+.studio-app .studio-workspace-nav__section {
+  margin: 0 0 20px;
+}
+
+.studio-app .studio-workspace-nav__section > span {
+  display: block;
+  margin: 0 8px 7px;
+  color: #777870;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.studio-app .studio-workspace-sidebar nav a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 37px;
+  margin: 2px 0;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: #a5a59e;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color .16s var(--signal-ease), border-color .16s var(--signal-ease), color .16s var(--signal-ease), transform .16s var(--signal-ease);
+}
+
+.studio-app .studio-workspace-sidebar nav a::before {
+  position: absolute;
+  left: -13px;
+  width: 3px;
+  height: 15px;
+  background: transparent;
+  content: "";
+}
+
+.studio-app .studio-workspace-sidebar nav a:hover {
+  background: #1e1e1b;
+  border-color: rgba(255, 255, 255, .1);
+  color: var(--signal-paper);
+  transform: translateX(1px);
+}
+
+.studio-app .studio-workspace-sidebar nav a.is-active {
+  background: var(--signal-lime);
+  border-color: var(--signal-lime);
+  color: var(--signal-ink);
+  font-weight: 800;
+}
+
+.studio-app .studio-workspace-sidebar nav a.is-active::before {
+  background: var(--signal-lime);
+  box-shadow: 0 0 0 4px rgba(185, 255, 67, .12);
+}
+
+.studio-app .studio-workspace-sidebar__bottom {
+  display: grid;
+  gap: 3px;
+  margin-top: auto;
+  padding: 14px 12px 17px;
+  border-top: 1px solid var(--signal-line);
+}
+
+.studio-app .studio-workspace-sidebar__bottom a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 31px;
+  padding: 0 8px;
+  color: #8b8b84;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.studio-app .studio-workspace-sidebar__bottom a:hover {
+  color: var(--signal-lime);
+}
+
+.studio-app .studio-workspace-main {
+  min-width: 0;
+  min-height: 100vh;
+  background-color: var(--signal-ink);
+  background-image: radial-gradient(rgba(255,255,255,.18) .65px, transparent .65px);
+  background-size: 24px 24px;
+}
+
+.studio-app .studio-workspace-topbar {
+  max-width: none;
+  min-height: 0;
+  margin: 0;
+  padding: 26px 36px 18px;
+  border-bottom: 1px solid var(--signal-line);
+  background: rgba(10,10,10,.9);
+}
+
+.studio-app .studio-workspace-topbar .studio-route-masthead {
+  width: 100%;
+}
+
+.studio-app .studio-workspace-content,
+.studio-app .studio-workspace-content--worktable {
+  max-width: 1660px;
+  margin: 0 auto;
+  padding: 26px 36px 64px;
+}
+
+.studio-app .studio-kicker,
+.studio-app .studio-kicker--dark {
+  color: var(--signal-lime);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+
+/* Command strip and route thesis create the workstation’s stable horizontal rhythm. */
+.studio-app .studio-route-masthead,
+.studio-app .studio-worktable__masthead,
+.studio-app--studio .studio-artboard-header {
+  border-bottom-color: var(--signal-line);
+}
+
+.studio-app .studio-route-masthead h1,
+.studio-app .studio-worktable__masthead h1,
+.studio-app--studio .studio-artboard-header h2,
+.studio-app .studio-workspace-topbar h1 {
+  color: var(--signal-paper);
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+}
+
+.studio-app .studio-route-masthead p,
+.studio-app .studio-worktable__masthead p,
+.studio-app .studio-workspace-topbar p,
+.studio-app--studio .studio-artboard-header p {
+  color: #a2a29a;
+}
+
+.studio-app .studio-route-controlbar {
+  min-height: 47px;
+  margin: 16px 0;
+  padding: 0 2px;
+  border-top: 1px solid var(--signal-line);
+  border-bottom: 1px solid var(--signal-line);
+}
+
+.studio-app .studio-route-controlbar__label {
+  color: var(--signal-paper);
+}
+
+.studio-app .studio-route-controlbar__label svg {
+  color: var(--signal-lime);
+}
+
+.studio-app .studio-search {
+  border-bottom-color: rgba(255,255,255,.25);
+  color: #7d7d76;
+}
+
+.studio-app .studio-search input {
+  color: var(--signal-paper);
+}
+
+.studio-app .studio-search input::placeholder {
+  color: #7d7d76;
+}
+
+/* Workstation controls: lime is a tool/commitment signal, never a decorative gradient. */
+.studio-app .studio-button,
+.studio-app .studio-button--dark,
+.studio-app .studio-button--lime,
+.studio-app .studio-button--paper,
+.studio-app .studio-artboard-renderbar__action button {
+  min-height: 37px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.studio-app .studio-button--dark,
+.studio-app .studio-button--lime,
+.studio-app .studio-artboard-renderbar__action button {
+  background: var(--signal-lime);
+  color: var(--signal-ink);
+}
+
+.studio-app .studio-button--dark:hover:not(:disabled),
+.studio-app .studio-button--lime:hover:not(:disabled),
+.studio-app .studio-artboard-renderbar__action button:hover:not(:disabled) {
+  background: var(--signal-lime-soft);
+  color: var(--signal-ink);
+  transform: translateY(-1px);
+}
+
+.studio-app .studio-button--paper,
+.studio-app .studio-artboard-secondary {
+  border-color: rgba(255,255,255,.3);
+  background: transparent;
+  color: var(--signal-paper);
+}
+
+.studio-app .studio-button--paper:hover:not(:disabled),
+.studio-app .studio-artboard-secondary:hover:not(:disabled) {
+  border-color: var(--signal-lime);
+  color: var(--signal-lime);
+}
+
+.studio-app .studio-text-button,
+.studio-app .studio-icon-button {
+  border-color: rgba(255,255,255,.18);
+  border-radius: 2px;
+  color: #b4b4ad;
+}
+
+.studio-app .studio-text-button:hover,
+.studio-app .studio-icon-button:hover {
+  border-color: var(--signal-lime);
+  background: rgba(185,255,67,.08);
+  color: var(--signal-lime);
+}
+
+.studio-app .studio-chip,
+.studio-app .studio-worktable__count {
+  border-color: rgba(255,255,255,.25);
+  background: transparent;
+  color: #c3c3bb;
+}
+
+.studio-app input,
+.studio-app select,
+.studio-app textarea {
+  border-color: #aaa9a1;
+  border-radius: 2px;
+  background: var(--signal-paper);
+  color: var(--signal-ink);
+}
+
+.studio-app input:focus,
+.studio-app select:focus,
+.studio-app textarea:focus,
+.studio-app button:focus-visible,
+.studio-app a:focus-visible {
+  outline-color: var(--signal-lime);
+  box-shadow: 0 0 0 3px rgba(185,255,67,.18);
+}
+
+/* Metric plates and work sheets make reviewable work feel physical against the dark production field. */
+.studio-app .studio-metric-ledger,
+.studio-app .studio-stat-grid,
+.studio-app .studio-worktable .studio-stat-grid,
+.studio-app .studio-work-sheet,
+.studio-app .studio-workspace-panel,
+.studio-app .studio-product-form,
+.studio-app .studio-creative-card,
+.studio-app .studio-batch-intro,
+.studio-app .studio-batch-source,
+.studio-app .studio-batch-config,
+.studio-app .studio-batch-output,
+.studio-app .studio-batch-progress {
+  border-color: var(--signal-line-dark);
+  border-radius: 2px;
+  background: var(--signal-paper);
+  color: var(--signal-ink);
+  box-shadow: 8px 8px 0 rgba(185,255,67,.09);
+}
+
+.studio-app .studio-metric-ledger__cell,
+.studio-app .studio-worktable .studio-stat-grid > div {
+  border-color: var(--signal-line-dark);
+}
+
+.studio-app .studio-metric-ledger__cell::before,
+.studio-app .studio-worktable .studio-stat-grid > div::after {
+  background: var(--signal-lime);
+}
+
+.studio-app .studio-metric-ledger__cell--ink::before { background: var(--signal-ink); }
+.studio-app .studio-metric-ledger__cell--vermilion::before { background: var(--signal-danger); }
+
+.studio-app .studio-metric-ledger__cell > span,
+.studio-app .studio-metric-ledger__cell small,
+.studio-app .studio-worktable .studio-stat-grid span,
+.studio-app .studio-worktable .studio-stat-grid small {
+  color: #6f7068;
+}
+
+.studio-app .studio-metric-ledger__cell strong,
+.studio-app .studio-worktable .studio-stat-grid strong {
+  color: var(--signal-ink);
+}
+
+.studio-app .studio-work-sheet--ink,
+.studio-app .studio-workspace-panel--accent,
+.studio-app .studio-worktable--source-library .studio-source-library__brand {
+  border-color: rgba(255,255,255,.2);
+  background: var(--signal-panel);
+  color: var(--signal-paper);
+  box-shadow: 8px 8px 0 rgba(185,255,67,.13);
+}
+
+.studio-app .studio-work-sheet--ink .studio-work-sheet__heading,
+.studio-app .studio-workspace-panel--accent .studio-panel-heading {
+  border-bottom-color: var(--signal-line);
+}
+
+.studio-app .studio-work-sheet--ink h2,
+.studio-app .studio-work-sheet--ink p,
+.studio-app .studio-workspace-panel--accent h2,
+.studio-app .studio-workspace-panel--accent p,
+.studio-app .studio-worktable--source-library .studio-source-library__brand h2,
+.studio-app .studio-worktable--source-library .studio-source-library__brand p {
+  color: inherit;
+}
+
+/* Overview: a dark campaign board, warm record plates, and a lime next-action instrument. */
+.studio-app .studio-overview-runway {
+  border-color: rgba(255,255,255,.22);
+  border-radius: 2px;
+  background: var(--signal-panel);
+  box-shadow: 10px 10px 0 rgba(185,255,67,.1);
+}
+
+.studio-app .studio-overview-runway__heading {
+  border-bottom-color: var(--signal-line);
+}
+
+.studio-app .studio-overview-runway__heading h2 {
+  color: var(--signal-paper);
+}
+
+.studio-app .studio-overview-runway__heading > span,
+.studio-app .studio-overview-runway__group > span,
+.studio-app .studio-overview-runway__card > span {
+  color: var(--signal-lime);
+}
+
+.studio-app .studio-overview-flow__asset,
+.studio-app .studio-overview-runway__card {
+  border-color: rgba(255,255,255,.2);
+  border-radius: 2px;
+  background: #22221f;
+  color: var(--signal-paper);
+}
+
+.studio-app .studio-overview-flow__asset:hover,
+.studio-app .studio-overview-runway__card:hover {
+  border-color: var(--signal-lime);
+  background: #2a2a26;
+}
+
+.studio-app .studio-overview-runway__step { color: var(--signal-lime); }
+
+.studio-app .studio-overview-next {
+  border: 1px solid var(--signal-lime);
+  border-radius: 2px;
+  background: var(--signal-lime);
+  color: var(--signal-ink);
+  box-shadow: 8px 8px 0 rgba(0,0,0,.4);
+}
+
+.studio-app .studio-overview-next h2,
+.studio-app .studio-overview-next p,
+.studio-app .studio-overview-next .studio-kicker,
+.studio-app .studio-overview-next__eyebrow {
+  color: var(--signal-ink);
+}
+
+.studio-app .studio-overview-next__link {
+  border-bottom-color: var(--signal-ink);
+  color: var(--signal-ink);
+}
+
+.studio-app .studio-workspace-readiness {
+  border-color: rgba(255,255,255,.22);
+  border-radius: 2px;
+  background: var(--signal-panel);
+  color: var(--signal-paper);
+}
+
+.studio-app .studio-workspace-readiness__lead,
+.studio-app .studio-workspace-readiness ol li { border-color: var(--signal-line); }
+.studio-app .studio-workspace-readiness__lead p { color: #a3a39c; }
+.studio-app .studio-workspace-readiness ol li > span { border-color: #777870; color: var(--signal-lime); }
+.studio-app .studio-workspace-readiness ol li.is-ready > span { border-color: var(--signal-lime); background: rgba(185,255,67,.12); color: var(--signal-lime); }
+
+/* Source, library, and delivery records become warm-paper contact sheets. */
+.studio-app .studio-worktable--source-library .studio-source-library__catalog,
+.studio-app .studio-worktable--source-library .studio-source-library__upload {
+  border-color: var(--signal-line-dark);
+  border-radius: 2px;
+  background: var(--signal-paper);
+  box-shadow: 8px 8px 0 rgba(185,255,67,.09);
+}
+
+.studio-app .studio-source-library__section-head,
+.studio-app .studio-panel-heading,
+.studio-app .studio-work-sheet__heading {
+  border-bottom-color: var(--signal-line-dark);
+}
+
+.studio-app .studio-product-card,
+.studio-app .studio-asset-card {
+  border-color: #bab9b1;
+  border-radius: 2px;
+  background: #f7f6f0;
+}
+
+.studio-app .studio-product-card:hover,
+.studio-app .studio-asset-card:hover {
+  border-color: var(--signal-ink);
+  box-shadow: 4px 4px 0 rgba(10,10,10,.14);
+}
+
+.studio-app .studio-data-row {
+  border-bottom-color: #cfcec6;
+  background: transparent;
+}
+
+.studio-app .studio-data-row:hover { background: #e3e2da; }
+.studio-app .studio-data-row strong { color: var(--signal-ink); }
+.studio-app .studio-data-row small,
+.studio-app .studio-data-value,
+.studio-app .studio-field-hint { color: #6d6e67; }
+.studio-app .studio-status-dot { background: var(--signal-ink); }
+.studio-app .studio-status-dot--lime { background: var(--signal-lime); box-shadow: 0 0 0 4px rgba(185,255,67,.2); }
+
+/* Notices stay honest but read as production flags. */
+.studio-app .studio-unavailable,
+.studio-app .studio-form-error,
+.studio-app .studio-inline-notice {
+  border-color: var(--signal-danger);
+  border-left: 3px solid var(--signal-danger);
+  border-radius: 2px;
+  background: #2a1b18;
+  color: #ffe0da;
+}
+
+.studio-app .studio-loading {
+  border-color: rgba(255,255,255,.25);
+  border-radius: 2px;
+  background: var(--signal-panel);
+  color: var(--signal-paper);
+}
+
+/* Studio is the main artboard: inspectors are dark, the canvas is almost black, and every active tool is lime. */
+.studio-app--studio .studio-artboard-header {
+  border-bottom-color: var(--signal-line);
+}
+
+.studio-app--studio .studio-artboard-header h2 { color: var(--signal-paper); }
+.studio-app--studio .studio-artboard-header h2 em { color: var(--signal-lime); }
+.studio-app--studio .studio-artboard-header__meta { color: #92928a; }
+.studio-app--studio .studio-artboard-header .text-\[\#c6ff5e\],
+.studio-app--studio .studio-artboard-pulse { color: var(--signal-lime) !important; background: var(--signal-lime); }
+.studio-app--studio .studio-artboard-reset { border-color: rgba(255,255,255,.3); border-radius: 2px; background: transparent; color: var(--signal-paper); }
+.studio-app--studio .studio-artboard-reset:hover { border-color: var(--signal-lime); color: var(--signal-lime); }
+
+.studio-app--studio .studio-artboard-workspace {
+  border-color: rgba(255,255,255,.24);
+  border-radius: 2px;
+  background: var(--signal-panel);
+  box-shadow: 12px 12px 0 rgba(185,255,67,.1);
+}
+
+.studio-app--studio .studio-artboard-inspector,
+.studio-app--studio .studio-artboard-publish {
+  background: #1a1a18;
+  color: var(--signal-paper);
+}
+
+.studio-app--studio .studio-artboard-inspector { border-right-color: var(--signal-line); }
+.studio-app--studio .studio-artboard-publish { border-left-color: var(--signal-line); }
+.studio-app--studio .studio-artboard-inspector__title,
+.studio-app--studio .studio-artboard-section { border-bottom-color: var(--signal-line); color: #aaa9a2; }
+.studio-app--studio .studio-artboard-section--brief { background: #20201e; }
+.studio-app--studio .studio-artboard-hint,
+.studio-app--studio .studio-artboard-section p,
+.studio-app--studio .text-\[\#aeb0a7\] { color: #a7a79f !important; }
+
+.studio-app--studio .studio-artboard-segmented,
+.studio-app--studio .studio-artboard-choice-row,
+.studio-app--studio .studio-artboard-template-value,
+.studio-app--studio .studio-artboard-product-search,
+.studio-app--studio .studio-artboard-source-card,
+.studio-app--studio .studio-artboard-upload {
+  border-color: rgba(255,255,255,.23);
+  border-radius: 2px;
+  background: #242421;
+  color: var(--signal-paper);
+}
+
+.studio-app--studio .studio-artboard-segmented button,
+.studio-app--studio .studio-artboard-choice-row button,
+.studio-app--studio .studio-artboard-template-tile {
+  border-color: rgba(255,255,255,.17);
+  border-radius: 2px;
+  background: #20201e;
+  color: #bbbcb3;
+}
+
+.studio-app--studio .studio-artboard-segmented button[aria-selected="true"],
+.studio-app--studio .studio-artboard-choice-row button[aria-pressed="true"],
+.studio-app--studio .studio-artboard-template-tile[aria-pressed="true"] {
+  border-color: var(--signal-lime);
+  background: var(--signal-lime);
+  color: var(--signal-ink);
+  box-shadow: none;
+}
+
+.studio-app--studio .studio-artboard-moods button { border-radius: 2px; }
+.studio-app--studio .studio-artboard-section--fine-tune details { border-top-color: var(--signal-line); }
+.studio-app--studio .studio-artboard-section--fine-tune summary { color: var(--signal-lime); }
+.studio-app--studio .studio-artboard-stage { background-color: #090909; background-image: radial-gradient(rgba(255,255,255,.14) .65px, transparent .65px); background-size: 18px 18px; }
+.studio-app--studio .studio-artboard-stage__toolbar,
+.studio-app--studio .studio-artboard-renderbar { border-color: var(--signal-line); background: #121210; }
+.studio-app--studio .studio-artboard-canvas { background: #080808; }
+.studio-app--studio .studio-artboard-canvas__paper { box-shadow: 0 22px 42px rgba(0,0,0,.45); }
+.studio-app--studio .studio-artboard-status-dot,
+.studio-app--studio .studio-artboard-progress li.is-active span { background: var(--signal-lime); }
+.studio-app--studio .studio-artboard-progress li.is-active { color: var(--signal-paper); }
+.studio-app--studio .studio-artboard-renderbar__action p strong { color: var(--signal-paper); }
+.studio-app--studio .studio-artboard-renderbar__action p span { color: #8d8d84; }
+.studio-app--studio .studio-artboard-language-tabs button[aria-selected="true"] { border-color: var(--signal-lime); background: rgba(185,255,67,.12); color: var(--signal-lime); }
+.studio-app--studio .studio-artboard-publish article { border-color: rgba(255,255,255,.18) !important; border-radius: 2px; background: #22221f !important; }
+.studio-app--studio .studio-artboard-publish article strong,
+.studio-app--studio .studio-artboard-publish .text-\[\#f1f2ec\] { color: var(--signal-paper) !important; }
+.studio-app--studio .studio-artboard-publish article .text-\[\#c6ff5e\] { color: var(--signal-lime) !important; }
+.studio-app--studio .studio-artboard-export { border-radius: 2px; background: var(--signal-lime); color: var(--signal-ink); }
+.studio-app--studio .studio-artboard-delivery { border-top-color: var(--signal-line); }
+
+/* Delivery and Batch become operations consoles, not a separate dashboard language. */
+.studio-app .studio-publish-stepper { border-color: rgba(255,255,255,.24); background: var(--signal-panel); color: var(--signal-paper); }
+.studio-app .studio-publish-stepper .studio-panel-heading { border-bottom-color: var(--signal-line); }
+.studio-app .studio-publish-stepper .studio-panel-heading h2,
+.studio-app .studio-publish-stepper .studio-panel-heading p { color: inherit; }
+.studio-app .studio-publish-stepper li { border-color: var(--signal-line); }
+.studio-app .studio-publish-stepper li > span { border-color: #74746d; color: var(--signal-lime); }
+.studio-app .studio-publish-stepper li.is-ready > span { border-color: var(--signal-lime); background: rgba(185,255,67,.13); color: var(--signal-lime); }
+.studio-app .studio-publish-stepper li i { background: var(--signal-line); }
+
+.studio-app .studio-batch-intro,
+.studio-app .studio-batch-progress { border-color: rgba(255,255,255,.22); background: var(--signal-panel); color: var(--signal-paper); }
+.studio-app .studio-batch-intro h2,
+.studio-app .studio-batch-progress h3 { color: var(--signal-paper); }
+.studio-app .studio-batch-intro__counter { border-color: var(--signal-lime); border-radius: 2px; background: rgba(185,255,67,.1); color: var(--signal-lime); }
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-app *, .studio-app *::before, .studio-app *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+
+@media (max-width: 980px) {
+  .studio-app { grid-template-columns: 196px minmax(0, 1fr); }
+  .studio-app .studio-workspace-topbar,
+  .studio-app .studio-workspace-content,
+  .studio-app .studio-workspace-content--worktable { padding-left: 24px; padding-right: 24px; }
+}
+
+@media (max-width: 760px) {
+  .studio-app { display: block; }
+  .studio-app .studio-workspace-sidebar { position:relative; display:block; height:auto; overflow:visible; border-right:0; border-bottom:1px solid var(--signal-line); }
+  .studio-app .studio-workspace-sidebar__brand { min-height:56px; padding:13px 16px; }
+  .studio-app .studio-workspace-sidebar nav { display:flex !important; gap:4px; overflow-x:auto; padding:9px 12px 12px; scrollbar-width:none; }
+  .studio-app .studio-workspace-nav__section { display:flex !important; flex:0 0 auto; gap:4px; margin:0; }
+  .studio-app .studio-workspace-nav__section > span,
+  .studio-app .studio-workspace-sidebar__bottom { display:none; }
+  .studio-app .studio-workspace-sidebar nav a { flex:0 0 auto; min-height:34px; padding:0 10px; font-size:11px; }
+  .studio-app .studio-workspace-sidebar nav a::before,
+  .studio-app .studio-workspace-sidebar nav a svg { display:none; }
+  .studio-app .studio-workspace-topbar,
+  .studio-app .studio-workspace-content,
+  .studio-app .studio-workspace-content--worktable { padding-left:16px; padding-right:16px; }
+  .studio-app .studio-workspace-topbar { padding-top:20px; padding-bottom:16px; }
+  .studio-app .studio-route-masthead h1,
+  .studio-app .studio-worktable__masthead h1,
+  .studio-app--studio .studio-artboard-header h2 { font-size:40px; }
+  .studio-app .studio-overview-runway,
+  .studio-app .studio-overview-next { box-shadow: none; }
+  .studio-app--studio .studio-artboard-workspace { box-shadow: none; }
+}

@@ -48,3 +48,15 @@ The Social route retains its real connection rows, OAuth actions, post/channel s
 The Admin control room now uses the same shell, masthead, and refresh control bar. Its system overview continues to expose backend-unavailable and fallback values rather than inventing administrative records. The Studio route intentionally remains its own three-zone authoring table inside the new shell; its source selection, local-SVG canvas, Brand placement, four independent caption fields, approval, and export controls remain visible in their existing task order.
 
 At 390 px, the replaced shell continues to transform the index into a horizontal route strip. The Studio route retains the visible unavailable-data notice, then sequences the route thesis, reset action, Composer/Importer control, product search, and format/template controls vertically before the artboard. This confirms that the new shared architecture does not compress the authoring workflow into an unreadable desktop grid.
+
+## Signal Workstation review — 23 August 2026
+
+The authenticated Overview now inherits the landing’s charcoal frame, star-grid texture, warm-paper metric plates, acid-lime tool states, and warm-paper-to-lime next-action contrast. The creative thread remains truthful: the unavailable backend notice is still prominent, and empty-state actions point only to real product-source and Studio flows.
+
+The Studio composer now reads as the primary artboard inside the same system. Its dark source inspector, nearly black dotted canvas stage, local-SVG preview, lime active tools, right-side Brand and language inspector, and production-progress row resemble a creative workstation without misrepresenting the local renderer as generative photography. All real controls remain present.
+
+The Products route now works as a charcoal-field source library: the real product contact sheet and three-image intake form remain warm-paper review surfaces, while the optional Brand kit occupies a dark inspector panel. The Social route follows the same visual grammar with a dark automation strip, warm-paper connection dock, dark delivery inspector, lime queue action, and unchanged OAuth/scheduling/receipt controls.
+
+The Admin control room uses the same landing-color tool shelf and dark work field while keeping its warm-paper data sheet and explicit backend fallback values. The public landing remains visually and structurally unchanged, confirming that the Signal Workstation layer is limited to `.studio-app` authenticated surfaces.
+
+At 390 px, Signal Workstation reduces the persistent tool shelf to a readable horizontally scrolling route strip. The dark top frame, lime selected Studio tool, explicit unavailable-data flag, local-SVG authoring context, Composer/Importer controls, source search, and format/template choices remain readable and stack before the canvas. The app does not squeeze a three-column desktop layout into the mobile viewport.
