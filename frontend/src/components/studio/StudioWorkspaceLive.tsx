@@ -13,6 +13,7 @@ import { StudioMark } from "./StudioShell";
 import { EditionDeskShell, MetricLedger, RouteControlBar, RouteMasthead } from "./EditionDeskPrimitives";
 import { StudioCommandPalette } from "./StudioCommandPalette";
 import { StudioOnboarding } from "./StudioOnboarding";
+import { AdminControlRoom, type AdminControlNavSection } from "./AdminControlRoom";
 import FadeContent from "@/components/FadeContent";
 import CreativeStudio from "@/components/features/studio/CreativeStudio";
 import BatchStudio from "@/components/features/studio/BatchStudio";
@@ -80,6 +81,12 @@ const adminEditionNavigation = Object.entries(adminData).map(([key, value]) => (
     href: `/admin/${key}`,
     icon: value[2] as typeof ShieldCheck,
 }));
+
+const adminControlNavigation: AdminControlNavSection[] = [
+    { label: "MONITOR", items: adminEditionNavigation.filter((item) => ["dashboard", "analytics"].includes(item.key)) },
+    { label: "REVIEW", items: adminEditionNavigation.filter((item) => ["products", "content", "templates", "generations", "publishing"].includes(item.key)) },
+    { label: "SYSTEM", items: adminEditionNavigation.filter((item) => ["users", "workspaces", "audit-logs", "settings"].includes(item.key)) },
+];
 
 const testingCatalog: ReadonlyArray<ProductInput & { assetPath: string }> = [
     {
@@ -365,5 +372,5 @@ export function AdminPage({ mode }: { mode: AdminMode }) {
     const reload = useCallback(async () => { setLoading(true); setError(null); try { const [nextProducts, nextPosts, nextTemplates, nextSummary, nextCapabilities] = await Promise.all([listProducts(), listPosts(), listTemplates(), getAdminSummary(), getSystemCapabilities()]); setProducts(nextProducts); setPosts(nextPosts); setTemplates(nextTemplates); setSummary(nextSummary); setCapabilities(nextCapabilities); } catch (err) { setError(err instanceof Error ? err.message : "Unable to load admin data"); } finally { setLoading(false); } }, []);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial fetch intentionally hydrates this admin surface.
     useEffect(() => { void reload(); }, [reload]);
-    return <EditionDeskShell activeKey={mode} contextLabel="ADMIN / CONTROL ROOM" navigation={[{ items: adminEditionNavigation }]} footerPrimaryHref="/dashboard" footerPrimaryLabel="Workspace" footerPrimaryIcon={LayoutDashboard}><div className="studio-admin studio-edition-route studio-edition-route--admin"><div className="studio-workspace-topbar"><RouteMasthead kicker={`CONTROL ROOM / ${label.toUpperCase()}`} title={title} description="Operations, governance, and the signals behind the creative system." actions={<div className="studio-admin-status"><span className="studio-dot studio-dot--lime" /> Live backend</div>} /></div><section className="studio-workspace-content"><RouteControlBar icon={Icon} label={label} utility={<button className="studio-text-button" onClick={() => void reload()}><RefreshCw size={14} /> Refresh data</button>} />{error && <div className="studio-form-error"><strong>Admin data unavailable.</strong> {error}</div>}{loading ? <div className="studio-loading"><Loader2 className="studio-spin" size={18} /> Loading admin data…</div> : <AdminSurface mode={mode} products={products} posts={posts} templates={templates} summary={summary} capabilities={capabilities} />}</section></div></EditionDeskShell>;
+    return <AdminControlRoom activeKey={mode} sections={adminControlNavigation} kicker={`CONTROL ROOM / ${label.toUpperCase()}`} title={label} utility={<button className="studio-admin-refresh" onClick={() => void reload()}><RefreshCw size={14} /> Refresh</button>}><div className="studio-admin-route studio-admin-route--${mode}">{error && <div className="studio-form-error"><strong>Admin data unavailable.</strong> {error}</div>}{loading ? <div className="studio-loading"><Loader2 className="studio-spin" size={18} /> Loading admin data…</div> : <AdminSurface mode={mode} products={products} posts={posts} templates={templates} summary={summary} capabilities={capabilities} />}</div></AdminControlRoom>;
 }

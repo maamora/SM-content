@@ -126,6 +126,11 @@
 - [x] Retain only direct labels, real status, and decision-critical guidance across Studio, Products, Brand, Overview, and delivery workflows.
 - [x] Validate copy density, responsive hierarchy, and production build before committing.
 
+## Dedicated Admin control room
+- [x] Replace the shared-looking Admin shell with a distinct governance and operations control-room layout.
+- [x] Recompose Admin routes around real moderation, records, capability, system, and unavailable-state boundaries.
+- [x] Validate that admin is visually isolated from the user creative workstation while preserving the public landing and production build.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

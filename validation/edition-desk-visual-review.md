@@ -76,3 +76,9 @@ At 390 px after the improvement pass, the horizontal tool shelf retains the sele
 ## Concise-copy review — 23 August 2026
 
 The Overview now presents a short workboard label, source/post/delivery summary, compact setup list, direct next action, and factual empty state. The Studio surface now uses short authoring, palette, source, render, Brand, and caption labels while retaining the controls and decision-critical states required to complete a post.
+
+## Dedicated Admin control-room review — 23 August 2026
+
+The Admin dashboard and Products moderation route now use a separate teal-on-charcoal control plane with Monitor, Review, and System navigation. They no longer render the member creative-workstation shell, command palette, creation action, or campaign-workflow treatment. Unavailable backend data remains visible as an explicit administrative error, and no unsupported moderation or directory mutation is presented.
+
+At 390 px, the Admin rail becomes a compact horizontally scrolling control navigation. The distinct control-plane header, refresh action, administrative unavailable notice, and record-fallback ledger remain readable without importing the member creative-workstation tool shelf.
