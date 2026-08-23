@@ -47,6 +47,11 @@
 - [x] Refine the supplied Studio reference while retaining all local rendering, captions, approval, export, and scheduling workflow states.
 - [x] Validate the reference-driven authenticated pages across responsive layouts and production build.
 
+## Reference-faithful authenticated-page rebuild
+- [x] Audit the current shell and inner surfaces against the supplied generated references; identify visible deviations rather than applying incremental styling patches.
+- [x] Rebuild Overview, source-library/Brand, and Studio composition around a single premium editorial system while retaining live components and workflow behavior.
+- [x] Verify desktop and mobile visual hierarchy, data-unavailable states, keyboard reachability, and production build before committing.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.
