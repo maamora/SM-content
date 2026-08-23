@@ -78,6 +78,11 @@
 - [x] Implement the new shared shell and route surfaces while preserving every real action and workflow.
 - [x] Verify responsive design, keyboard access, unavailable-data states, and production build before committing.
 
+## React Bits MCP setup
+- [x] Inspect the existing STUDIO component registry, connector configuration, and client compatibility.
+- [x] Add the React Bits registry and a compatible shadcn MCP server configuration without changing application behavior.
+- [x] Validate the setup and document how to browse or install React Bits components safely.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

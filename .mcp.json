@@ -9,6 +9,12 @@
                 "ads",
                 "caption"
             ]
+        },
+        "shadcn": {
+            "command": "node",
+            "args": [
+                "frontend/scripts/shadcn-mcp.mjs"
+            ]
         }
     }
 }
