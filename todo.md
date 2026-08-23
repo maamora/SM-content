@@ -157,6 +157,11 @@
 - [x] Keep creation controls and workflow guidance on Products, Brand, Studio, and Social rather than the Workboard route.
 - [x] Validate unavailable-data, responsive, and production-build states before committing.
 
+## Supplied React Bits media and navigation patterns
+- [x] Evaluate MaskedHeading, ScrollExpand, DepthCarousel, DriftWall, PillNav, and StaggeredMenu against real Press Bench workflows and technical constraints.
+- [x] Adapt only the suitable supplied interaction pattern to existing real product/post records, reduced motion, and current dependencies.
+- [x] Validate the resulting inner-page integration for accessibility, mobile behavior, workflow preservation, and production build.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

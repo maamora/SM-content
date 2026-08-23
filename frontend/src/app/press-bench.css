@@ -270,6 +270,26 @@
 .studio-app--press-bench .studio-product-card__body h3 { font-family: Georgia, "Times New Roman", serif; }
 .studio-app--press-bench .studio-product-form { position: sticky; top: 16px; border-color: var(--bench-line); border-radius: 2px; background: #f8f6ef; box-shadow: 5px 5px 0 rgb(17 17 15 / 10%); }
 
+/* React Bits DepthCarousel adaptation: manual browsing of real product and post media. */
+.studio-app--press-bench .studio-asset-depth { margin: 18px 0 22px; overflow: hidden; border: 1px solid var(--bench-ink); border-radius: 2px; background: var(--bench-ink); box-shadow: 6px 6px 0 rgb(198 255 94 / 62%); color: var(--bench-paper); }
+.studio-app--press-bench .studio-asset-depth__header { display: flex; min-height: 54px; align-items: center; justify-content: space-between; border-bottom: 1px solid #3d3f36; padding: 10px 14px; }
+.studio-app--press-bench .studio-asset-depth__header .studio-kicker { color: var(--bench-lime); }
+.studio-app--press-bench .studio-asset-depth__header h3 { margin: 3px 0 0; color: var(--bench-paper); font-family: Georgia, "Times New Roman", serif; font-size: 21px; font-weight: 400; letter-spacing: -.045em; }
+.studio-app--press-bench .studio-asset-depth__header > span { color: #a9aaa1; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }
+.studio-app--press-bench .studio-asset-depth__stage { position: relative; display: grid; height: 290px; place-items: center; overflow: hidden; outline: none; perspective: 1200px; }
+.studio-app--press-bench .studio-asset-depth__stage:focus-visible { box-shadow: inset 0 0 0 2px var(--bench-lime); }
+.studio-app--press-bench .studio-asset-depth__card { position: absolute; display: grid; width: min(58vw, 300px); aspect-ratio: 4 / 3; overflow: hidden; place-items: end start; border: 1px solid #56584d; border-radius: 2px; background: #292a25; box-shadow: 8px 8px 0 rgb(0 0 0 / 28%); padding: 0; transform-style: preserve-3d; }
+.studio-app--press-bench .studio-asset-depth__card[aria-current="true"] { border-color: var(--bench-lime); }
+.studio-app--press-bench .studio-asset-depth__card img { width: 100%; height: 100%; object-fit: cover; }
+.studio-app--press-bench .studio-asset-depth__card span { position: absolute; left: 8px; bottom: 8px; border: 1px solid #55574d; background: rgb(17 17 15 / 86%); padding: 3px 5px; color: var(--bench-paper); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.studio-app--press-bench .studio-asset-depth__footer { display: flex; min-height: 56px; align-items: center; justify-content: space-between; gap: 14px; border-top: 1px solid #3d3f36; padding: 10px 14px; }
+.studio-app--press-bench .studio-asset-depth__footer > div:first-child { display: grid; min-width: 0; gap: 2px; }
+.studio-app--press-bench .studio-asset-depth__footer strong { overflow: hidden; color: var(--bench-paper); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.studio-app--press-bench .studio-asset-depth__footer small { color: #aaaBA2; font-size: 10px; }
+.studio-app--press-bench .studio-asset-depth__footer [role="group"] { display: flex; gap: 6px; }
+.studio-app--press-bench .studio-asset-depth__footer button { display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid #52544b; border-radius: 2px; background: transparent; color: var(--bench-paper); }
+.studio-app--press-bench .studio-asset-depth__footer button:hover { border-color: var(--bench-lime); background: var(--bench-lime); color: var(--bench-ink); }
+
 /* Studio is the dominant production surface: source tray → proof table → inspector. */
 .studio-app--press-bench .studio-workspace-panel--studio { padding: 0; border: 0; background: transparent; box-shadow: none; }
 .studio-app--press-bench .studio-artboard-header { min-height: 70px; margin: 0 0 16px; border: 1px solid var(--bench-line); border-radius: 2px; background: #f8f6ef; padding: 13px 16px; box-shadow: 5px 5px 0 rgb(17 17 15 / 10%); }
@@ -302,6 +322,8 @@
 @media (max-width: 860px) {
   .studio-app--press-bench .studio-artboard-workspace { grid-template-columns: 238px minmax(380px, 1fr) 276px; }
   .studio-app--press-bench .studio-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .studio-app--press-bench .studio-asset-depth__stage { height: 250px; }
+  .studio-app--press-bench .studio-asset-depth__card { width: min(74vw, 280px); }
 }
 
 @media (max-width: 760px) {

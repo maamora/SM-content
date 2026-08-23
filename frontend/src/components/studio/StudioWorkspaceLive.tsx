@@ -13,6 +13,7 @@ import { StudioMark } from "./StudioShell";
 import { EditionDeskShell, MetricLedger, RouteControlBar, RouteMasthead } from "./EditionDeskPrimitives";
 import { StudioCommandPalette } from "./StudioCommandPalette";
 import { AdminControlRoom, type AdminControlNavSection } from "./AdminControlRoom";
+import { AssetDepthCarousel } from "./AssetDepthCarousel";
 import FadeContent from "@/components/FadeContent";
 import CreativeStudio from "@/components/features/studio/CreativeStudio";
 import BatchStudio from "@/components/features/studio/BatchStudio";
@@ -276,7 +277,7 @@ function PostsSurface({ posts, refresh }: { posts: Post[]; refresh: () => void }
 
 function AssetsSurface({ products, posts }: { products: Product[]; posts: Post[] }) {
     const assets = [...products.flatMap((product) => [product.imageUrl, product.imageUrl2, product.imageUrl3].filter(Boolean).map((url) => ({ url: url as string, label: product.name, kind: "Product" }))), ...posts.filter((post) => post.imageUrl).map((post) => ({ url: post.imageUrl as string, label: post.productName, kind: "Generated post" }))];
-    return <section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">ASSET MEMORY</span><h2>Approved visual sources</h2></div><span className="studio-chip">{assets.length} files</span></div>{assets.length ? <div className="studio-asset-grid">{assets.map((asset, index) => <a className="studio-asset-card" key={`${asset.url}-${index}`} href={asset.url} target="_blank" rel="noreferrer"><img src={asset.url} alt={asset.label} /><div><strong>{asset.label}</strong><small>{asset.kind}</small></div></a>)}</div> : <Notice title="No assets have landed yet." detail="Upload a product reference to start building the library." action={<Link className="studio-button studio-button--dark" href="/dashboard/products">Add source material <Plus size={14} /></Link>} />}</section>;
+    return <section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">ASSET MEMORY</span><h2>Approved visual sources</h2></div><span className="studio-chip">{assets.length} files</span></div>{assets.length ? <><AssetDepthCarousel items={assets.map((asset, index) => ({ ...asset, id: `${asset.url}-${index}` }))} /><div className="studio-asset-grid">{assets.map((asset, index) => <a className="studio-asset-card" key={`${asset.url}-${index}`} href={asset.url} target="_blank" rel="noreferrer"><img src={asset.url} alt={asset.label} /><div><strong>{asset.label}</strong><small>{asset.kind}</small></div></a>)}</div></> : <Notice title="No assets have landed yet." detail="Upload a product reference to start building the library." action={<Link className="studio-button studio-button--dark" href="/dashboard/products">Add source material <Plus size={14} /></Link>} />}</section>;
 }
 
 function CalendarSurface({ posts }: { posts: Post[] }) {
