@@ -12,7 +12,6 @@ import {
 import { StudioMark } from "./StudioShell";
 import { EditionDeskShell, MetricLedger, RouteControlBar, RouteMasthead } from "./EditionDeskPrimitives";
 import { StudioCommandPalette } from "./StudioCommandPalette";
-import { StudioOnboarding } from "./StudioOnboarding";
 import { AdminControlRoom, type AdminControlNavSection } from "./AdminControlRoom";
 import FadeContent from "@/components/FadeContent";
 import CreativeStudio from "@/components/features/studio/CreativeStudio";
@@ -190,29 +189,28 @@ function WorkspaceReadiness({ products, posts }: { products: Product[]; posts: P
 }
 
 function Overview({ products, posts, refresh }: { products: Product[]; posts: Post[]; refresh: () => void }) {
-    const recent = posts.slice(0, 5);
-    const sourceProducts = products.slice(0, 2);
-    const latestPost = recent[0];
-    const nextHref = sourceProducts.length ? "/dashboard/studio" : "/dashboard/products";
-    const nextLabel = sourceProducts.length ? "Open Studio" : "Add product reference";
-    const queue = [
-        !products.length ? { label: "Add a source", detail: "No product record is available for composition.", href: "/dashboard/products" } : null,
-        products.length && !posts.length ? { label: "Create the first direction", detail: "A source is ready; open the local-SVG artboard.", href: "/dashboard/studio" } : null,
-        posts.find((post) => post.status === "DRAFT") ? { label: "Review a draft", detail: "A saved post still needs captions, approval, or export.", href: "/dashboard/posts" } : null,
-        posts.find((post) => post.status === "APPROVED") ? { label: "Plan delivery", detail: "An approved post can be scheduled on a connected channel.", href: "/dashboard/social" } : null,
-    ].filter(Boolean) as { label: string; detail: string; href: string }[];
-    return <div className="studio-worktable studio-worktable--overview">
-        <RouteMasthead kicker="WORKSPACE / 01" title="Workboard" description="Sources · posts · delivery." actions={<><button className="studio-text-button" onClick={refresh}><RefreshCw size={14} /> Refresh</button><Link href="/dashboard/studio" className="studio-button studio-button--dark"><Plus size={15} /> New post</Link></>} />
-        <FadeContent duration={260} distance={8} threshold={0.08} className="studio-quiet-reveal"><Stats products={products} posts={posts} /></FadeContent>
-        <StudioOnboarding products={products} posts={posts} />
-        {queue.length > 0 && <section className="studio-continue-queue"><div><span className="studio-kicker">NEXT</span><h2>Next actions</h2></div><ol>{queue.map((item, index) => <li key={item.label}><span>0{index + 1}</span><div><strong>{item.label}</strong><small>{item.detail}</small></div><Link href={item.href} aria-label={`Open ${item.label}`}><ArrowUpRight size={15} /></Link></li>)}</ol></section>}
-        <FadeContent duration={300} delay={45} distance={10} threshold={0.08} className="studio-quiet-reveal"><div className="studio-worktable__body">
-            <section className="studio-overview-runway"><div className="studio-overview-runway__heading"><div><span className="studio-kicker">FLOW</span><h2>Source to delivery</h2></div><span>{sourceProducts.length ? `${sourceProducts.length} source record${sourceProducts.length === 1 ? "" : "s"}` : "No source"}</span></div>
-                {sourceProducts.length ? <div className="studio-overview-runway__sequence"><div className="studio-overview-runway__group"><span>01 / SOURCE</span><div className="studio-overview-flow__assets">{sourceProducts.map((product) => <Link href="/dashboard/products" key={product.id} className="studio-overview-flow__asset">{product.imageUrl ? <img src={product.imageUrl} alt="" /> : <span />}<strong>{product.name}</strong><small>{product.status}</small></Link>)}</div></div><div className="studio-overview-runway__step">→</div><Link href="/dashboard/studio" className="studio-overview-runway__card"><span>02 / EDIT</span><strong>{latestPost?.format || "New post"}</strong><small>{latestPost ? "Saved" : "Open Studio"}</small></Link><div className="studio-overview-runway__step">→</div><Link href="/dashboard/posts" className="studio-overview-runway__card studio-overview-runway__card--post"><span>03 / POST</span>{latestPost?.imageUrl ? <img src={latestPost.imageUrl} alt="" /> : <b>Draft</b>}<strong>{latestPost?.productName || "No post"}</strong><small>{latestPost?.status || "Draft"}</small></Link><div className="studio-overview-runway__step">→</div><Link href="/dashboard/social" className="studio-overview-runway__card"><span>04 / DELIVERY</span><strong>{latestPost?.status === "APPROVED" ? "Ready" : "Review"}</strong><small>{latestPost?.status === "APPROVED" ? "Schedule" : "Approve first"}</small></Link></div> : <Notice title="No source" detail="Add a product to begin." action={<Link className="studio-button studio-button--lime" href="/dashboard/products"><Plus size={14} /> Add product</Link>} />}
-            </section>
-            <aside className="studio-overview-next"><span className="studio-kicker studio-kicker--dark">NEXT</span><div><span className="studio-overview-next__eyebrow">{sourceProducts.length ? "EDIT" : "SOURCE"}</span><h2>{sourceProducts.length ? "Open Studio" : "Add a product"}</h2><p>{sourceProducts.length ? "Create a post." : "Add product images."}</p></div><Link href={nextHref} className="studio-overview-next__link">{nextLabel} <ArrowUpRight size={16} /></Link></aside>
-        </div></FadeContent>
-        <FadeContent duration={260} delay={80} distance={8} threshold={0.08} className="studio-quiet-reveal"><WorkspaceReadiness products={products} posts={posts} /></FadeContent>
+    const approvedSources = products.filter((product) => product.status === "APPROVED").length;
+    const pendingSources = products.filter((product) => product.status === "PENDING").length;
+    const rejectedSources = products.filter((product) => product.status === "REJECTED").length;
+    const multiImageSources = products.filter((product) => Boolean(product.imageUrl && product.imageUrl2)).length;
+    const draftPosts = posts.filter((post) => post.status === "DRAFT").length;
+    const approvedPosts = posts.filter((post) => post.status === "APPROVED").length;
+    const recentPosts = posts.slice(0, 6);
+    const funnel = [
+        { label: "Sources", value: products.length, detail: `${approvedSources} approved` },
+        { label: "Proofs", value: posts.length, detail: `${draftPosts} draft` },
+        { label: "Approved", value: approvedPosts, detail: "Ready for delivery" },
+        { label: "Source depth", value: `${multiImageSources}/${products.length}`, detail: "2+ images" },
+    ];
+    return <div className="studio-worktable studio-worktable--overview studio-analysis-dashboard">
+        <RouteMasthead kicker="WORKBOARD / ANALYSIS" title="Workboard" description="Live source, post, approval, and delivery signals." actions={<button className="studio-text-button" onClick={refresh}><RefreshCw size={14} /> Refresh</button>} />
+        <FadeContent duration={220} distance={6} threshold={0.08} className="studio-quiet-reveal"><Stats products={products} posts={posts} /></FadeContent>
+        <div className="studio-analysis-dashboard__grid">
+            <section className="studio-analysis-panel studio-analysis-panel--funnel"><div className="studio-analysis-panel__heading"><div><span className="studio-kicker">PIPELINE</span><h2>Record flow</h2></div><span>LIVE</span></div><div className="studio-analysis-funnel">{funnel.map((item, index) => <div key={item.label}><span>0{index + 1}</span><strong>{item.value}</strong><b>{item.label}</b><small>{item.detail}</small></div>)}</div></section>
+            <section className="studio-analysis-panel studio-analysis-panel--quality"><div className="studio-analysis-panel__heading"><div><span className="studio-kicker">SOURCE QUALITY</span><h2>Coverage</h2></div></div><dl><div><dt>Approved source ratio</dt><dd>{products.length ? `${Math.round((approvedSources / products.length) * 100)}%` : "—"}</dd></div><div><dt>Multi-image sources</dt><dd>{multiImageSources}</dd></div><div><dt>Pending review</dt><dd>{pendingSources}</dd></div><div><dt>Rejected source</dt><dd>{rejectedSources}</dd></div></dl></section>
+            <section className="studio-analysis-panel studio-analysis-panel--status"><div className="studio-analysis-panel__heading"><div><span className="studio-kicker">DELIVERY READINESS</span><h2>Current state</h2></div></div><div className="studio-analysis-status"><div><span className={approvedPosts ? "is-positive" : ""} /> <strong>{approvedPosts ? "Approved posts available" : "No approved post"}</strong><small>{approvedPosts ? `${approvedPosts} post${approvedPosts === 1 ? "" : "s"} can enter delivery.` : "Approval is reflected here when a saved post changes state."}</small></div><div><span className={draftPosts ? "is-warn" : ""} /> <strong>{draftPosts ? "Draft review pending" : "No drafts pending"}</strong><small>{draftPosts ? `${draftPosts} draft${draftPosts === 1 ? "" : "s"} in the current record set.` : "No draft review signal in the current record set."}</small></div></div></section>
+        </div>
+        <section className="studio-analysis-panel studio-analysis-panel--activity"><div className="studio-analysis-panel__heading"><div><span className="studio-kicker">RECENT RECORDS</span><h2>Post activity</h2></div><span>{recentPosts.length} records</span></div>{recentPosts.length ? <div className="studio-analysis-table" role="table" aria-label="Recent post activity"><div role="row" className="studio-analysis-table__head"><span role="columnheader">Product</span><span role="columnheader">Format</span><span role="columnheader">State</span><span role="columnheader">Recorded</span></div>{recentPosts.map((post) => <div role="row" key={post.id}><strong role="cell">{post.productName || "Untitled post"}</strong><span role="cell">{post.format || "—"}</span><span role="cell" className={`studio-analysis-status-tag studio-analysis-status-tag--${post.status.toLowerCase()}`}>{post.status}</span><time role="cell">{post.createdAt ? new Date(post.createdAt).toLocaleDateString() : "—"}</time></div>)}</div> : <div className="studio-analysis-empty"><strong>No post records</strong><span>Analysis will populate from saved records.</span></div>}</section>
     </div>;
 }
 

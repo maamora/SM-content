@@ -152,6 +152,11 @@
 - [x] Rebuild member, Studio, source, delivery, and Admin routes around the approved replacement architecture.
 - [x] Validate responsive, accessible, reduced-motion, and production-build behavior before committing the full redesign.
 
+## Analysis-only Workboard
+- [x] Replace setup, next-action, and creation-flow content on Workboard with analysis-only metrics and truthful operational signals.
+- [x] Keep creation controls and workflow guidance on Products, Brand, Studio, and Social rather than the Workboard route.
+- [x] Validate unavailable-data, responsive, and production-build states before committing.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.
