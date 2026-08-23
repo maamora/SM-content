@@ -35,6 +35,9 @@
 ## Botanical landing artwork
 - [x] Replace the referenced landing showcase artwork with the user-supplied botanical creative-system image while preserving layout and interaction behavior.
 
+## Editorial Control Room Studio page
+- [x] Implement the supplied three-pane Studio composer reference while retaining source selection, local rendering, brand behavior, multilingual captions, approval, export, and scheduling.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.
