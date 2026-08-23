@@ -57,7 +57,7 @@ public class SocialOAuthService {
             @Value("${app.social.meta.app-id:}") String metaAppId,
             @Value("${META_APP_SECRET:}") String metaAppSecret,
             @Value("${app.social.meta.redirect-uri}") String metaRedirectUri,
-            @Value("${app.social.meta.graph-version:v20.0}") String metaGraphVersion,
+            @Value("${app.social.meta.graph-version:v26.0}") String metaGraphVersion,
             @Value("${app.social.tiktok.client-key:}") String tiktokClientKey,
             @Value("${TIKTOK_CLIENT_SECRET:}") String tiktokClientSecret,
             @Value("${app.social.tiktok.redirect-uri}") String tiktokRedirectUri,

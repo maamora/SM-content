@@ -136,6 +136,11 @@
 - [x] Fix the confirmed upload failure without making Brand logo placement mandatory.
 - [x] Validate uploaded logo preview, saved state, Studio availability, and frontend/backend builds before committing.
 
+## Meta OAuth readiness
+- [x] Trace Meta OAuth environment variables, redirect handling, capability detection, and Social connection state.
+- [x] Repair the Social connection experience for an unconfigured provider without storing credentials in source control.
+- [x] Provide the exact Meta Developer settings and `.env` entries required to enable the verified connection flow.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

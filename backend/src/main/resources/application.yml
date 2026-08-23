@@ -172,7 +172,7 @@ app:
       app-id: ${META_APP_ID:}
       app-secret: ${META_APP_SECRET:}
       redirect-uri: ${META_REDIRECT_URI:http://localhost:8080/api/social/callback/meta}
-      graph-version: ${META_GRAPH_VERSION:v20.0}
+      graph-version: ${META_GRAPH_VERSION:v26.0}
     tiktok:
       client-key: ${TIKTOK_CLIENT_KEY:}
       client-secret: ${TIKTOK_CLIENT_SECRET:}

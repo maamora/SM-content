@@ -312,7 +312,16 @@ function SocialSurface({ posts }: { posts: Post[] }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial fetch intentionally hydrates this client surface.
     useEffect(() => { void reload(); }, [reload]);
     useEffect(() => { setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone || "your device timezone"); }, []);
-    const connect = async (provider: SocialProvider) => { setBusy(true); setStatus(""); try { window.location.assign(await getSocialConnectUrl(provider)); } catch (err) { setStatus(err instanceof Error ? err.message : "Provider OAuth is not configured"); } finally { setBusy(false); } };
+    const connect = async (provider: SocialProvider) => {
+        setBusy(true); setStatus("");
+        try {
+            const capabilities = await getSystemCapabilities();
+            const configured = provider === "META" ? capabilities.metaOAuth : provider === "TIKTOK" ? capabilities.tiktokOAuth : provider === "LINKEDIN" ? capabilities.linkedinOAuth : capabilities.xOAuth;
+            if (!configured) throw new Error(`${providerLabels[provider]} needs server configuration before it can connect.`);
+            window.location.assign(await getSocialConnectUrl(provider));
+        } catch (err) { setStatus(err instanceof Error ? err.message : "Provider OAuth is not configured"); }
+        finally { setBusy(false); }
+    };
     const disconnect = async (id: string) => { setBusy(true); try { await disconnectSocialConnection(id); await reload(); setStatus("Connection marked disconnected."); } catch (err) { setStatus(err instanceof Error ? err.message : "Unable to disconnect provider"); } finally { setBusy(false); } };
     const publish = async () => { if (!selectedPost || !selectedConnection) { setStatus("Choose an approved post and an active channel first."); return; } setBusy(true); setStatus(""); try { await queueSocialPublish({ postId: selectedPost, connectionId: selectedConnection, scheduledFor: scheduledFor ? new Date(scheduledFor).toISOString() : null }); setStatus(scheduledFor ? "Scheduled delivery saved. STUDIO will hand it to the connected channel at the selected time." : "Publish job queued. The provider response will determine its final state."); setSelectedPost(""); setScheduledFor(""); await reload(); } catch (err) { setStatus(err instanceof Error ? err.message : "Unable to queue publish job"); } finally { setBusy(false); } };
     const approvedPosts = posts.filter((post) => post.status === "APPROVED");
