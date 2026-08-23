@@ -72,3 +72,7 @@ The Studio artboard now exposes actual safe-area guides, zoom controls, a source
 The Brand route now summarizes its saved logo, color pair, and tone fields as advisory creative guardrails while preserving neutral-by-default composition and explicit logo placement in Studio. Social now exposes the browser’s device timezone in its real schedule step; delivery remains disabled until the backend returns an approved post and an active OAuth connection.
 
 At 390 px after the improvement pass, the horizontal tool shelf retains the selected Studio route, the actionable unavailable-data notice remains readable, and the Studio source inspector stacks with usable Composer/Importer, source search, and format/template controls. The command trigger stays available as a compact fixed power-user affordance rather than competing with the artboard controls.
+
+## Concise-copy review — 23 August 2026
+
+The Overview now presents a short workboard label, source/post/delivery summary, compact setup list, direct next action, and factual empty state. The Studio surface now uses short authoring, palette, source, render, Brand, and caption labels while retaining the controls and decision-critical states required to complete a post.

@@ -20,9 +20,9 @@ export function StudioOnboarding({ products, posts }: { products: Product[]; pos
   }, []);
 
   const steps = useMemo(() => [
-    { label: "Set a Brand kit", detail: "Optional logo, color, type, and tone rules.", href: "/dashboard/brand", complete: Boolean(brand?.configured) },
-    { label: "Add a product source", detail: "Upload the references that anchor a post.", href: "/dashboard/products", complete: products.length > 0 },
-    { label: "Render a first post", detail: "Use the local-SVG Studio artboard.", href: "/dashboard/studio", complete: posts.length > 0 },
+    { label: "Brand kit", detail: "Logo · color · type", href: "/dashboard/brand", complete: Boolean(brand?.configured) },
+    { label: "Add source", detail: "Product images", href: "/dashboard/products", complete: products.length > 0 },
+    { label: "Create post", detail: "Local SVG", href: "/dashboard/studio", complete: posts.length > 0 },
   ], [brand?.configured, products.length, posts.length]);
 
   const completed = steps.filter((step) => step.complete).length;
@@ -34,7 +34,7 @@ export function StudioOnboarding({ products, posts }: { products: Product[]; pos
   };
 
   return <section className="studio-onboarding" aria-label="First workspace steps">
-    <header><div><span className="studio-kicker">FIRST THREAD</span><h2>Make the first hand-off visible.</h2><p>{completed}/3 complete. These are optional setup steps, not simulated progress.</p></div><button type="button" onClick={dismiss} aria-label="Dismiss first-run guidance"><X size={15} /></button></header>
+    <header><div><span className="studio-kicker">SETUP</span><h2>Workspace setup</h2><p>{completed}/3 complete</p></div><button type="button" onClick={dismiss} aria-label="Dismiss first-run guidance"><X size={15} /></button></header>
     <ol>{steps.map((step, index) => <li className={step.complete ? "is-complete" : ""} key={step.label}><span>{step.complete ? <Check size={13} /> : `0${index + 1}`}</span><div><strong>{step.label}</strong><small>{step.detail}</small></div><Link href={step.href} aria-label={`Open ${step.label}`}><ChevronRight size={16} /></Link></li>)}</ol>
   </section>;
 }

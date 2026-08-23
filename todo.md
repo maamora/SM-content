@@ -121,6 +121,11 @@
 - [x] Make Overview and Social operationally actionable with a continue-work queue, delivery context, and honest retry/diagnostic states.
 - [x] Validate responsive, accessible, production-ready behavior and commit the complete improvement pass.
 
+## Concise authenticated copy refinement
+- [x] Remove generic explanatory copy from the shared workspace shell, route mastheads, onboarding, and operational panels.
+- [x] Retain only direct labels, real status, and decision-critical guidance across Studio, Products, Brand, Overview, and delivery workflows.
+- [x] Validate copy density, responsive hierarchy, and production build before committing.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.
