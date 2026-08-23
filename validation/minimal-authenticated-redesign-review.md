@@ -17,3 +17,13 @@ At 390 px, the workspace rail now becomes a compact horizontal route strip, leav
 Products uses the corrected compact route strip and keeps the source-library statement, active Studio hand-off, and live product contact sheet in the first mobile reading sequence. The actual add-source form follows the contact sheet instead of competing with the primary library state.
 
 Social keeps its route title, new-direction hand-off, delivery search, unavailable-data message, connect → choose → schedule state, and subsequent connection controls in a readable vertical sequence. Batch keeps its format/template workflow and the initial source-selection state visible after the same compact route strip. No horizontal overflow was observed in the final 390 px captures.
+
+## React Bits enhancement review — desktop
+
+The installed React Bits `FadeContent` wrapper stages the Overview metrics, creative-thread work area, readiness strip, Products contact sheet, Brand hand-off, and add-source surface with short low-distance entrance transitions. Once settled, all content, unavailable-data states, and form controls remain fully visible. The component was adapted to render immediately under reduced-motion preferences and is not used on the public landing, Studio controls, or high-frequency interactions.
+
+On narrow screens, the optional reveal is intentionally disabled so the primary metrics and next actions render at full contrast immediately. This preserves the mobile-first workflow hierarchy instead of forcing users to wait for an entrance effect.
+
+Final 390 px captures confirm that the Overview metric grid and Products contact sheet render immediately at full contrast. The compact route strip, unavailable-data state, Open Studio hand-off, Brand hand-off, and downstream product upload path remain readable and reachable.
+
+The shadcn audit checklist was run after installation. `FadeContent.tsx` passes its isolated lint check, and the production build passes. The repository-wide lint command still reports existing `react-hooks/purity` errors in `StudioWorkspaceLive.tsx` around legacy render-time clock calculations; these existed outside the new React Bits wrapper and are recorded as separate lint debt rather than being masked by this enhancement.

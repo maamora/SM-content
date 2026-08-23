@@ -83,6 +83,11 @@
 - [x] Add the React Bits registry and a compatible shadcn MCP server configuration without changing application behavior.
 - [x] Validate the setup and document how to browse or install React Bits components safely.
 
+## Selective React Bits enhancement
+- [x] Inspect suitable React Bits components and reject any that conflict with Quiet Studio performance, accessibility, or restrained motion.
+- [x] Select and document a minimal component set for authenticated pages only.
+- [x] Install, integrate, and validate the selected components without changing workflow behavior or the public landing page.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

@@ -299,6 +299,14 @@
   margin-top: 18px;
 }
 
+.studio-quiet-reveal {
+  min-width: 0;
+}
+
+.studio-source-library > .studio-quiet-reveal {
+  display: contents;
+}
+
 .studio-overview-runway,
 .studio-overview-next,
 .studio-workspace-readiness,
@@ -833,6 +841,12 @@
 }
 
 @media (max-width: 760px) {
+  .studio-quiet-reveal {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
+
   .studio-app {
     display: block;
   }
