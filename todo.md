@@ -57,6 +57,11 @@
 - [x] Recompose the Studio page around the intended design while preserving source selection, import, local rendering, Brand, independent captions, approval, export, and delivery behavior.
 - [x] Add only workflow enhancements that improve creative control and validate desktop/mobile behavior before committing.
 
+## Authored inner-product art-direction rebuild
+- [x] Identify the current visual choices that make authenticated pages read as generic or AI-generated rather than intentionally designed.
+- [x] Establish a bolder, consistently applied editorial art direction for the shared shell, Overview, Products, Brand, and Studio.
+- [x] Validate that the redesigned inner product remains responsive, accessible, and workflow-complete before committing.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.
