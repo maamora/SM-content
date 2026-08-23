@@ -62,6 +62,11 @@
 - [x] Establish a bolder, consistently applied editorial art direction for the shared shell, Overview, Products, Brand, and Studio.
 - [x] Validate that the redesigned inner product remains responsive, accessible, and workflow-complete before committing.
 
+## High-value skill review
+- [x] Inventory available skills against current STUDIO design, frontend, backend, and validation needs.
+- [x] Read and select only skills with concrete, compatible value for the active project.
+- [x] Apply the selected guidance to the quality backlog and document why excluded skills were not added.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

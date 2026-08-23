@@ -435,6 +435,35 @@
   box-shadow: 3px 3px 0 var(--press-signal);
 }
 
+/* Signal Press quality baseline: keyboard focus, form readability, and reduced motion are system rules rather than route-by-route patches. */
+.studio-app :is(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--press-signal);
+  outline-offset: 3px;
+}
+
+.studio-app :is(input, select, textarea)::placeholder {
+  color: #74796e;
+  opacity: 1;
+}
+
+.studio-app button:disabled,
+.studio-app input:disabled,
+.studio-app textarea:disabled,
+.studio-app select:disabled {
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-app *,
+  .studio-app *::before,
+  .studio-app *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
 @media (max-width: 820px) {
   .studio-workspace-sidebar {
     position: relative;
