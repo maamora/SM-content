@@ -60,3 +60,15 @@ The Products route now works as a charcoal-field source library: the real produc
 The Admin control room uses the same landing-color tool shelf and dark work field while keeping its warm-paper data sheet and explicit backend fallback values. The public landing remains visually and structurally unchanged, confirming that the Signal Workstation layer is limited to `.studio-app` authenticated surfaces.
 
 At 390 px, Signal Workstation reduces the persistent tool shelf to a readable horizontally scrolling route strip. The dark top frame, lime selected Studio tool, explicit unavailable-data flag, local-SVG authoring context, Composer/Importer controls, source search, and format/template choices remain readable and stack before the canvas. The app does not squeeze a three-column desktop layout into the mobile viewport.
+
+## Product-workstation improvements — 23 August 2026
+
+The Overview now exposes a contextual first-run checklist and a `Continue work` queue derived from real product and post records. In the unavailable-data fallback, the queue truthfully shows only the missing source action rather than inventing activity. The checklist points to existing Brand, Products, and Studio routes and can be dismissed locally.
+
+The `⌘/Ctrl + K` command palette opens successfully from the authenticated shell, focuses its search field, and lists only existing STUDIO routes. It does not claim to execute background operations or use artificial search results.
+
+The Studio artboard now exposes actual safe-area guides, zoom controls, a source-image completeness indicator, keyboard guidance, and a review-readiness board without removing its existing source picker, Brand controls, local-SVG renderer, four caption editors, approval, or export flows. The Products route now exposes a real client-side source filter and status selector, while retaining the three persisted image slots and the live create/delete product behavior.
+
+The Brand route now summarizes its saved logo, color pair, and tone fields as advisory creative guardrails while preserving neutral-by-default composition and explicit logo placement in Studio. Social now exposes the browser’s device timezone in its real schedule step; delivery remains disabled until the backend returns an approved post and an active OAuth connection.
+
+At 390 px after the improvement pass, the horizontal tool shelf retains the selected Studio route, the actionable unavailable-data notice remains readable, and the Studio source inspector stacks with usable Composer/Importer, source search, and format/template controls. The command trigger stays available as a compact fixed power-user affordance rather than competing with the artboard controls.

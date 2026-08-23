@@ -1,10 +1,10 @@
 "use client";
 
-/* EDITION DESK POST ARTBOARD: paper control sheets frame one calibrated canvas; blue marks active composition and vermilion marks export. Every persisted visual, Brand decision, and multilingual caption remains independently usable. */
+/* SIGNAL WORKSTATION POST ARTBOARD: charcoal inspectors frame one local-SVG canvas; acid lime marks active tools and real commitments. Every persisted visual, Brand decision, and multilingual caption remains independently usable. */
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
     AlignLeft, Check, CheckCircle2, Copy, Download, Eye, FileUp, Frame,
-    ImagePlus, Layers3, Loader2, Palette, Search, Sparkles, Stamp, UploadCloud,
+    ImagePlus, Keyboard, Layers3, Loader2, Maximize2, Minus, Palette, Plus, Search, Sparkles, Stamp, UploadCloud,
 } from "lucide-react";
 import { getBrand, type BrandSettings } from "@/lib/api/brand";
 import { createBrowserVisualPost, editCaption, exportPost, generateCaptions, generateImage, approvePost, type Post } from "@/lib/api/posts";
@@ -16,6 +16,8 @@ interface Product {
     description: string;
     price: number | null;
     imageUrl: string | null;
+    imageUrl2?: string | null;
+    imageUrl3?: string | null;
     status: "PENDING" | "APPROVED" | "REJECTED";
 }
 
@@ -102,6 +104,8 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const [copiedLanguage, setCopiedLanguage] = useState<CaptionLang | null>(null);
     const [savingCaptionLanguage, setSavingCaptionLanguage] = useState<CaptionLang | null>(null);
     const [busy, setBusy] = useState<"render" | "upload" | "captions" | "approve" | "export" | null>(null);
+    const [canvasZoom, setCanvasZoom] = useState(1);
+    const [safeAreaVisible, setSafeAreaVisible] = useState(true);
     const pickerRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -128,6 +132,8 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
         : productFocus === "FLOATING" ? { x: 220, y: 180, width: 560, height: 470, mode: "meet" }
             : productFocus === "WIDE" ? { x: 80, y: 250, width: 840, height: 390, mode: "meet" }
                 : { x: 150, y: 210, width: 700, height: 480, mode: "meet" };
+    const sourceImageCount = [selectedProduct?.imageUrl, selectedProduct?.imageUrl2, selectedProduct?.imageUrl3].filter(Boolean).length;
+    const captionsReady = languages.every((language) => captionDrafts[language.id].trim().length > 0);
 
     useEffect(() => {
         void Promise.all([listTemplates(), getBrand()])
@@ -238,6 +244,20 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const canGenerateCaptions = Boolean(post) && busy === null;
     const activeCaption = languages.find((language) => language.id === activeCaptionLanguage) ?? languages[0];
 
+    useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+            const target = event.target as HTMLElement | null;
+            const editingText = target?.matches("input, textarea, select, [contenteditable='true']");
+            if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !editingText && canCreate && busy === null) {
+                event.preventDefault();
+                void (mode === "template" ? renderTemplate() : saveUploadedPost());
+            }
+            if (!editingText && event.key.toLowerCase() === "g") setSafeAreaVisible((value) => !value);
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [busy, canCreate, mode, uploadedFile, selectedProduct, templateId]);
+
     return (
         <div className="studio-artboard-shell">
             <header className="studio-artboard-header">
@@ -249,6 +269,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                 <div className="studio-artboard-header__meta">
                     <span>{format === "SQUARE_POST" ? "1080 × 1080" : "1080 × 1920"}</span>
                     <span>LOCAL SVG</span>
+                    <button type="button" onClick={() => setSafeAreaVisible((value) => !value)} className="studio-artboard-reset" aria-pressed={safeAreaVisible} title="Toggle safe-area guides (G)"><Maximize2 className="h-3.5 w-3.5" /> Guides</button>
                     <button type="button" onClick={resetDirection} className="studio-artboard-reset">Réinitialiser la direction</button>
                 </div>
             </header>
@@ -275,7 +296,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                             <input value={productQuery} onFocus={() => setProductPickerOpen(true)} onChange={(event) => { setProductQuery(event.target.value); setProductPickerOpen(true); }} placeholder="Rechercher un produit" />
                         </div>
                         {productPickerOpen && <div className="studio-artboard-product-menu">{matchingProducts.map((product) => <button key={product.id} type="button" onMouseDown={(event) => { event.preventDefault(); setProductId(product.id); setProductQuery(product.name); setProductPickerOpen(false); clearWorkingPost(); }}><span>{product.name}</span><small>{product.price != null ? `${product.price.toFixed(2)} MAD` : "produit"}</small></button>)}{!matchingProducts.length && <p>Aucun produit approuvé.</p>}</div>}
-                        {selectedProduct && <div className="studio-artboard-source-card"><div className="studio-artboard-source-card__image">{selectedProduct.imageUrl ? <img src={selectedProduct.imageUrl} alt={`Référence produit ${selectedProduct.name}`} /> : <ImagePlus className="h-5 w-5" />}</div><div><span>Source product</span><strong>{selectedProduct.name}</strong><small>{selectedProduct.description || "Référence produit sélectionnée"}</small></div></div>}
+                        {selectedProduct && <div className="studio-artboard-source-card"><div className="studio-artboard-source-card__image">{selectedProduct.imageUrl ? <img src={selectedProduct.imageUrl} alt={`Référence produit ${selectedProduct.name}`} /> : <ImagePlus className="h-5 w-5" />}</div><div><span>Source product</span><strong>{selectedProduct.name}</strong><small>{selectedProduct.description || "Référence produit sélectionnée"}</small><em>{sourceImageCount}/3 source images available</em></div></div>}
                     </section>
 
                     <section className="studio-artboard-section">
@@ -319,14 +340,15 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                 </aside>
 
                 <main className="studio-artboard-stage">
-                    <div className="studio-artboard-stage__toolbar"><div><Eye className="h-3.5 w-3.5" /><span>ARTBOARD / {isStory ? "STORY" : "POST"}</span></div><div><span className="studio-artboard-status-dot" />{post ? "Sauvegardé" : "Brouillon vivant"}</div></div>
+                    <div className="studio-artboard-stage__toolbar"><div><Eye className="h-3.5 w-3.5" /><span>ARTBOARD / {isStory ? "STORY" : "POST"}</span></div><div className="studio-artboard-toolbar-tools"><button type="button" onClick={() => setCanvasZoom((value) => Math.max(.72, Number((value - .08).toFixed(2))))} aria-label="Zoom out artboard" disabled={canvasZoom <= .72}><Minus className="h-3.5 w-3.5" /></button><span>{Math.round(canvasZoom * 100)}%</span><button type="button" onClick={() => setCanvasZoom((value) => Math.min(1.24, Number((value + .08).toFixed(2))))} aria-label="Zoom in artboard" disabled={canvasZoom >= 1.24}><Plus className="h-3.5 w-3.5" /></button><span className="studio-artboard-status-dot" />{post ? "Sauvegardé" : "Brouillon vivant"}</div></div>
                     <div className={`studio-artboard-canvas ${isStory ? "studio-artboard-canvas--story" : ""}`}>
                         <div className="studio-artboard-canvas__ruler studio-artboard-canvas__ruler--top" /><div className="studio-artboard-canvas__ruler studio-artboard-canvas__ruler--side" />
-                        <div className="studio-artboard-canvas__paper">
+                        <div className="studio-artboard-canvas__paper" style={{ transform: `scale(${canvasZoom})` }}>
+                            {safeAreaVisible && <div className="studio-artboard-safe-area" aria-hidden="true"><span>SAFE AREA</span></div>}
                             {previewImage ? <img src={previewImage} alt="Aperçu du post" /> : <svg viewBox="0 0 1000 1000" role="img" aria-label="Aperçu SVG du post"><rect width="1000" height="1000" fill={layoutStyle === "MINIMAL" ? "#F4F1E8" : layoutStyle === "CATALOG" ? "#DDE5D7" : selectedMood.id === "eclipse" ? "#141512" : "#1b201c"} />{layoutStyle === "MINIMAL" ? <path d="M0 120 L1000 40 V170 L0 250 Z" fill={accentColor} opacity=".45" /> : layoutStyle === "CATALOG" ? <rect x="50" y="50" width="900" height="900" rx="32" fill="none" stroke="#10110f" strokeOpacity=".18" strokeWidth="3" /> : <circle cx="790" cy="220" r="270" fill={accentColor} opacity={layoutStyle === "POSTER" ? ".20" : ".55"} />}{productFocus === "FLOATING" ? <rect x={previewProductBox.x - 18} y={previewProductBox.y - 14} width={previewProductBox.width + 36} height={previewProductBox.height + 30} rx="42" fill="#F5F1E8" opacity=".14" /> : null}<rect x="56" y="62" width="310" height="75" fill={accentColor} /><text x="80" y="110" fill="#10110f" fontSize="30" fontWeight="800" letterSpacing="4">{badgeText || "NOUVEAU"}</text>{includeBrandLogo && canAddBrandMark ? <g><rect x={previewBrandFrame.x} y={previewBrandFrame.y} width={previewBrandFrame.width} height={previewBrandFrame.height} rx="16" fill="#F5F1E8" opacity=".9" />{brand?.logoUrl ? <image href={brand.logoUrl} x={previewBrandFrame.x + previewBrandFrame.padding} y={previewBrandFrame.y + previewBrandFrame.padding} width={previewBrandFrame.width - previewBrandFrame.padding * 2} height={previewBrandFrame.height - previewBrandFrame.padding * 2} preserveAspectRatio="xMidYMid meet" /> : configuredBrandName ? <text x={previewBrandFrame.x + previewBrandFrame.width / 2} y={previewBrandFrame.y + 53} textAnchor="middle" fill="#11120f" fontSize="22" fontWeight="700" letterSpacing="2">{configuredBrandName}</text> : null}</g> : null}{selectedProduct?.imageUrl ? <image href={selectedProduct.imageUrl} x={previewProductBox.x} y={previewProductBox.y} width={previewProductBox.width} height={previewProductBox.height} preserveAspectRatio={`xMidYMid ${previewProductBox.mode}`} /> : <rect x={previewProductBox.x} y={previewProductBox.y} width={previewProductBox.width} height={previewProductBox.height} rx="40" fill="#c9c7bb" opacity=".55" />}<rect x="0" y="680" width="1000" height="320" fill={layoutStyle === "MINIMAL" ? "#F4F1E8" : layoutStyle === "CATALOG" ? "#EAF0E6" : "#11120f"} opacity={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? ".96" : ".88"} /><text x={previewCopyX} y="755" textAnchor={previewTextAnchor} fill={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? "#10110f" : "#F5F1E8"} fontSize="58" fontWeight="800">{headline || selectedProduct?.name || "VOTRE PRODUIT"}</text><text x={previewCopyX} y="815" textAnchor={previewTextAnchor} fill={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? "#10110f" : accentColor} fontSize="28" fontWeight="700">{promoText || "Votre prochaine direction"}</text><text x={previewCopyX} y="862" textAnchor={previewTextAnchor} fill={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? "#4a4d45" : "#bdbdb4"} fontSize="18">{supportingText || selectedProduct?.description || "Définissez votre bénéfice produit."}</text>{ctaText ? <g><rect x={textAlignment === "CENTER" ? 375 : 70} y="895" width="250" height="48" rx="24" fill={accentColor} /><text x={textAlignment === "CENTER" ? 500 : 195} y="926" textAnchor="middle" fill="#10110f" fontSize="16" fontWeight="700" letterSpacing="1">{ctaText}</text></g> : null}<text x={previewCopyX} y="978" textAnchor={previewTextAnchor} fill={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? "#4a4d45" : "#bdbdb4"} fontSize="14" letterSpacing="3">LOCAL SVG TEMPLATE COMPOSITION</text></svg>}
                         </div>
                     </div>
-                    <div className="studio-artboard-renderbar"><ol className="studio-artboard-progress" aria-label="Étapes du post"><li className="is-active"><span />Composer</li><li className={post ? "is-active" : ""}><span />Légendes</li><li className={post?.status === "APPROVED" || post?.status === "EXPORTED" ? "is-active" : ""}><span />Validation</li><li><span />Diffusion</li><li className={post?.status === "EXPORTED" ? "is-active" : ""}><span />Export</li></ol><div className="studio-artboard-renderbar__action"><p><strong>{mode === "template" ? "Le rendu suivra cette direction." : uploadedFile ? "Le fichier est prêt à rejoindre la bibliothèque." : "Importez votre post final."}</strong><span>{mode === "template" ? "Les réglages de la colonne gauche s’appliquent au PNG local." : "Aucune retouche n’est appliquée à votre fichier."}</span></p><button type="button" disabled={!canCreate || busy !== null} onClick={() => void (mode === "template" ? renderTemplate() : saveUploadedPost())}>{busy === "render" || busy === "upload" ? <Loader2 className="h-4 w-4 animate-spin" /> : mode === "template" ? <Sparkles className="h-4 w-4" /> : <FileUp className="h-4 w-4" />}{busy === "render" ? "Rendu…" : busy === "upload" ? "Ajout…" : mode === "template" ? "Rendre le post" : "Ajouter au studio"}</button></div></div>
+                    <div className="studio-artboard-renderbar"><ol className="studio-artboard-progress" aria-label="Étapes du post"><li className="is-active"><span />Composer</li><li className={post ? "is-active" : ""}><span />Légendes</li><li className={post?.status === "APPROVED" || post?.status === "EXPORTED" ? "is-active" : ""}><span />Validation</li><li><span />Diffusion</li><li className={post?.status === "EXPORTED" ? "is-active" : ""}><span />Export</li></ol><div className="studio-artboard-renderbar__action"><p><strong>{mode === "template" ? "Le rendu suivra cette direction." : uploadedFile ? "Le fichier est prêt à rejoindre la bibliothèque." : "Importez votre post final."}</strong><span>{mode === "template" ? "⌘/Ctrl + Enter renders the local composition. G toggles safe-area guides." : "Aucune retouche n’est appliquée à votre fichier."}</span></p><button type="button" disabled={!canCreate || busy !== null} onClick={() => void (mode === "template" ? renderTemplate() : saveUploadedPost())}>{busy === "render" || busy === "upload" ? <Loader2 className="h-4 w-4 animate-spin" /> : mode === "template" ? <Sparkles className="h-4 w-4" /> : <FileUp className="h-4 w-4" />}{busy === "render" ? "Rendu…" : busy === "upload" ? "Ajout…" : mode === "template" ? "Rendre le post" : "Ajouter au studio"}</button></div></div>
                 </main>
 
                 <aside className="studio-artboard-publish" aria-label="Contrôles de marque et publication">
@@ -358,6 +380,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
 
                     <section className="studio-artboard-delivery">
                         <div className="studio-artboard-delivery__status"><span><CheckCircle2 className="h-4 w-4" /></span><div><Label>Prêt pour diffusion</Label><strong>{post ? `Statut : ${post.status}` : "En préparation"}</strong></div></div>
+                        <div className="studio-artboard-review-board"><span className="studio-kicker">REVIEW CHECK</span><ul><li className={post ? "is-ready" : ""}>{post ? <Check size={12} /> : <span />}Visual saved</li><li className={captionsReady ? "is-ready" : ""}>{captionsReady ? <Check size={12} /> : <span />}4 captions reviewed</li><li className={includeBrandLogo ? "is-ready" : ""}>{includeBrandLogo ? <Check size={12} /> : <span />}Brand placement optional</li></ul></div>
                         <p>Validez l’image et la légende. Le post pourra ensuite rejoindre Social pour choisir un canal et une heure de diffusion.</p>
                         <div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => void approve()} disabled={!post || post.status !== "DRAFT" || busy !== null} className="studio-artboard-secondary">{busy === "approve" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}Valider</button><button type="button" onClick={() => void exportPostFile()} disabled={!post || busy !== null} className="studio-artboard-export">{busy === "export" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}Exporter</button></div>
                     </section>

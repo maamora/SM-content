@@ -114,6 +114,13 @@
 - [x] Recompose core authoring, source-library, overview, delivery, and admin surfaces around toolbars, artboards, inspectors, and production panels without removing real workflows.
 - [x] Validate color continuity with the landing page, mobile sequencing, accessibility, truthful fallback states, and production build before committing.
 
+## Full product-workstation improvement pass
+- [x] Add a keyboard-first command palette, contextual first-run guidance, and a truthful operational-status foundation.
+- [x] Upgrade Studio with persistent creative controls, safe-area/alignment assistance, clear review hand-off, and no-loss keyboard access.
+- [x] Expand product-source and Brand workflows with source completeness, visual organization, and reusable creative guardrails.
+- [x] Make Overview and Social operationally actionable with a continue-work queue, delivery context, and honest retry/diagnostic states.
+- [x] Validate responsive, accessible, production-ready behavior and commit the complete improvement pass.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.
