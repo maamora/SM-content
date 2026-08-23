@@ -23,6 +23,6 @@ type UploadResponse = { url: string };
 
 /** Stores a Brand-page logo through the existing authenticated image-upload route. */
 export const uploadBrandLogo = async (file: File) => {
-    const upload = await apiUpload<UploadResponse>("/api/uploads/image", file);
+    const upload = await apiUpload<UploadResponse>("/api/uploads/brand-logo", file);
     return upload.url;
 };

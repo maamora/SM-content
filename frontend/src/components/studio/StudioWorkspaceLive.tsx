@@ -234,8 +234,15 @@ function BrandSurface() {
         if (!file.type.startsWith("image/")) { setStatus("Choose a PNG, JPG, WebP, or SVG logo."); return; }
         if (file.size > 15 * 1024 * 1024) { setStatus("The logo must be 15 MB or smaller."); return; }
         setUploadingLogo(true); setStatus("");
-        try { const logoUrl = await uploadBrandLogo(file); setDraft((current) => ({ ...current, logoUrl })); setStatus("Logo uploaded. Save the brand kit to use it in Studio."); }
-        catch (err) { setStatus(err instanceof Error ? err.message : "Unable to upload logo"); }
+        try {
+            const logoUrl = await uploadBrandLogo(file);
+            const nextDraft = { ...draft, logoUrl };
+            const value = await updateBrand(nextDraft);
+            setDraft(nextDraft);
+            setBrand(value);
+            setStatus("Logo uploaded and saved.");
+        }
+        catch (err) { setStatus(err instanceof Error ? err.message : "Unable to upload and save logo"); }
         finally { setUploadingLogo(false); }
     };
     if (!brand && status === "Loading brand kit…") return <div className="studio-loading"><Loader2 className="studio-spin" size={18} /> {status}</div>;

@@ -131,6 +131,11 @@
 - [x] Recompose Admin routes around real moderation, records, capability, system, and unavailable-state boundaries.
 - [x] Validate that admin is visually isolated from the user creative workstation while preserving the public landing and production build.
 
+## Brand logo upload repair
+- [x] Trace the Logo upload request from Brand UI through authenticated storage and persisted Brand state.
+- [x] Fix the confirmed upload failure without making Brand logo placement mandatory.
+- [x] Validate uploaded logo preview, saved state, Studio availability, and frontend/backend builds before committing.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

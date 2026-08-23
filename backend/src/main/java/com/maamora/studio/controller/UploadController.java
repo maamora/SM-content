@@ -26,6 +26,11 @@ public class UploadController {
         return upload(file, "products");
     }
 
+    @PostMapping("/brand-logo")
+    public ApiResponse<UploadResponse> uploadBrandLogo(@RequestParam("file") MultipartFile file) {
+        return upload(file, "brand/logos");
+    }
+
     @PostMapping("/creative-reference")
     public ApiResponse<UploadResponse> uploadCreativeReference(@RequestParam("file") MultipartFile file) {
         return upload(file, "creative/references");
