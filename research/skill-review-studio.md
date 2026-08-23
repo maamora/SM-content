@@ -16,3 +16,9 @@ A skill is included only when it can improve STUDIO without changing the product
 ## Excluded skills
 
 Skills for slides, music, text-to-speech, generic image editing, finance, and data backup do not improve the active STUDIO application. `game-dev` does not fit the product. `manus-config` is only needed when a connector or scheduled task must be changed. Presentation and document skills remain available for future project collateral, not product implementation.
+
+## Project-local skill restoration note
+
+The repository tracks three `.agent/skills/*` entries as Git links, but the checkout and remote repository do not include a `.gitmodules` mapping. As a result, the original source URLs cannot be recovered automatically from the project alone. The folders are empty placeholders, not usable imported skills.
+
+Two names are independently verifiable and align with STUDIO’s needs: `frontend-design` corresponds to the public Anthropic frontend-design guidance, which emphasizes a specific visual point of view, one justified aesthetic risk, readable product copy, and restrained motion; `ui-ux-pro-max-skill` corresponds to the MIT-licensed public UI/UX Pro Max repository, a design-intelligence knowledge base for modern interfaces. The unqualified `tmp_emilkowalski` link has no verified source and will remain unimported rather than guessing at its provenance.

@@ -67,6 +67,11 @@
 - [x] Read and select only skills with concrete, compatible value for the active project.
 - [x] Apply the selected guidance to the quality backlog and document why excluded skills were not added.
 
+## Project-local agent skill import
+- [x] Inventory agent skills already tracked in the STUDIO repository.
+- [x] Assess compatibility, safety, and concrete value for the active application.
+- [x] Import selected local-skill guidance into the project quality workflow and document exclusions.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.
