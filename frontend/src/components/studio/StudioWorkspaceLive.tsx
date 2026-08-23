@@ -1,5 +1,5 @@
 "use client";
-/* AUTHENTICATED STUDIO SYSTEM: The Editorial Worktable—one asymmetric working field per route, with charcoal for authoring, paper for records, and lime only for commitment. Existing workspace APIs and workflows remain unchanged. */
+/* EDITION DESK / AUTHENTICATED WORKSPACE: a cool-paper production desk with blue structural signals and vermilion delivery states. Existing APIs, honest fallbacks, and all workflows remain unchanged. */
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";

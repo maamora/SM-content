@@ -93,6 +93,13 @@
 - [x] Restore a package-consistent implementation that compiles in local development and production.
 - [x] Verify the repaired frontend and document the correction before committing.
 
+## Refero-informed inner-product redesign
+- [x] Configure and verify the user-provided Refero MCP connector securely (server connected and exposed eight read-only research tools; no credential committed).
+- [x] Use project-local design skills and public product-interface references to select the Edition Desk authenticated-page aesthetic after the Refero subscription rejected the first non-mutating search; document the limitation without retaining a token.
+- [x] Implement Edition Desk across inner pages while preserving real workflows and leaving the public landing page unchanged.
+- [x] Validate desktop/mobile behavior, keyboard focus, honest unavailable states, and the production build before committing.
+- [ ] Re-run Refero style/screen research after the account subscription attached to the MCP credential is active; compare any resulting evidence against the Edition Desk reference lock before considering another visual revision.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

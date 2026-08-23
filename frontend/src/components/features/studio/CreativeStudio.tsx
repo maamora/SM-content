@@ -1,6 +1,6 @@
 "use client";
 
-/* STUDIO POST ARTBOARD: Editorial Control Room—dark direction desk, dominant local artboard, and pale finishing rail. Every persisted visual, Brand decision, and multilingual caption remains independently usable. */
+/* EDITION DESK POST ARTBOARD: paper control sheets frame one calibrated canvas; blue marks active composition and vermilion marks export. Every persisted visual, Brand decision, and multilingual caption remains independently usable. */
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
     AlignLeft, Check, CheckCircle2, Copy, Download, Eye, FileUp, Frame,
