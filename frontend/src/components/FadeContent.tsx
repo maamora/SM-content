@@ -1,13 +1,11 @@
-import * as React from 'react';
-import { useRef, useEffect } from 'react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+"use client";
 
-gsap.registerPlugin(ScrollTrigger);
+/* REACT BITS ADAPTATION: dependency-safe reveal primitive based on the selected registry component, implemented with STUDIO's existing Motion runtime. */
+import * as React from "react";
+import { motion, useReducedMotion, type HTMLMotionProps } from "motion/react";
 
-interface FadeContentProps extends React.HTMLAttributes<HTMLDivElement> {
+interface FadeContentProps extends Omit<HTMLMotionProps<"div">, "ref" | "children"> {
   children: React.ReactNode;
-  container?: Element | string | null;
   blur?: boolean;
   duration?: number;
   ease?: string;
@@ -15,107 +13,43 @@ interface FadeContentProps extends React.HTMLAttributes<HTMLDivElement> {
   threshold?: number;
   initialOpacity?: number;
   distance?: number;
-  disappearAfter?: number;
-  disappearDuration?: number;
-  disappearEase?: string;
   onComplete?: () => void;
-  onDisappearanceComplete?: () => void;
 }
+
+const toSeconds = (value: number) => (value > 10 ? value / 1000 : value);
+const toEase = (value: string): [number, number, number, number] | "easeOut" =>
+  value.includes("power") || value.includes("cubic") ? [0.22, 1, 0.36, 1] : "easeOut";
 
 const FadeContent: React.FC<FadeContentProps> = ({
   children,
-  container,
   blur = false,
-  duration = 1000,
-  ease = 'power2.out',
+  duration = 260,
+  ease = "cubic-bezier(0.22, 1, 0.36, 1)",
   delay = 0,
   threshold = 0.1,
   initialOpacity = 0,
   distance = 10,
-  disappearAfter = 0,
-  disappearDuration = 0.5,
-  disappearEase = 'power2.in',
   onComplete,
-  onDisappearanceComplete,
-  className = '',
+  className = "",
+  style,
   ...props
 }) => {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reducedMotion) {
-      gsap.set(el, { autoAlpha: 1, clearProps: 'filter,transform,willChange' });
-      return;
-    }
-
-    let scrollerTarget: Element | string | null = container || document.getElementById('snap-main-container') || null;
-
-    if (typeof scrollerTarget === 'string') {
-      scrollerTarget = document.querySelector(scrollerTarget);
-    }
-
-    const startPct = (1 - threshold) * 100;
-    const getSeconds = (val: number) => (val > 10 ? val / 1000 : val);
-
-    gsap.set(el, {
-      autoAlpha: initialOpacity,
-      filter: blur ? 'blur(10px)' : 'blur(0px)',
-      y: distance,
-      willChange: 'opacity, filter, transform'
-    });
-
-    const tl = gsap.timeline({
-      paused: true,
-      delay: getSeconds(delay),
-      onComplete: () => {
-        if (onComplete) onComplete();
-        if (disappearAfter > 0) {
-          gsap.to(el, {
-            autoAlpha: initialOpacity,
-            filter: blur ? 'blur(10px)' : 'blur(0px)',
-            delay: getSeconds(disappearAfter),
-            duration: getSeconds(disappearDuration),
-            ease: disappearEase,
-            onComplete: () => onDisappearanceComplete?.()
-          });
-        }
-      }
-    });
-
-    tl.to(el, {
-      autoAlpha: 1,
-      filter: 'blur(0px)',
-      y: 0,
-      duration: getSeconds(duration),
-      ease: ease
-    });
-
-    const alreadyVisible = el.getBoundingClientRect().top <= window.innerHeight * (1 - threshold);
-    const st = alreadyVisible ? null : ScrollTrigger.create({
-      trigger: el,
-      scroller: scrollerTarget || window,
-      start: `top ${startPct}%`,
-      once: true,
-      onEnter: () => tl.play()
-    });
-
-    if (alreadyVisible) tl.play();
-
-    return () => {
-      st?.kill();
-      tl.kill();
-      gsap.killTweensOf(el);
-    };
-  }, [blur, container, delay, disappearAfter, disappearDuration, disappearEase, distance, duration, ease, initialOpacity, onComplete, onDisappearanceComplete, threshold]);
+  const reducedMotion = useReducedMotion();
+  const motionIsDisabled = Boolean(reducedMotion);
 
   return (
-    <div ref={ref} className={className} {...props}>
+    <motion.div
+      className={className}
+      style={style}
+      initial={motionIsDisabled ? false : { opacity: initialOpacity, y: distance, filter: blur ? "blur(8px)" : "blur(0px)" }}
+      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      viewport={{ once: true, amount: Math.max(0, Math.min(threshold, 1)) }}
+      transition={{ duration: motionIsDisabled ? 0 : toSeconds(duration), delay: motionIsDisabled ? 0 : toSeconds(delay), ease: toEase(ease) }}
+      onAnimationComplete={onComplete}
+      {...props}
+    >
       {children}
-    </div>
+    </motion.div>
   );
 };
 

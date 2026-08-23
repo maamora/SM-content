@@ -88,6 +88,11 @@
 - [x] Select and document a minimal component set for authenticated pages only.
 - [x] Install, integrate, and validate the selected components without changing workflow behavior or the public landing page.
 
+## React Bits dependency repair
+- [x] Inspect the frontend dependency manifest and lockfile for the missing animation runtime.
+- [x] Restore a package-consistent implementation that compiles in local development and production.
+- [x] Verify the repaired frontend and document the correction before committing.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

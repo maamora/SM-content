@@ -27,3 +27,7 @@ On narrow screens, the optional reveal is intentionally disabled so the primary 
 Final 390 px captures confirm that the Overview metric grid and Products contact sheet render immediately at full contrast. The compact route strip, unavailable-data state, Open Studio hand-off, Brand hand-off, and downstream product upload path remain readable and reachable.
 
 The shadcn audit checklist was run after installation. `FadeContent.tsx` passes its isolated lint check, and the production build passes. The repository-wide lint command still reports existing `react-hooks/purity` errors in `StudioWorkspaceLive.tsx` around legacy render-time clock calculations; these existed outside the new React Bits wrapper and are recorded as separate lint debt rather than being masked by this enhancement.
+
+## React Bits dependency repair
+
+The first React Bits registry component imported GSAP, which can fail immediately in a working tree whose packages have not been reinstalled after a pull. The wrapper now uses STUDIO’s pre-existing `motion` runtime instead, and the unused GSAP package was removed from the manifest and lockfile. A fresh production build and authenticated Overview browser render both complete without the previous unresolved-module error.
