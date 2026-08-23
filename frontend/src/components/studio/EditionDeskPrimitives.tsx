@@ -1,5 +1,5 @@
 "use client";
-/* SIGNAL WORKSTATION PRIMITIVES: authenticated-only layout architecture built from a tool shelf, route thesis, operational controls, and durable canvas sheets. These components are presentational and never replace data, API behavior, or honest unavailable states. */
+/* PRESS BENCH PRIMITIVES: authenticated-only production shell with a compact tool dock, job strip, and route-specific work field. These components never replace data, API behavior, or honest unavailable states. */
 
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -39,27 +39,27 @@ export function EditionDeskShell({
   footerPrimaryIcon: FooterPrimaryIcon = CircleHelp,
 }: EditionDeskShellProps) {
   return (
-    <main className="studio-app studio-app--edition-desk">
-      <aside className="studio-workspace-sidebar" aria-label={`${contextLabel} navigation`}>
-        <div className="studio-workspace-sidebar__brand"><StudioMark compact /><span>{contextLabel}</span></div>
-        <nav>
+    <main className="studio-app studio-app--press-bench">
+      <aside className="studio-workspace-sidebar studio-bench-dock" aria-label={`${contextLabel} navigation`}>
+        <div className="studio-workspace-sidebar__brand studio-bench-dock__brand"><StudioMark compact /><span>{contextLabel}</span></div>
+        <nav className="studio-bench-dock__nav">
           {navigation.map((section) => (
             <div className="studio-workspace-nav__section" key={section.label ?? section.items.map((item) => item.key).join("-")}>
               {section.label && <span>{section.label}</span>}
               {section.items.map(({ key, label, href, icon: Icon }) => (
-                <Link key={key} href={href} className={activeKey === key ? "is-active" : ""} aria-current={activeKey === key ? "page" : undefined}>
-                  <Icon size={16} />{label}
+                <Link key={key} href={href} className={activeKey === key ? "is-active" : ""} aria-current={activeKey === key ? "page" : undefined} data-label={label} title={label}>
+                  <Icon size={17} /><span>{label}</span>
                 </Link>
               ))}
             </div>
           ))}
         </nav>
-        <div className="studio-workspace-sidebar__bottom">
-          <Link href={footerPrimaryHref}><FooterPrimaryIcon size={15} />{footerPrimaryLabel}</Link>
-          <Link href="/">← Back to site</Link>
+        <div className="studio-workspace-sidebar__bottom studio-bench-dock__footer">
+          <Link href={footerPrimaryHref} title={footerPrimaryLabel}><FooterPrimaryIcon size={16} /><span>{footerPrimaryLabel}</span></Link>
+          <Link href="/" title="Back to site"><span>←</span><span>Back to site</span></Link>
         </div>
       </aside>
-      <div className="studio-workspace-main">{children}</div>
+      <div className="studio-workspace-main studio-bench-workspace">{children}</div>
     </main>
   );
 }
@@ -75,8 +75,8 @@ type RouteMastheadProps = {
 
 export function RouteMasthead({ kicker, title, description, actions, children, compact = false }: RouteMastheadProps) {
   return (
-    <header className={`studio-route-masthead ${compact ? "studio-route-masthead--compact" : ""}`}>
-      <div className="studio-route-masthead__copy"><span className="studio-kicker studio-kicker--dark">{kicker}</span><h1>{title}</h1><p>{description}</p>{children}</div>
+    <header className={`studio-route-masthead studio-job-strip ${compact ? "studio-route-masthead--compact" : ""}`}>
+      <div className="studio-route-masthead__copy studio-job-strip__record"><span className="studio-kicker studio-kicker--dark">{kicker}</span><div><h1>{title}</h1><p>{description}</p></div>{children}</div>
       {actions && <div className="studio-route-masthead__actions">{actions}</div>}
     </header>
   );
@@ -91,7 +91,7 @@ type RouteControlBarProps = {
 
 export function RouteControlBar({ icon: Icon, label, utility, children }: RouteControlBarProps) {
   return (
-    <div className="studio-route-controlbar">
+    <div className="studio-route-controlbar studio-job-strip__tools">
       <div className="studio-route-controlbar__label"><Icon size={17} /><span>{label}</span></div>
       <div className="studio-route-controlbar__actions">{children}{utility}</div>
     </div>
@@ -109,7 +109,7 @@ type WorkSheetProps = {
 
 export function WorkSheet({ kicker, title, meta, tone = "paper", className = "", children }: WorkSheetProps) {
   return (
-    <section className={`studio-work-sheet studio-work-sheet--${tone} ${className}`}>
+    <section className={`studio-work-sheet studio-bench-sheet studio-work-sheet--${tone} ${className}`}>
       {(kicker || title || meta) && <div className="studio-work-sheet__heading"><div>{kicker && <span className="studio-kicker studio-kicker--dark">{kicker}</span>}{title && <h2>{title}</h2>}</div>{meta && <div className="studio-work-sheet__meta">{meta}</div>}</div>}
       <div className="studio-work-sheet__body">{children}</div>
     </section>
@@ -125,7 +125,7 @@ export type MetricLedgerItem = {
 
 export function MetricLedger({ items, className = "" }: { items: MetricLedgerItem[]; className?: string }) {
   return (
-    <div className={`studio-metric-ledger ${className}`}>
+    <div className={`studio-metric-ledger studio-bench-ledger ${className}`}>
       {items.map((item) => <div className={`studio-metric-ledger__cell studio-metric-ledger__cell--${item.accent ?? "blue"}`} key={item.label}><span>{item.label}</span><strong>{item.value}</strong><small>{item.detail}</small></div>)}
     </div>
   );

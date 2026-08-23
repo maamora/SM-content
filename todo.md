@@ -146,6 +146,12 @@
 - [x] Adapt only suitable components to use real STUDIO records and the existing `motion/react` dependency, without adding GSAP or OGL.
 - [x] Validate the selected integrations for reduced motion, keyboard access, mobile layout, real workflow preservation, and production build.
 
+## Complete uploaded-skills-informed inner-page redesign
+- [x] Inventory every user-uploaded skill and map its applicable requirements to the authenticated STUDIO product.
+- [x] Define a replacement visual system and page architecture that preserves the public landing, real workflows, and Admin separation.
+- [x] Rebuild member, Studio, source, delivery, and Admin routes around the approved replacement architecture.
+- [x] Validate responsive, accessible, reduced-motion, and production-build behavior before committing the full redesign.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

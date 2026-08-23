@@ -7,6 +7,8 @@ import "./quiet-studio.css";
 import "./edition-desk.css";
 /* SIGNAL WORKSTATION: final authenticated-only creative-app layer, aligned to the public landing palette. */
 import "./signal-workstation.css";
+/* PRESS BENCH: final authenticated production architecture, loaded last and scoped away from public marketing. */
+import "./press-bench.css";
 
 export const metadata: Metadata = {
   title: "STUDIO | Creative operations in motion",
