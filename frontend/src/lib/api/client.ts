@@ -163,6 +163,14 @@ export async function apiUpload<T>(path: string, file: File): Promise<T> {
         throw new Error(`Could not reach the backend at ${API_BASE_URL}. Is it running?`);
     }
 
+    if ((res.status === 401 || res.status === 403) && token) {
+        clearToken();
+        if (typeof window !== "undefined") {
+            window.location.href = "/login";
+        }
+        throw new Error("Session expired. Please log in again.");
+    }
+
     const body = await parseEnvelope<T>(res);
 
     if (!res.ok || !body.success) {

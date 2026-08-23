@@ -136,6 +136,11 @@
 - [x] Fix the confirmed upload failure without making Brand logo placement mandatory.
 - [x] Validate uploaded logo preview, saved state, Studio availability, and frontend/backend builds before committing.
 
+## Brand logo upload regression repair
+- [x] Reproduce and trace the current Brand logo upload failure across client, authenticated API, storage, and saved Brand state.
+- [x] Repair the confirmed regression while keeping the logo optional for post composition.
+- [x] Validate the upload preview, persisted logo URL, Studio availability, and relevant frontend/backend builds before committing.
+
 ## Meta OAuth readiness
 - [x] Trace Meta OAuth environment variables, redirect handling, capability detection, and Social connection state.
 - [x] Repair the Social connection experience for an unconfigured provider without storing credentials in source control.

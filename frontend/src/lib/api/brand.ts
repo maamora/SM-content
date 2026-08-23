@@ -19,10 +19,9 @@ export const updateBrand = (input: BrandSettingsInput) => apiFetch<BrandSettings
     body: JSON.stringify(input),
 });
 
-type UploadResponse = { url: string };
-
-/** Stores a Brand-page logo through the existing authenticated image-upload route. */
-export const uploadBrandLogo = async (file: File) => {
-    const upload = await apiUpload<UploadResponse>("/api/uploads/brand-logo", file);
-    return upload.url;
-};
+/**
+ * Stores an optional logo and persists its URL in the current Brand workspace
+ * in one authenticated operation. This avoids a second client-side save racing
+ * a completed multipart request.
+ */
+export const uploadBrandLogo = (file: File) => apiUpload<BrandSettings>("/api/brand/logo", file);
