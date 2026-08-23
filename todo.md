@@ -100,6 +100,15 @@
 - [x] Validate desktop/mobile behavior, keyboard focus, honest unavailable states, and the production build before committing.
 - [ ] Re-run Refero style/screen research after the account subscription attached to the MCP credential is active; compare any resulting evidence against the Edition Desk reference lock before considering another visual revision.
 
+## Implementable authenticated-page design targets
+- [x] Produce coherent high-fidelity visual targets for the authenticated Overview, Products, Studio, and Delivery workflows without altering the public landing direction.
+- [x] Map every generated target to existing STUDIO page structure and real controls so implementation can follow the images exactly without removing workflows.
+
+## Authenticated page architecture replacement
+- [x] Replace the shared authenticated shell and route composition with the Edition Desk target architecture while retaining navigation, APIs, and truthful states.
+- [x] Rebuild the Overview, Products, Brand, Studio, Batch, Library, Delivery, Settings, and Admin page structures around the new reusable layout primitives.
+- [x] Validate real workflows, responsive sequencing, accessibility, production build, and public landing isolation before committing.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

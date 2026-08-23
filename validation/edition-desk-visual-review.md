@@ -38,3 +38,13 @@ No public landing selectors were changed. The authenticated stylesheet contains 
 ## Keyboard focus check — 23 August 2026
 
 From `/dashboard`, pressing `Tab` moves focus to the STUDIO home link in the index rail. The target receives a visible two-pixel edition-blue outline with an offset, and the page remains stable rather than using an animated focus treatment. The shared `:focus-visible` rule also applies to authenticated links, buttons, inputs, selects, and textareas.
+
+## Page-architecture replacement pass — 23 August 2026
+
+The shared authenticated route composition now resolves through `EditionDeskShell`, `RouteMasthead`, and `RouteControlBar`, while page-local surfaces retain ownership of live data and actions. Desktop checks of Overview and Social confirm that the index rail remains persistent, every route has one clear thesis and one primary action, and the actual backend-unavailable notice remains visible above the work surface.
+
+The Social route retains its real connection rows, OAuth actions, post/channel selectors, schedule field, queue action, and receipt ledger. The new masthead and control bar reorganize those controls without hiding delivery prerequisites or simulating connections.
+
+The Admin control room now uses the same shell, masthead, and refresh control bar. Its system overview continues to expose backend-unavailable and fallback values rather than inventing administrative records. The Studio route intentionally remains its own three-zone authoring table inside the new shell; its source selection, local-SVG canvas, Brand placement, four independent caption fields, approval, and export controls remain visible in their existing task order.
+
+At 390 px, the replaced shell continues to transform the index into a horizontal route strip. The Studio route retains the visible unavailable-data notice, then sequences the route thesis, reset action, Composer/Importer control, product search, and format/template controls vertically before the artboard. This confirms that the new shared architecture does not compress the authoring workflow into an unreadable desktop grid.
