@@ -38,6 +38,15 @@
 ## Editorial Control Room Studio page
 - [x] Implement the supplied three-pane Studio composer reference while retaining source selection, local rendering, brand behavior, multilingual captions, approval, export, and scheduling.
 
+## Inner-page design concept set
+- [x] Generate coordinated professional design concepts for all inner STUDIO pages while keeping the landing page’s charcoal, black, warm-paper, and acid-lime color language.
+
+## Supplied inner-page design implementation
+- [x] Implement the supplied Overview reference while retaining live workspace metrics, readiness, posts, and next-action behavior.
+- [x] Implement the supplied Products and Brand reference while retaining product API, upload, test catalog, and Brand-kit behavior.
+- [x] Refine the supplied Studio reference while retaining all local rendering, captions, approval, export, and scheduling workflow states.
+- [x] Validate the reference-driven authenticated pages across responsive layouts and production build.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.
