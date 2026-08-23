@@ -9,6 +9,7 @@ import {
 import { getBrand, type BrandSettings } from "@/lib/api/brand";
 import { createBrowserVisualPost, editCaption, exportPost, generateCaptions, generateImage, approvePost, type Post } from "@/lib/api/posts";
 import { listTemplates, type Template } from "@/lib/api/templates";
+import { SourceStack } from "@/components/studio/SourceStack";
 
 interface Product {
     id: string;
@@ -132,7 +133,8 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
         : productFocus === "FLOATING" ? { x: 220, y: 180, width: 560, height: 470, mode: "meet" }
             : productFocus === "WIDE" ? { x: 80, y: 250, width: 840, height: 390, mode: "meet" }
                 : { x: 150, y: 210, width: 700, height: 480, mode: "meet" };
-    const sourceImageCount = [selectedProduct?.imageUrl, selectedProduct?.imageUrl2, selectedProduct?.imageUrl3].filter(Boolean).length;
+    const sourceImages = [selectedProduct?.imageUrl, selectedProduct?.imageUrl2, selectedProduct?.imageUrl3].filter((url): url is string => Boolean(url));
+    const sourceImageCount = sourceImages.length;
     const captionsReady = languages.every((language) => captionDrafts[language.id].trim().length > 0);
 
     useEffect(() => {
@@ -296,7 +298,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                             <input value={productQuery} onFocus={() => setProductPickerOpen(true)} onChange={(event) => { setProductQuery(event.target.value); setProductPickerOpen(true); }} placeholder="Rechercher un produit" />
                         </div>
                         {productPickerOpen && <div className="studio-artboard-product-menu">{matchingProducts.map((product) => <button key={product.id} type="button" onMouseDown={(event) => { event.preventDefault(); setProductId(product.id); setProductQuery(product.name); setProductPickerOpen(false); clearWorkingPost(); }}><span>{product.name}</span><small>{product.price != null ? `${product.price.toFixed(2)} MAD` : "produit"}</small></button>)}{!matchingProducts.length && <p>Aucun produit approuvé.</p>}</div>}
-                        {selectedProduct && <div className="studio-artboard-source-card"><div className="studio-artboard-source-card__image">{selectedProduct.imageUrl ? <img src={selectedProduct.imageUrl} alt={`Référence produit ${selectedProduct.name}`} /> : <ImagePlus className="h-5 w-5" />}</div><div><span>Source product</span><strong>{selectedProduct.name}</strong><small>{selectedProduct.description || "Référence produit sélectionnée"}</small><em>{sourceImageCount}/3 source images available</em></div></div>}
+                        {selectedProduct && <><div className="studio-artboard-source-card"><div className="studio-artboard-source-card__image">{selectedProduct.imageUrl ? <img src={selectedProduct.imageUrl} alt={`Référence produit ${selectedProduct.name}`} /> : <ImagePlus className="h-5 w-5" />}</div><div><span>Source product</span><strong>{selectedProduct.name}</strong><small>{selectedProduct.description || "Référence produit sélectionnée"}</small><em>{sourceImageCount}/3 source images available</em></div></div><SourceStack items={sourceImages.map((url, index) => ({ url, label: `Source ${index + 1}` }))} /></>}
                     </section>
 
                     <section className="studio-artboard-section">

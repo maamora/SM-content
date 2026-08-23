@@ -141,6 +141,11 @@
 - [x] Repair the Social connection experience for an unconfigured provider without storing credentials in source control.
 - [x] Provide the exact Meta Developer settings and `.env` entries required to enable the verified connection flow.
 
+## Selective React Bits inner-page integration
+- [x] Evaluate the supplied React Bits components against the existing Signal Workstation and Admin control-room workflows.
+- [x] Adapt only suitable components to use real STUDIO records and the existing `motion/react` dependency, without adding GSAP or OGL.
+- [x] Validate the selected integrations for reduced motion, keyboard access, mobile layout, real workflow preservation, and production build.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

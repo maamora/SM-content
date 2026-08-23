@@ -784,6 +784,22 @@
 .studio-app .studio-batch-progress h3 { color: var(--signal-paper); }
 .studio-app .studio-batch-intro__counter { border-color: var(--signal-lime); border-radius: 2px; background: rgba(185,255,67,.1); color: var(--signal-lime); }
 
+/* React Bits Stack and TiltedCard adaptations: real source ordering and restrained product-media depth. */
+.studio-app .studio-source-stack { display: grid; gap: .55rem; margin-top: .85rem; padding-top: .75rem; border-top: 1px solid rgb(255 255 255 / 10%); }
+.studio-app .studio-source-stack__label { color: #aeb0a7; font-family: var(--font-mono, ui-monospace, monospace); font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; }
+.studio-app .studio-source-stack__cards { position: relative; height: 3.35rem; padding-right: 1.5rem; }
+.studio-app .studio-source-stack__card { position: absolute; inset: 0 auto auto 0; display: grid; grid-template-columns: 2.4rem 1fr; align-items: center; gap: .45rem; width: min(100%, 12rem); height: 3.25rem; overflow: hidden; border: 1px solid rgb(255 255 255 / 16%); border-radius: .35rem; background: #171914; color: #f4f1e8; cursor: pointer; text-align: left; transform-origin: 12% 92%; }
+.studio-app .studio-source-stack__card:focus-visible { outline: 2px solid #c6ff5e; outline-offset: 2px; }
+.studio-app .studio-source-stack__card img { width: 2.4rem; height: 3.25rem; object-fit: cover; }
+.studio-app .studio-source-stack__card span { overflow: hidden; font-size: .68rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.studio-app .studio-tilted-media { position: absolute; inset: 0; transform-style: preserve-3d; will-change: transform; }
+.studio-app .studio-tilted-media > span,.studio-app .studio-tilted-media img { display: block; width: 100%; height: 100%; }
+
+@media (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .studio-app .studio-tilted-media { transform: none !important; }
+  .studio-app .studio-source-stack__card { transition: none !important; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .studio-app *, .studio-app *::before, .studio-app *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
