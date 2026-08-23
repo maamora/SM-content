@@ -1,6 +1,6 @@
 "use client";
 
-/* STUDIO POST ARTBOARD: dark editorial control room; every persisted visual, brand, and independently usable multilingual caption stays visible without a form-first layout. */
+/* STUDIO POST ARTBOARD: Editorial Control Room—dark direction desk, dominant local artboard, and pale finishing rail. Every persisted visual, Brand decision, and multilingual caption remains independently usable. */
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
     AlignLeft, Check, CheckCircle2, Copy, Download, Eye, FileUp, Frame,
@@ -97,6 +97,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const [uploadPreview, setUploadPreview] = useState<string | null>(null);
     const [post, setPost] = useState<Post | null>(null);
     const [captionDrafts, setCaptionDrafts] = useState<Record<CaptionLang, string>>({ fr: "", en: "", ar: "", darija: "" });
+    const [activeCaptionLanguage, setActiveCaptionLanguage] = useState<CaptionLang>("fr");
     const [error, setError] = useState<string | null>(null);
     const [copiedLanguage, setCopiedLanguage] = useState<CaptionLang | null>(null);
     const [savingCaptionLanguage, setSavingCaptionLanguage] = useState<CaptionLang | null>(null);
@@ -235,6 +236,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
 
     const canCreate = Boolean(selectedProduct && templateId && (mode === "template" || uploadedFile));
     const canGenerateCaptions = Boolean(post) && busy === null;
+    const activeCaption = languages.find((language) => language.id === activeCaptionLanguage) ?? languages[0];
 
     return (
         <div className="studio-artboard-shell">
@@ -257,7 +259,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                 <aside className="studio-artboard-inspector" aria-label="Contrôles de composition">
                     <div className="studio-artboard-inspector__title"><div><Layers3 className="h-4 w-4" /><span>Composition</span></div><span>01—04</span></div>
 
-                    <section className="studio-artboard-section">
+                    <section className="studio-artboard-section studio-artboard-section--brief">
                         <Label>Source du post</Label>
                         <div className="studio-artboard-segmented" role="tablist">
                             <button type="button" role="tab" aria-selected={mode === "template"} onClick={() => { setMode("template"); clearWorkingPost(); }}><Sparkles className="h-3.5 w-3.5" />Composer</button>
@@ -266,7 +268,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                         <p className="studio-artboard-hint">{mode === "template" ? "Une composition locale issue de votre produit approuvé." : "Votre visuel final entre dans le même cycle de légende, validation et diffusion."}</p>
                     </section>
 
-                    <section className="studio-artboard-section" ref={pickerRef}>
+                    <section className="studio-artboard-section studio-artboard-section--source" ref={pickerRef}>
                         <div className="flex items-center justify-between"><Label>Produit</Label><span className="text-[10px] text-[#96998d]">obligatoire</span></div>
                         <div className="studio-artboard-product-search">
                             <Search className="h-4 w-4" />
@@ -287,24 +289,24 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                             <div className="studio-artboard-moods">{moods.map((mood) => <button key={mood.id} type="button" aria-pressed={moodId === mood.id} onClick={() => { setMoodId(mood.id); clearWorkingPost(); }} title={mood.label} style={{ "--mood": mood.color } as React.CSSProperties}><span>{mood.label}</span></button>)}</div>
                             <p className="studio-artboard-hint">Choisissez d’abord une atmosphère. Les réglages de précision restent disponibles ci-dessous.</p>
                         </section>
-                        <section className="studio-artboard-section">
+                        <section className="studio-artboard-section studio-artboard-section--fine-tune">
                             <Label>Direction</Label>
                             <div className="mt-3"><Label>Structure</Label><div className="studio-artboard-choice-row mt-2">{layoutStyles.map((style) => <button key={style.id} type="button" aria-pressed={layoutStyle === style.id} onClick={() => { setLayoutStyle(style.id); clearWorkingPost(); }}>{style.label}</button>)}</div></div>
                             <details className="mt-4 border-t border-[#2e302a] pt-3 text-xs text-[#aeb0a7]">
-                                <summary className="cursor-pointer font-semibold text-[#e8e9e1] marker:text-[#c6ff5e]">Réglages de composition</summary>
+                                <summary className="cursor-pointer font-semibold text-[#e8e9e1] marker:text-[#c6ff5e]">Fine tune / composition</summary>
                                 <p className="studio-artboard-hint mt-2">Cadrage, alignement et couleur signal modifient le PNG local sans ajouter de complexité au flux principal.</p>
                                 <div className="mt-3"><Label>Cadrage produit</Label><div className="studio-artboard-choice-row mt-2">{productFocuses.map((focus) => <button key={focus.id} type="button" aria-pressed={productFocus === focus.id} onClick={() => { setProductFocus(focus.id); clearWorkingPost(); }}>{focus.label}</button>)}</div></div>
                                 <div className="mt-3 flex items-center justify-between"><Label>Alignement du texte</Label><div className="studio-artboard-choice-row"><button type="button" aria-pressed={textAlignment === "LEFT"} onClick={() => { setTextAlignment("LEFT"); clearWorkingPost(); }}>Gauche</button><button type="button" aria-pressed={textAlignment === "CENTER"} onClick={() => { setTextAlignment("CENTER"); clearWorkingPost(); }}>Centré</button></div></div>
                                 <div className="mt-3 flex items-center justify-between"><span className="text-xs font-semibold text-[#d9dbd1]">Signal couleur</span><label className="flex items-center gap-2 text-[10px] font-mono uppercase text-[#9c9f94]"><span>{accentColor}</span><input type="color" value={accentColor} onChange={(event) => { setAccentColor(event.target.value); clearWorkingPost(); }} /></label></div>
                             </details>
                         </section>
-                        <section className="studio-artboard-section">
+                        <section className="studio-artboard-section studio-artboard-section--fine-tune">
                             <Label>Message</Label>
                             <label className="studio-artboard-field">Titre principal<input value={headline} maxLength={46} placeholder={selectedProduct?.name || "Votre produit"} onChange={(event) => { setHeadline(event.target.value); clearWorkingPost(); }} /></label>
                             <label className="studio-artboard-field">Message<input value={promoText} maxLength={80} onChange={(event) => { setPromoText(event.target.value.toUpperCase()); clearWorkingPost(); }} /></label>
                             <label className="studio-artboard-field">Appel à l’action<input value={ctaText} maxLength={28} onChange={(event) => { setCtaText(event.target.value.toUpperCase()); clearWorkingPost(); }} /></label>
                             <details className="mt-4 border-t border-[#2e302a] pt-3 text-xs text-[#aeb0a7]">
-                                <summary className="cursor-pointer font-semibold text-[#e8e9e1] marker:text-[#c6ff5e]">Ajouter badge ou preuve</summary>
+                                <summary className="cursor-pointer font-semibold text-[#e8e9e1] marker:text-[#c6ff5e]">Fine tune / preuve</summary>
                                 <div className="mt-3"><label className="studio-artboard-field">Badge<input value={badgeText} maxLength={32} onChange={(event) => { setBadgeText(event.target.value.toUpperCase()); clearWorkingPost(); }} /></label></div>
                                 <label className="studio-artboard-field">Preuve / bénéfice<input value={supportingText} maxLength={86} placeholder={selectedProduct?.description || "Ce qui rend votre offre désirable"} onChange={(event) => { setSupportingText(event.target.value); clearWorkingPost(); }} /></label>
                             </details>
@@ -339,8 +341,9 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                         <p className="studio-artboard-hint">Basées sur {selectedProduct?.name ?? "le produit sélectionné"}, sa description, son bénéfice, son prix et votre direction de campagne.</p>
                         {!post && <p className="studio-artboard-hint"><strong>Étape suivante :</strong> rendez ou importez d’abord le visuel. Les quatre légendes deviennent disponibles une fois le post sauvegardé.</p>}
                         <button type="button" onClick={() => void createCaptions()} disabled={!canGenerateCaptions} title={post ? "Générer les quatre légendes du post" : "Rendez ou importez le post avant de générer les légendes"} className="studio-artboard-secondary mt-3 w-full">{busy === "captions" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{post ? "Générer les 4 légendes" : "Rendre le post d’abord"}</button>
-                        <div className="mt-3 space-y-2.5" aria-label="Légendes séparées par langue">
-                            {languages.map((language) => {
+                        <nav className="studio-artboard-language-tabs" aria-label="Choisir une légende à réviser">{languages.map((language) => <button key={language.id} type="button" aria-selected={activeCaptionLanguage === language.id} onClick={() => setActiveCaptionLanguage(language.id)}><span>{language.shortLabel}</span><small>{captionDrafts[language.id].length} car.</small></button>)}</nav>
+                        <div className="mt-3 space-y-2.5" aria-label={`Légende ${activeCaption.label}`}>
+                            {languages.filter((language) => language.id === activeCaptionLanguage).map((language) => {
                                 const caption = captionDrafts[language.id];
                                 const isCopied = copiedLanguage === language.id;
                                 const isSaving = savingCaptionLanguage === language.id;

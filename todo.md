@@ -52,6 +52,11 @@
 - [x] Rebuild Overview, source-library/Brand, and Studio composition around a single premium editorial system while retaining live components and workflow behavior.
 - [x] Verify desktop and mobile visual hierarchy, data-unavailable states, keyboard reachability, and production build before committing.
 
+## Studio reference workflow rebuild
+- [x] Audit the existing Studio controls and the intended reference composition without reopening the supplied reference asset.
+- [x] Recompose the Studio page around the intended design while preserving source selection, import, local rendering, Brand, independent captions, approval, export, and delivery behavior.
+- [x] Add only workflow enhancements that improve creative control and validate desktop/mobile behavior before committing.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

@@ -17,3 +17,9 @@ Studio retains its functional three-pane control room and already matches the wo
 At 390 px, the compact navigation remains a bounded top tool strip and the worktable continues below it without horizontal overflow. Overview keeps the route statement, committed action, and live ledger readable; Products keeps the source statement, Studio hand-off, and contact-sheet hierarchy in the mobile reading order. The product form deliberately follows the library below the first viewport rather than competing with the source records.
 
 Brand keeps its live configuration fields in the warm-paper work area and moves the dark rules panel below the form on mobile. Studio preserves its source rail, central artboard, Brand/caption finishing rail, approval, and export sequence as an intentionally vertical authoring flow. The muted reset control remains disabled until a direction can be reset; it is not presented as an unavailable workflow.
+
+## Studio workflow rebuild review
+
+The Studio composer now presents the intended three-part Editorial Control Room: a dark direction desk, a dominant charcoal artboard, and a pale finishing desk. Source selection, compose/import, format, template, atmosphere, structure, advanced craft shelves, message controls, local rendering, configured-or-neutral Brand handling, approval, and export all remain in the working surface.
+
+The four independent caption fields now use an explicit finishing-rail switcher. During review, selecting **EN** replaced only the visible detailed editor with the English editor and changed the related copy action to `Copier EN`; the French, Arabic, and Darija drafts remain retained in the same editor state and remain independently saveable/copyable. The narrow view preserves the control room as a vertical authoring flow with no horizontal overflow.
