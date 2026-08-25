@@ -172,6 +172,11 @@
 - [x] Apply the landing-aligned palette without changing Press Bench navigation, workflows, or public landing code.
 - [x] Validate contrast, desktop/mobile presentation, public landing isolation, and production build before committing.
 
+## Landing-palette-only inner-page refinement
+- [x] Inventory every member and Admin color declaration against the public landing palette.
+- [x] Replace all off-palette authenticated colors with exact landing tokens, preserving semantic contrast and error states.
+- [x] Validate palette exclusivity, responsive behavior, public-page isolation, and production build before committing.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.
