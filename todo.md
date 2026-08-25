@@ -177,6 +177,11 @@
 - [x] Replace all off-palette authenticated colors with exact landing tokens, preserving semantic contrast and error states.
 - [x] Validate palette exclusivity, responsive behavior, public-page isolation, and production build before committing.
 
+## Creative-operations website research
+- [x] Identify current direct and adjacent products that overlap STUDIO’s source, composition, copy, review, scheduling, and delivery workflow.
+- [x] Verify comparable features from first-party product pages and documentation.
+- [x] Summarize overlap, gaps, and differentiation with linked sources.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.
