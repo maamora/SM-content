@@ -30,3 +30,23 @@ Thumbs.db
 backend/uploads/
 backend/data/
 frontend/tsconfig.tsbuildinfo
+
+# ── Markdown files ─────────────────────────────────────────────────────────────
+*.md
+
+# ── Test files ─────────────────────────────────────────────────────────────────
+*.test.*
+*.spec.*
+**/test/
+**/tests/
+**/__tests__/
+**/testing/
+STUDIO_LIVE_SMOKE_TEST.ps1
+smoke_test_output.txt
+
+# ── Research & validation notes ────────────────────────────────────────────────
+research/
+verification/
+validation/
+verification-notes.md
+website-validation-notes.md
