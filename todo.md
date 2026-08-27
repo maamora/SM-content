@@ -182,6 +182,12 @@
 - [x] Verify comparable features from first-party product pages and documentation.
 - [x] Summarize overlap, gaps, and differentiation with linked sources.
 
+## Functional inner-page redesign from competitor patterns
+- [x] Audit every authenticated member and Admin route, including controls, real data states, and workflow boundaries.
+- [x] Document the landing-aligned component system and the adapted inspiration for library, composer, review, schedule, and analysis surfaces.
+- [x] Implement the route-specific redesign without changing API contracts, public pages, or separate Admin governance permissions.
+- [x] Validate critical user controls, truthful empty/unavailable states, keyboard/reduced-motion behavior, responsive layouts, and production builds.
+
 - [x] Inspect entities, repositories, seeders, and current PostgreSQL configuration.
 - [x] Provision the `maamora_studio` database and `maamora` application role without destructive resets.
 - [x] Start PostgreSQL and verify the application can connect.

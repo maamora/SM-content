@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-/* STUDIO batch: state-led local composition flow that keeps selected source material and completed outputs visible. */
+/* CAMPAIGN SWITCHBOARD / STUDIO BATCH: a landing-color production run that keeps real selected sources, local batch state, and completed outputs legible without changing the queue workflow. */
 import { ArrowRight, Layers, Loader2 } from "lucide-react";
 import { type Product } from "@/lib/api/products";
 import { listTemplates, type Template } from "@/lib/api/templates";
