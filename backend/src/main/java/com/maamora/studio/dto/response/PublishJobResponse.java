@@ -9,6 +9,7 @@ public record PublishJobResponse(
         String postId,
         String connectionId,
         String provider,
+        String metaTarget,
         String status,
         String externalPostId,
         String errorMessage,
@@ -19,8 +20,8 @@ public record PublishJobResponse(
     public static PublishJobResponse from(PublishJob job) {
         return new PublishJobResponse(
                 job.getId(), job.getPost().getId(), job.getConnection().getId(), job.getProvider().name(),
-                job.getStatus().name(), job.getExternalPostId(), job.getErrorMessage(), job.getCreatedAt(),
-                job.getUpdatedAt(), job.getPublishedAt()
+                job.getMetaTarget(), job.getStatus().name(), job.getExternalPostId(), job.getErrorMessage(),
+                job.getCreatedAt(), job.getUpdatedAt(), job.getPublishedAt()
         );
     }
 }

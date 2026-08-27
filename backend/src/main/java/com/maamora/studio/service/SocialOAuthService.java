@@ -21,6 +21,7 @@ import org.springframework.web.client.RestClient;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -163,8 +164,10 @@ public class SocialOAuthService {
     }
 
     private TokenIdentity exchangeTikTok(String code) {
+        // TikTok's token endpoint rejects the exchange without redirect_uri —
+        // it must exactly match the one used in the authorize call above.
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-        form.add("client_key", tiktokClientKey); form.add("client_secret", tiktokClientSecret); form.add("code", code); form.add("grant_type", "authorization_code");
+        form.add("client_key", tiktokClientKey); form.add("client_secret", tiktokClientSecret); form.add("code", code); form.add("grant_type", "authorization_code"); form.add("redirect_uri", tiktokRedirectUri);
         JsonNode token = json(restClient.post().uri("https://open.tiktokapis.com/v2/oauth/token/").contentType(MediaType.APPLICATION_FORM_URLENCODED).body(form).retrieve().body(String.class));
         String accessToken = text(token, "access_token");
         JsonNode user = json(restClient.get().uri("https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name").header("Authorization", "Bearer " + accessToken).retrieve().body(String.class)).path("data").path("user");
@@ -181,9 +184,14 @@ public class SocialOAuthService {
     }
 
     private TokenIdentity exchangeX(String code, String codeVerifier) {
+        // X treats an app with a client secret as a "confidential client" —
+        // the token endpoint requires HTTP Basic auth (base64 client_id:secret)
+        // on top of the form body, or it rejects the exchange as
+        // unauthorized_client. The previous version never sent this header.
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-        form.add("code", code); form.add("grant_type", "authorization_code"); form.add("client_id", xClientId); form.add("redirect_uri", xRedirectUri); form.add("code_verifier", codeVerifier);
-        JsonNode token = json(restClient.post().uri("https://api.x.com/2/oauth2/token").contentType(MediaType.APPLICATION_FORM_URLENCODED).body(form).retrieve().body(String.class));
+        form.add("code", code); form.add("grant_type", "authorization_code"); form.add("redirect_uri", xRedirectUri); form.add("code_verifier", codeVerifier);
+        String basicAuth = Base64.getEncoder().encodeToString((xClientId + ":" + xClientSecret).getBytes(StandardCharsets.UTF_8));
+        JsonNode token = json(restClient.post().uri("https://api.x.com/2/oauth2/token").header("Authorization", "Basic " + basicAuth).contentType(MediaType.APPLICATION_FORM_URLENCODED).body(form).retrieve().body(String.class));
         String accessToken = text(token, "access_token");
         JsonNode user = json(restClient.get().uri("https://api.x.com/2/users/me").header("Authorization", "Bearer " + accessToken).retrieve().body(String.class)).path("data");
         return new TokenIdentity(text(user, "id"), text(user, "name"), accessToken, text(token, "refresh_token"), expires(token), user.toString());

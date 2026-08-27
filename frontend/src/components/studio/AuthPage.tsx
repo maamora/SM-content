@@ -1,7 +1,8 @@
+"use client";
 
 import Link from "next/link";
 import { Globe2, ArrowUpRight, LoaderCircle, Upload, X } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { login, register as registerAccount, uploadBrandLogo, startGoogleAuth } from "@/lib/api/auth";
 import { StudioMark } from "./StudioShell";
@@ -27,12 +28,22 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   // display:none, since some bots skip visually-hidden-but-still-"visible"
   // fields differently). Left blank by any real submission.
   const [website, setWebsite] = useState("");
-  const [error, setError] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    const params = new URLSearchParams(window.location.search);
-    return params.get("oauth") === "error" ? (params.get("message") || "Google sign-in could not be completed.") : null;
-  });
+  // Always starts null so the server and client's first render match — the
+  // real value (if any) is picked up after mount below, once `window` is
+  // actually safe to read. Setting this straight from a lazy useState
+  // initializer caused a hydration mismatch (server has no `window`, so it
+  // always rendered null there while the client could immediately compute a
+  // real error string from ?oauth=error&message=... after a failed Google
+  // redirect back to this page).
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("oauth") === "error") {
+      setError(params.get("message") || "Google sign-in could not be completed.");
+    }
+  }, []);
 
   const handleLogoSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

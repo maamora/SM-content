@@ -1,10 +1,8 @@
 package com.maamora.studio.config;
 
-import com.maamora.studio.model.BrandSettings;
 import com.maamora.studio.model.User;
 import com.maamora.studio.model.enums.Role;
 import com.maamora.studio.repository.UserRepository;
-import com.maamora.studio.service.BrandSettingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
@@ -22,6 +20,14 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * Runs at @Order(2), after BrandSeeder (@Order(1)) has ensured the shared
  * brand workspace already exists.
+ *
+ * The admin account is deliberately created with NO brand attached. It used
+ * to be attached to whatever BrandSettingsService.getSharedBrand() resolved
+ * to — in practice, one real customer's workspace — which meant the platform
+ * admin quietly showed up as a "coworker" inside that brand's Settings →
+ * Team list, and any brand cleanup (deleting/merging a brand) could drag the
+ * admin account along with it. AuthService.login()/currentUser() both treat
+ * a null brand as expected for ADMIN specifically, so this is safe.
  */
 @Component
 @RequiredArgsConstructor
@@ -29,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminSeeder implements ApplicationRunner {
 
     private final UserRepository userRepository;
-    private final BrandSettingsService brandSettingsService;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${app.admin.email:admin@maamora.com}")
@@ -46,14 +51,12 @@ public class AdminSeeder implements ApplicationRunner {
             return;
         }
 
-        BrandSettings brand = brandSettingsService.getSharedBrand();
-
         User admin = User.builder()
                 .name("Admin")
                 .email(adminEmail)
                 .passwordHash(passwordEncoder.encode(adminPassword))
                 .role(Role.ADMIN)
-                .brand(brand)
+                .brand(null)
                 .build();
 
         userRepository.save(admin);

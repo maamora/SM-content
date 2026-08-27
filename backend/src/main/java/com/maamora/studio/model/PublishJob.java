@@ -35,6 +35,12 @@ public class PublishJob {
     @Column(nullable = false)
     private SocialProvider provider;
 
+    // Only meaningful when provider == META: "FACEBOOK_PAGE" or "INSTAGRAM"
+    // — one Meta connection covers both surfaces, so the target has to be
+    // recorded per publish job, not on the connection itself. Null for every
+    // other provider.
+    private String metaTarget;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default

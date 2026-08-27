@@ -4,10 +4,10 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-    ArrowUpRight, Bell, CalendarDays, Check, ChevronRight, CircleHelp,
-    Download, Facebook, FileImage, FolderOpen, Instagram, Layers3, LayoutDashboard, Loader2,
+    ArrowUpRight, Bell, CalendarDays, Camera, Check, ChevronRight, CircleHelp,
+    Download, FileImage, FolderOpen, Layers3, LayoutDashboard, Loader2,
     LogOut, MessageCircle, Music2, Package, Palette, Plus, RefreshCw, Search, Settings2, ShieldCheck,
-    Sparkles, Store, Trash2, Users2,
+    Sparkles, Store, ThumbsUp, Trash2, Users2,
 } from "lucide-react";
 import { StudioMark } from "./StudioShell";
 import CreativeStudio from "@/components/features/studio/CreativeStudio";
@@ -19,12 +19,13 @@ import { listProducts, type Product } from "@/lib/api/products";
 import { deletePost, exportPost, listPosts, type Post } from "@/lib/api/posts";
 import { getBrand, updateBrand, type BrandSettings, type BrandSettingsInput } from "@/lib/api/brand";
 import { listTemplates, type Template } from "@/lib/api/templates";
-import { logout } from "@/lib/api/auth";
+import { logout, getCurrentUser, type UserProfile } from "@/lib/api/auth";
 import { getMe, updateProfile, changePassword, listCoworkers, type UserSummary } from "@/lib/api/users";
 import { getSystemCapabilities, type SystemCapabilities } from "@/lib/api/system";
 import { getAdminSummary, type AdminSummary } from "@/lib/api/admin";
-import { disconnectSocialConnection, getSocialConnectUrl, listPublishJobs, listSocialConnections, queueSocialPublish, type PublishJob, type SocialConnection, type SocialProvider } from "@/lib/api/social";
+import { connectSocialAccount, disconnectSocialAccount, disconnectSocialConnection, getSocialConnectUrl, listPublishJobs, listSocialAccounts, listSocialConnections, queueSocialPublish, type MetaTarget, type PublishJob, type SocialAccount, type SocialConnection, type SocialPlatform, type SocialProvider } from "@/lib/api/social";
 import { listEmailDeliveries, type EmailDelivery } from "@/lib/api/email";
+import { acceptInvitation, declineInvitation, inviteToBrand, listMyInvitations, listSentInvitations, type BrandInvitation } from "@/lib/api/invitations";
 
 const workspaceData = {
     dashboard: ["Overview", "Your creative operating system", "A live read on what is moving, waiting, and ready to ship.", LayoutDashboard],
@@ -149,9 +150,12 @@ function BrandSurface() {
     return <div className="studio-live-columns"><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">BRAND SETTINGS</span><h2>{brand?.name || "Your brand"}</h2></div><span className="studio-chip">LIVE API</span></div><div className="studio-form-grid">{([["name", "Brand name"], ["logoUrl", "Logo URL"], ["primaryColor", "Primary color"], ["secondaryColor", "Secondary color"], ["fontFamily", "Font family"]] as const).map(([key, label]) => <label key={key}>{label}<input value={draft[key] ?? ""} onChange={(event) => setDraft({ ...draft, [key]: event.target.value })} /></label>)}<label className="studio-form-grid__wide">Tone guidelines<textarea rows={5} value={draft.toneGuidelines ?? ""} onChange={(event) => setDraft({ ...draft, toneGuidelines: event.target.value })} /></label></div>{status && <p className="studio-inline-notice">{status}</p>}<button className="studio-button studio-button--dark" disabled={saving} onClick={() => void save()}>{saving ? <Loader2 className="studio-spin" size={15} /> : <Check size={15} />} Save brand kit</button></section><section className="studio-workspace-panel studio-workspace-panel--accent"><span className="studio-kicker studio-kicker--dark">INVITE TEAMMATES</span><h2>Bring your team into this workspace.</h2><p>Share this code — teammates enter it under &quot;Join with a code&quot; on the register page to land in this exact brand instead of creating their own.</p>{brand?.joinCode && <div className="flex items-center gap-2 mt-3"><span className="studio-chip studio-chip--lime" style={{ fontSize: "13px", padding: "8px 12px", letterSpacing: "0.15em" }}>{brand.joinCode}</span><button className="studio-text-button" onClick={() => void copyCode()}>{copied ? "Copied!" : "Copy"}</button></div>}<div className="studio-color-pair"><span style={{ background: draft.primaryColor || "#B9FF43" }} /><span style={{ background: draft.secondaryColor || "#11110F" }} /></div></section></div>;
 }
 
-const SOCIAL_PLATFORMS: [SocialPlatform, string, typeof Instagram][] = [
-    ["INSTAGRAM", "Instagram", Instagram],
-    ["FACEBOOK", "Facebook", Facebook],
+// lucide-react dropped brand/logo icons (Facebook, Instagram, etc.) a while
+// back for trademark reasons, so these use generic stand-ins instead of the
+// real platform logos.
+const SOCIAL_PLATFORMS: [SocialPlatform, string, typeof Camera][] = [
+    ["INSTAGRAM", "Instagram", Camera],
+    ["FACEBOOK", "Facebook", ThumbsUp],
     ["TIKTOK", "TikTok", Music2],
     ["WHATSAPP", "WhatsApp", MessageCircle],
 ];
@@ -304,48 +308,153 @@ function LinkedAccountsSection() {
 function CoworkersSection() {
     const [coworkers, setCoworkers] = useState<UserSummary[] | null>(null);
     const [status, setStatus] = useState("");
+    const [sent, setSent] = useState<BrandInvitation[]>([]);
+    const [inviteEmail, setInviteEmail] = useState("");
+    const [inviteStatus, setInviteStatus] = useState("");
+    const [inviting, setInviting] = useState(false);
 
-    useEffect(() => { listCoworkers().then(setCoworkers).catch((err) => setStatus(err instanceof Error ? err.message : "Unable to load coworkers")); }, []);
+    const reload = useCallback(() => {
+        listCoworkers().then(setCoworkers).catch((err) => setStatus(err instanceof Error ? err.message : "Unable to load coworkers"));
+        listSentInvitations().then(setSent).catch(() => {});
+    }, []);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial fetch intentionally hydrates this panel.
+    useEffect(() => { reload(); }, [reload]);
+
+    const invite = async () => {
+        const email = inviteEmail.trim();
+        if (!email) return;
+        setInviting(true); setInviteStatus("");
+        try {
+            await inviteToBrand(email);
+            setInviteEmail("");
+            setInviteStatus(`Invite sent to ${email}.`);
+            reload();
+        } catch (err) {
+            setInviteStatus(err instanceof Error ? err.message : "Unable to send invite");
+        } finally {
+            setInviting(false);
+        }
+    };
+
+    const pending = sent.filter((invitation) => invitation.status === "PENDING");
 
     return (
-        <section className="studio-workspace-panel">
-            <div className="studio-panel-heading">
-                <div><span className="studio-kicker studio-kicker--dark">TEAM</span><h2>Coworkers in this workspace.</h2></div>
-                <span className="studio-chip">{coworkers?.length ?? 0}</span>
-            </div>
-            {status && <p className="studio-inline-notice">{status}</p>}
-            {coworkers && coworkers.length > 0 ? (
-                <div className="studio-data-stack">
-                    {coworkers.map((person) => (
-                        <div className="studio-data-row" key={person.id}>
-                            <span className="studio-avatar">{person.name?.trim()?.[0]?.toUpperCase() ?? "?"}</span>
-                            <div><strong>{person.name}</strong><small>{person.email}</small></div>
-                            <span className="studio-data-value">{person.role}</span>
-                        </div>
-                    ))}
+        <>
+            <section className="studio-workspace-panel">
+                <div className="studio-panel-heading">
+                    <div><span className="studio-kicker studio-kicker--dark">TEAM</span><h2>Coworkers in this workspace.</h2></div>
+                    <span className="studio-chip">{coworkers?.length ?? 0}</span>
                 </div>
-            ) : coworkers ? (
-                <Notice title="It's just you so far." detail="Share your workspace's join code (Brand → Invite teammates) so others can land here instead of creating their own brand." />
-            ) : (
-                <div className="studio-loading"><Loader2 className="studio-spin" size={18} /> Loading team…</div>
-            )}
+                {status && <p className="studio-inline-notice">{status}</p>}
+                {coworkers && coworkers.length > 0 ? (
+                    <div className="studio-data-stack">
+                        {coworkers.map((person) => (
+                            <div className="studio-data-row" key={person.id}>
+                                <span className="studio-avatar">{person.name?.trim()?.[0]?.toUpperCase() ?? "?"}</span>
+                                <div><strong>{person.name}</strong><small>{person.email}</small></div>
+                                <span className="studio-data-value">{person.role}</span>
+                            </div>
+                        ))}
+                    </div>
+                ) : coworkers ? (
+                    <Notice title="It's just you so far." detail="Invite a teammate by email below, or share your workspace's join code from Brand settings so others can land here instead of creating their own brand." />
+                ) : (
+                    <div className="studio-loading"><Loader2 className="studio-spin" size={18} /> Loading team…</div>
+                )}
+            </section>
+            <section className="studio-workspace-panel studio-workspace-panel--accent">
+                <span className="studio-kicker studio-kicker--dark">INVITE BY EMAIL</span>
+                <h2>Bring someone into this workspace.</h2>
+                <p>They&apos;ll see this invite waiting for them on their Notifications page and can accept or decline it — nothing changes for them until they do.</p>
+                <div className="flex items-center gap-2 mt-3">
+                    <input
+                        type="email"
+                        placeholder="teammate@email.com"
+                        value={inviteEmail}
+                        onChange={(event) => setInviteEmail(event.target.value)}
+                        className="min-w-0 flex-1 border border-[rgba(185,255,67,.4)] bg-[rgba(255,255,255,.05)] px-3 py-2 text-[13px] text-[var(--studio-paper)] outline-none focus:border-[var(--studio-lime)]"
+                    />
+                    <button className="studio-button studio-button--dark" disabled={inviting || !inviteEmail.trim()} onClick={() => void invite()}>
+                        {inviting ? <Loader2 className="studio-spin" size={14} /> : <Plus size={14} />} Invite
+                    </button>
+                </div>
+                {inviteStatus && <p className="studio-inline-notice">{inviteStatus}</p>}
+                {pending.length > 0 && (
+                    <div className="studio-data-stack" style={{ marginTop: 14 }}>
+                        {pending.map((invitation) => (
+                            <div className="studio-data-row" key={invitation.id}>
+                                <span className="studio-status-dot" />
+                                <div><strong>{invitation.invitedEmail}</strong><small>Invited {new Date(invitation.createdAt).toLocaleDateString()}</small></div>
+                                <span className="studio-data-value">PENDING</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </section>
+        </>
+    );
+}
+
+function CapabilityStatusSection() {
+    const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [capabilities, setCapabilities] = useState<SystemCapabilities | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    useEffect(() => { Promise.all([getCurrentUser(), getSystemCapabilities()]).then(([nextProfile, nextCapabilities]) => { setProfile(nextProfile); setCapabilities(nextCapabilities); }).catch((err) => setError(err instanceof Error ? err.message : "Unable to load workspace settings")); }, []);
+    if (error) return <Notice title="Capability status unavailable." detail={error} />;
+    if (!profile || !capabilities) return <div className="studio-loading"><Loader2 className="studio-spin" size={18} /> Loading capability status…</div>;
+    const capabilityRows: [string, boolean][] = [["Caption generation", capabilities.captionGeneration], ["Image generation", capabilities.imageGeneration], ["Cloud storage", capabilities.cloudStorage], ["Local storage", capabilities.localStorage], ["Social publishing", capabilities.socialPublishing], ["SMTP email", capabilities.smtpEmail], ["Meta OAuth", capabilities.metaOAuth], ["TikTok OAuth", capabilities.tiktokOAuth], ["LinkedIn OAuth", capabilities.linkedinOAuth], ["X OAuth", capabilities.xOAuth]];
+    return (
+        <section className="studio-workspace-panel studio-workspace-panel--accent">
+            <span className="studio-kicker studio-kicker--dark">CAPABILITY CHECK</span>
+            <h2>Only configured systems are shown as ready.</h2>
+            <div className="studio-data-stack">{capabilityRows.map(([label, ready]) => <div className="studio-data-row" key={label}><span className={`studio-status-dot ${ready ? "studio-status-dot--lime" : ""}`} /><div><strong>{label}</strong><small>{ready ? "Configured" : "Needs environment setup"}</small></div></div>)}</div>
         </section>
     );
 }
 
+type SettingsTab = "account" | "team" | "brand" | "social" | "system";
+
+// Each entry reuses an icon already imported elsewhere in this file — see the
+// Facebook/Instagram incident: this lucide-react version dropped several
+// exports, so sticking to icons already proven to resolve avoids repeating
+// that crash.
+const SETTINGS_NAV: [SettingsTab, string, typeof Settings2][] = [
+    ["account", "Account", Settings2],
+    ["team", "Team", Users2],
+    ["brand", "Brand", Palette],
+    ["social", "Linked accounts", Store],
+    ["system", "System", ShieldCheck],
+];
+
 function SettingsSurface() {
+    const [tab, setTab] = useState<SettingsTab>("account");
     return (
-        <div className="grid gap-4">
-            <ProfileSection />
-            <PasswordSection />
-            <LinkedAccountsSection />
-            <CoworkersSection />
-            <section className="studio-workspace-panel studio-workspace-panel--accent">
-                <span className="studio-kicker studio-kicker--dark">SESSION</span>
-                <h2>Done for now?</h2>
-                <p>Signing out clears this session on this device — your workspace and everything in it stays exactly as you left it.</p>
-                <SignOutButton variant="button" />
-            </section>
+        <div className="studio-settings">
+            <aside className="studio-settings__nav">
+                <p className="studio-settings__nav-title">Settings</p>
+                <nav className="studio-settings__nav-list">
+                    {SETTINGS_NAV.map(([key, label, Icon]) => (
+                        <button
+                            key={key}
+                            type="button"
+                            className={`studio-settings__nav-item ${tab === key ? "is-active" : ""}`}
+                            onClick={() => setTab(key)}
+                        >
+                            <Icon size={15} /> {label}
+                        </button>
+                    ))}
+                </nav>
+                <div className="studio-settings__nav-footer">
+                    <SignOutButton variant="button" />
+                </div>
+            </aside>
+            <div className="studio-settings__content">
+                {tab === "account" && <><ProfileSection /><PasswordSection /></>}
+                {tab === "team" && <CoworkersSection />}
+                {tab === "brand" && <BrandSurface />}
+                {tab === "social" && <LinkedAccountsSection />}
+                {tab === "system" && <CapabilityStatusSection />}
+            </div>
         </div>
     );
 }
@@ -367,6 +476,65 @@ function CalendarSurface({ posts }: { posts: Post[] }) {
     return <section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">CONTENT TIMELINE</span><h2>Calendar from live posts</h2></div><span className="studio-chip">{scheduled.length} dated</span></div>{scheduled.length ? <div className="studio-data-stack">{scheduled.map((post) => <Link className="studio-data-row" key={post.id} href="/dashboard/posts"><span className="studio-status-dot" /><div><strong>{post.productName}</strong><small>{post.status} · {post.format}</small></div><span className="studio-data-value">{new Date(post.createdAt as string).toLocaleDateString()}</span><ChevronRight size={14} /></Link>)}</div> : <Notice title="The calendar is waiting for a dated post." detail="Create a post in Studio and its persisted creation date will appear here." action={<Link className="studio-button studio-button--dark" href="/dashboard/studio"><Plus size={14} /> Create a post</Link>} />}</section>;
 }
 
+function WorkspaceInvitesSection() {
+    const [invites, setInvites] = useState<BrandInvitation[] | null>(null);
+    const [busy, setBusy] = useState<string | null>(null);
+    const [status, setStatus] = useState("");
+
+    useEffect(() => { listMyInvitations().then(setInvites).catch((err) => setStatus(err instanceof Error ? err.message : "Unable to load invites")); }, []);
+
+    const respond = async (invitation: BrandInvitation, accept: boolean) => {
+        setBusy(invitation.id); setStatus("");
+        try {
+            if (accept) {
+                await acceptInvitation(invitation.id);
+                // Accepting moves this account to the invite's brand — every
+                // brand-scoped view (sidebar, products, posts...) needs to
+                // refetch against the new workspace, so a full reload is the
+                // simplest way to guarantee nothing shows stale data.
+                window.location.href = "/dashboard";
+                return;
+            }
+            await declineInvitation(invitation.id);
+            setInvites((current) => (current ?? []).filter((item) => item.id !== invitation.id));
+        } catch (err) {
+            setStatus(err instanceof Error ? err.message : "Unable to respond to invite");
+            setBusy(null);
+        }
+    };
+
+    if (!invites || invites.length === 0) return null;
+
+    return (
+        <section className="studio-workspace-panel studio-workspace-panel--accent studio-workspace-panel--wide">
+            <span className="studio-kicker studio-kicker--dark">WORKSPACE INVITES</span>
+            <h2>Someone wants you on their team.</h2>
+            <div className="studio-data-stack">
+                {invites.map((invitation) => (
+                    <div className="studio-data-row" key={invitation.id}>
+                        <span className="studio-avatar">{invitation.brandName?.trim()?.[0]?.toUpperCase() ?? "?"}</span>
+                        <div><strong>{invitation.brandName}</strong><small>Invited by {invitation.invitedByName || "a teammate"} · {new Date(invitation.createdAt).toLocaleDateString()}</small></div>
+                        <span className="flex items-center gap-2">
+                            <button
+                                className="studio-button studio-button--dark"
+                                style={{ padding: "7px 14px", fontSize: 11 }}
+                                disabled={busy === invitation.id}
+                                onClick={() => void respond(invitation, true)}
+                            >
+                                {busy === invitation.id ? <Loader2 className="studio-spin" size={13} /> : "Accept"}
+                            </button>
+                            <button className="studio-text-button" disabled={busy === invitation.id} onClick={() => void respond(invitation, false)}>
+                                Decline
+                            </button>
+                        </span>
+                    </div>
+                ))}
+            </div>
+            {status && <p className="studio-inline-notice">{status}</p>}
+        </section>
+    );
+}
+
 function NotificationsSurface({ products, posts }: { products: Product[]; posts: Post[] }) {
     const [deliveries, setDeliveries] = useState<EmailDelivery[]>([]);
     const [deliveryError, setDeliveryError] = useState<string | null>(null);
@@ -375,7 +543,7 @@ function NotificationsSurface({ products, posts }: { products: Product[]; posts:
         ...products.filter((product) => product.status === "PENDING").map((product) => ({ id: `product-${product.id}`, title: `${product.name} needs approval`, detail: "Product source is waiting in the moderation queue.", href: "/dashboard/products" })),
         ...posts.filter((post) => post.status === "DRAFT").map((post) => ({ id: `post-${post.id}`, title: `${post.productName} is still a draft`, detail: "Review captions or export the post from the content pipeline.", href: "/dashboard/posts" })),
     ];
-    return <div className="studio-live-columns"><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">LIVE SIGNALS</span><h2>Notifications from real records</h2></div><span className="studio-chip">{notices.length} open</span></div>{notices.length ? <div className="studio-data-stack">{notices.map((notice) => <Link className="studio-data-row" key={notice.id} href={notice.href}><span className="studio-status-dot studio-status-dot--lime" /><div><strong>{notice.title}</strong><small>{notice.detail}</small></div><ChevronRight size={14} /></Link>)}</div> : <Notice title="Nothing needs your attention." detail="Approval and draft events will appear here as your workspace changes." />}</section><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">SMTP DELIVERY</span><h2>Email history</h2></div><span className="studio-chip">{deliveries.length} records</span></div>{deliveryError ? <Notice title="Email history unavailable." detail={deliveryError} /> : deliveries.length ? <div className="studio-data-stack">{deliveries.slice(0, 8).map((delivery) => <div className="studio-data-row" key={delivery.id}><span className={`studio-status-dot ${delivery.status === "SENT" ? "studio-status-dot--lime" : ""}`} /><div><strong>{delivery.subject}</strong><small>{delivery.toAddress} · {delivery.status}{delivery.errorMessage ? ` · ${delivery.errorMessage}` : ""}</small></div><span className="studio-data-value">{delivery.createdAt ? new Date(delivery.createdAt).toLocaleDateString() : "Queued"}</span></div>)}</div> : <Notice title="No email deliveries yet." detail="SMTP delivery records will appear here after an authenticated send request is queued." />}</section></div>;
+    return <><WorkspaceInvitesSection /><div className="studio-live-columns"><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">LIVE SIGNALS</span><h2>Notifications from real records</h2></div><span className="studio-chip">{notices.length} open</span></div>{notices.length ? <div className="studio-data-stack">{notices.map((notice) => <Link className="studio-data-row" key={notice.id} href={notice.href}><span className="studio-status-dot studio-status-dot--lime" /><div><strong>{notice.title}</strong><small>{notice.detail}</small></div><ChevronRight size={14} /></Link>)}</div> : <Notice title="Nothing needs your attention." detail="Approval and draft events will appear here as your workspace changes." />}</section><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">SMTP DELIVERY</span><h2>Email history</h2></div><span className="studio-chip">{deliveries.length} records</span></div>{deliveryError ? <Notice title="Email history unavailable." detail={deliveryError} /> : deliveries.length ? <div className="studio-data-stack">{deliveries.slice(0, 8).map((delivery) => <div className="studio-data-row" key={delivery.id}><span className={`studio-status-dot ${delivery.status === "SENT" ? "studio-status-dot--lime" : ""}`} /><div><strong>{delivery.subject}</strong><small>{delivery.toAddress} · {delivery.status}{delivery.errorMessage ? ` · ${delivery.errorMessage}` : ""}</small></div><span className="studio-data-value">{delivery.createdAt ? new Date(delivery.createdAt).toLocaleDateString() : "Queued"}</span></div>)}</div> : <Notice title="No email deliveries yet." detail="SMTP delivery records will appear here after an authenticated send request is queued." />}</section></div></>;
 }
 
 function SocialSurface({ posts }: { posts: Post[] }) {
@@ -383,6 +551,7 @@ function SocialSurface({ posts }: { posts: Post[] }) {
     const [jobs, setJobs] = useState<PublishJob[]>([]);
     const [selectedPost, setSelectedPost] = useState("");
     const [selectedConnection, setSelectedConnection] = useState("");
+    const [metaTarget, setMetaTarget] = useState<MetaTarget>("INSTAGRAM");
     const [status, setStatus] = useState("");
     const [busy, setBusy] = useState(false);
     const providers: SocialProvider[] = ["META", "TIKTOK", "LINKEDIN", "X"];
@@ -392,20 +561,32 @@ function SocialSurface({ posts }: { posts: Post[] }) {
     useEffect(() => { void reload(); }, [reload]);
     const connect = async (provider: SocialProvider) => { setBusy(true); setStatus(""); try { window.location.assign(await getSocialConnectUrl(provider)); } catch (err) { setStatus(err instanceof Error ? err.message : "Provider OAuth is not configured"); } finally { setBusy(false); } };
     const disconnect = async (id: string) => { setBusy(true); try { await disconnectSocialConnection(id); await reload(); setStatus("Connection marked disconnected."); } catch (err) { setStatus(err instanceof Error ? err.message : "Unable to disconnect provider"); } finally { setBusy(false); } };
-    const publish = async () => { if (!selectedPost || !selectedConnection) { setStatus("Choose an approved post and an active connection first."); return; } setBusy(true); setStatus(""); try { await queueSocialPublish({ postId: selectedPost, connectionId: selectedConnection }); setStatus("Publish job queued. The provider response will determine its final state."); setSelectedPost(""); await reload(); } catch (err) { setStatus(err instanceof Error ? err.message : "Unable to queue publish job"); } finally { setBusy(false); } };
+    const selectedConnectionObj = connections.find((connection) => connection.id === selectedConnection);
+    const selectConnection = (id: string) => {
+        setSelectedConnection(id);
+        // Default to Instagram when the newly chosen connection has it linked,
+        // otherwise fall back to the Facebook Page — matches the backend's
+        // own resolveMetaTarget() default so the UI never shows a choice the
+        // publish call would silently override.
+        const next = connections.find((connection) => connection.id === id);
+        if (next?.provider === "META") setMetaTarget(next.hasInstagram ? "INSTAGRAM" : "FACEBOOK_PAGE");
+    };
+    const publish = async () => {
+        if (!selectedPost || !selectedConnection) { setStatus("Choose an approved post and an active connection first."); return; }
+        setBusy(true); setStatus("");
+        try {
+            await queueSocialPublish({ postId: selectedPost, connectionId: selectedConnection, metaTarget: selectedConnectionObj?.provider === "META" ? metaTarget : undefined });
+            setStatus("Publish job queued. The provider response will determine its final state.");
+            setSelectedPost("");
+            await reload();
+        } catch (err) {
+            setStatus(err instanceof Error ? err.message : "Unable to queue publish job");
+        } finally {
+            setBusy(false);
+        }
+    };
     const approvedPosts = posts.filter((post) => post.status === "APPROVED");
-    return <div className="studio-live-columns"><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">OAUTH CONNECTIONS</span><h2>Social channels</h2></div><span className="studio-chip">{connections.filter((connection) => connection.status === "ACTIVE").length} active</span></div><div className="studio-data-stack">{providers.map((provider) => { const connection = connections.find((item) => item.provider === provider && item.status === "ACTIVE"); return <div className="studio-data-row" key={provider}><span className={`studio-status-dot ${connection ? "studio-status-dot--lime" : ""}`} /><div><strong>{providerLabels[provider]}</strong><small>{connection ? `${connection.accountName || "Connected account"} · ${connection.status}` : "Not connected — provider credentials or review may be required"}</small></div>{connection ? <button className="studio-text-button" disabled={busy} onClick={() => void disconnect(connection.id)}>Disconnect</button> : <button className="studio-text-button" disabled={busy} onClick={() => void connect(provider)}>Connect</button>}</div>; })}</div>{status && <p className="studio-inline-notice">{status}</p>}</section><section className="studio-workspace-panel studio-workspace-panel--accent"><span className="studio-kicker studio-kicker--dark">PUBLISH QUEUE</span><h2>Ship an approved direction.</h2><p>Only persisted posts with APPROVED status can enter the provider queue. No success is displayed until the backend receives a confirmed provider response.</p><div className="studio-form-grid"><label>Approved post<select value={selectedPost} onChange={(event) => setSelectedPost(event.target.value)}><option value="">Choose a post</option>{approvedPosts.map((post) => <option key={post.id} value={post.id}>{post.productName} · {post.format}</option>)}</select></label><label>Active channel<select value={selectedConnection} onChange={(event) => setSelectedConnection(event.target.value)}><option value="">Choose a connection</option>{connections.filter((connection) => connection.status === "ACTIVE").map((connection) => <option key={connection.id} value={connection.id}>{providerLabels[connection.provider]} · {connection.accountName || "Account"}</option>)}</select></label></div><button className="studio-button studio-button--dark" disabled={busy || !approvedPosts.length || !connections.some((connection) => connection.status === "ACTIVE")} onClick={() => void publish()}><ArrowUpRight size={14} /> Queue publish</button>{!approvedPosts.length && <p className="studio-inline-notice">No approved posts are available yet.</p>}</section><section className="studio-workspace-panel studio-workspace-panel--wide"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">PROVIDER RECEIPTS</span><h2>Publish jobs</h2></div><span className="studio-chip">{jobs.length} jobs</span></div>{jobs.length ? <div className="studio-data-stack">{jobs.slice(0, 10).map((job) => <div className="studio-data-row" key={job.id}><span className={`studio-status-dot ${job.status === "SENT" ? "studio-status-dot--lime" : ""}`} /><div><strong>{providerLabels[job.provider]} · {job.status}</strong><small>{job.externalPostId ? `Provider id ${job.externalPostId}` : job.errorMessage || "Awaiting provider response"}</small></div><span className="studio-data-value">{job.createdAt ? new Date(job.createdAt).toLocaleDateString() : "Queued"}</span></div>)}</div> : <Notice title="No publish jobs yet." detail="Connect a provider, then queue an approved post to create a real delivery record." />}</section></div>;
-}
-
-function SettingsSurface() {
-    const [profile, setProfile] = useState<UserProfile | null>(null);
-    const [capabilities, setCapabilities] = useState<SystemCapabilities | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    useEffect(() => { Promise.all([getCurrentUser(), getSystemCapabilities()]).then(([nextProfile, nextCapabilities]) => { setProfile(nextProfile); setCapabilities(nextCapabilities); }).catch((err) => setError(err instanceof Error ? err.message : "Unable to load workspace settings")); }, []);
-    if (error) return <Notice title="Settings unavailable." detail={error} action={<Link className="studio-button studio-button--dark" href="/dashboard">Return to overview</Link>} />;
-    if (!profile || !capabilities) return <div className="studio-loading"><Loader2 className="studio-spin" size={18} /> Loading workspace settings…</div>;
-    const capabilityRows: [string, boolean][] = [["Caption generation", capabilities.captionGeneration], ["Image generation", capabilities.imageGeneration], ["Cloud storage", capabilities.cloudStorage], ["Local storage", capabilities.localStorage], ["Social publishing", capabilities.socialPublishing], ["SMTP email", capabilities.smtpEmail], ["Meta OAuth", capabilities.metaOAuth], ["TikTok OAuth", capabilities.tiktokOAuth], ["LinkedIn OAuth", capabilities.linkedinOAuth], ["X OAuth", capabilities.xOAuth]];
-    return <div className="studio-live-columns"><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">ACCOUNT</span><h2>{profile.name || profile.email}</h2></div><span className="studio-chip">{profile.role}</span></div><div className="studio-data-stack"><div className="studio-data-row"><div><strong>Email</strong><small>{profile.email}</small></div></div><div className="studio-data-row"><div><strong>Workspace</strong><small>{profile.brandId ? "Brand workspace connected" : "No brand workspace yet"}</small></div></div><div className="studio-data-row"><div><strong>Member since</strong><small>{profile.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "Not available"}</small></div></div></div></section><section className="studio-workspace-panel studio-workspace-panel--accent"><span className="studio-kicker studio-kicker--dark">CAPABILITY CHECK</span><h2>Only configured systems are shown as ready.</h2><div className="studio-data-stack">{capabilityRows.map(([label, ready]) => <div className="studio-data-row" key={label}><span className={`studio-status-dot ${ready ? "studio-status-dot--lime" : ""}`} /><div><strong>{label}</strong><small>{ready ? "Configured" : "Needs environment setup"}</small></div></div>)}</div></section></div>;
+    return <div className="studio-live-columns"><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">OAUTH CONNECTIONS</span><h2>Social channels</h2></div><span className="studio-chip">{connections.filter((connection) => connection.status === "ACTIVE").length} active</span></div><div className="studio-data-stack">{providers.map((provider) => { const connection = connections.find((item) => item.provider === provider && item.status === "ACTIVE"); return <div className="studio-data-row" key={provider}><span className={`studio-status-dot ${connection ? "studio-status-dot--lime" : ""}`} /><div><strong>{providerLabels[provider]}</strong><small>{connection ? `${connection.accountName || "Connected account"} · ${connection.status}` : "Not connected — provider credentials or review may be required"}</small></div>{connection ? <button className="studio-text-button" disabled={busy} onClick={() => void disconnect(connection.id)}>Disconnect</button> : <button className="studio-text-button" disabled={busy} onClick={() => void connect(provider)}>Connect</button>}</div>; })}</div>{status && <p className="studio-inline-notice">{status}</p>}</section><section className="studio-workspace-panel studio-workspace-panel--accent"><span className="studio-kicker studio-kicker--dark">PUBLISH QUEUE</span><h2>Ship an approved direction.</h2><p>Only persisted posts with APPROVED status can enter the provider queue. No success is displayed until the backend receives a confirmed provider response.</p><div className="studio-form-grid"><label>Approved post<select value={selectedPost} onChange={(event) => setSelectedPost(event.target.value)}><option value="">Choose a post</option>{approvedPosts.map((post) => <option key={post.id} value={post.id}>{post.productName} · {post.format}</option>)}</select></label><label>Active channel<select value={selectedConnection} onChange={(event) => selectConnection(event.target.value)}><option value="">Choose a connection</option>{connections.filter((connection) => connection.status === "ACTIVE").map((connection) => <option key={connection.id} value={connection.id}>{providerLabels[connection.provider]} · {connection.accountName || "Account"}</option>)}</select></label>{selectedConnectionObj?.provider === "META" && <label>Post to<select value={metaTarget} onChange={(event) => setMetaTarget(event.target.value as MetaTarget)}><option value="INSTAGRAM" disabled={!selectedConnectionObj.hasInstagram}>Instagram{!selectedConnectionObj.hasInstagram ? " (no professional account linked)" : ""}</option><option value="FACEBOOK_PAGE">Facebook Page</option></select></label>}</div><button className="studio-button studio-button--dark" disabled={busy || !approvedPosts.length || !connections.some((connection) => connection.status === "ACTIVE")} onClick={() => void publish()}><ArrowUpRight size={14} /> Queue publish</button>{!approvedPosts.length && <p className="studio-inline-notice">No approved posts are available yet.</p>}</section><section className="studio-workspace-panel studio-workspace-panel--wide"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">PROVIDER RECEIPTS</span><h2>Publish jobs</h2></div><span className="studio-chip">{jobs.length} jobs</span></div>{jobs.length ? <div className="studio-data-stack">{jobs.slice(0, 10).map((job) => <div className="studio-data-row" key={job.id}><span className={`studio-status-dot ${job.status === "SENT" ? "studio-status-dot--lime" : ""}`} /><div><strong>{providerLabels[job.provider]}{job.metaTarget ? ` · ${job.metaTarget === "INSTAGRAM" ? "Instagram" : "Facebook Page"}` : ""} · {job.status}</strong><small>{job.externalPostId ? `Provider id ${job.externalPostId}` : job.errorMessage || "Awaiting provider response"}</small></div><span className="studio-data-value">{job.createdAt ? new Date(job.createdAt).toLocaleDateString() : "Queued"}</span></div>)}</div> : <Notice title="No publish jobs yet." detail="Connect a provider, then queue an approved post to create a real delivery record." />}</section></div>;
 }
 
 function Unavailable({ label, reason }: { label: string; reason: string }) { return <Notice title={`${label} is ready for its backend route.`} detail={reason} action={<Link className="studio-button studio-button--dark" href="/contact">Talk to the team <ArrowUpRight size={14} /></Link>} />; }
@@ -425,8 +606,15 @@ function Surface({ mode, products, posts, refresh }: { mode: WorkspaceMode; prod
 }
 
 export function WorkspacePage({ mode }: { mode: WorkspaceMode }) {
+    const router = useRouter();
     const [label, title, description, Icon] = workspaceData[mode];
     const { products, posts, brand, loading, error, reload } = useLiveWorkspace();
+    // Safety net for reaching /dashboard with no brand configured — the
+    // normal path (fresh Google sign-up) already gets redirected to
+    // /onboarding from the OAuth callback, but this covers anyone who lands
+    // here directly (bookmark, back button, stale tab) before finishing setup.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- One-off redirect check, not state hydration.
+    useEffect(() => { getCurrentUser().then((me) => { if (!me.brandId) router.replace("/onboarding"); }).catch(() => {}); }, [router]);
     return <main className="studio-app"><WorkspaceSidebar active={mode} brand={brand} /><div className="studio-workspace-main"><header className="studio-workspace-topbar"><div><span className="studio-kicker studio-kicker--dark">WORKSPACE / {label.toUpperCase()}</span><h1>{title}</h1><p>{description}</p></div><div className="studio-workspace-actions"><button className="studio-icon-button" aria-label="Search"><Search size={17} /></button><Link href="/dashboard/studio" className="studio-button studio-button--dark"><Plus size={15} /> New direction</Link></div></header><section className="studio-workspace-content"><div className="studio-command-row"><div className="studio-route-title"><Icon size={20} /><span>{label}</span></div><label className="studio-search"><Search size={15} /><input placeholder={`Search ${label.toLowerCase()}`} /></label></div>{error && <div className="studio-form-error"><strong>Live data unavailable.</strong> {error} <button onClick={() => void reload()}>Retry</button></div>}{loading ? <div className="studio-loading"><Loader2 className="studio-spin" size={18} /> Loading live workspace data…</div> : <Surface mode={mode} products={products} posts={posts} refresh={() => void reload()} />}</section></div></main>;
 }
 

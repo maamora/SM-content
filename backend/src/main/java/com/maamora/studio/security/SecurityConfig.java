@@ -39,21 +39,18 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-<<<<<<< HEAD
-                        .requestMatchers("/api/auth/**", "/api/uploads/logo", "/files/**", "/actuator/health").permitAll()
-=======
                         .requestMatchers(
                                 "/api/auth/register",
                                 "/api/auth/login",
                                 "/api/auth/google/start",
                                 "/api/auth/google/callback",
+                                "/api/uploads/logo",
                                 "/api/system/capabilities",
                                 "/api/system/higgsfield",
                                 "/api/social/callback/**",
                                 "/files/**",
                                 "/actuator/health"
                         ).permitAll()
->>>>>>> 0aaa1cfa406c946d0887dbeaa5c9c2676e5da0aa
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

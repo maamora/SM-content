@@ -17,6 +17,7 @@ import com.maamora.studio.repository.PublishJobRepository;
 import com.maamora.studio.repository.SocialConnectionRepository;
 import com.maamora.studio.repository.UserRepository;
 import com.maamora.studio.security.SecretCipher;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,6 +73,7 @@ public class SocialPublishService {
                 .post(post)
                 .connection(connection)
                 .provider(connection.getProvider())
+                .metaTarget(connection.getProvider() == SocialProvider.META ? resolveMetaTarget(connection, request.metaTarget()) : null)
                 .status(DeliveryStatus.QUEUED)
                 .build();
         PublishJob saved = publishJobRepository.save(job);
@@ -99,7 +101,7 @@ public class SocialPublishService {
         try {
             SocialConnection connection = job.getConnection();
             String token = cipher.decrypt(connection.getAccessTokenEncrypted());
-            PublishResult result = publish(connection.getProvider(), token, connection.getExternalAccountId(), job.getPost());
+            PublishResult result = publish(connection, job.getMetaTarget(), token, job.getPost());
             job.setStatus(DeliveryStatus.SENT);
             job.setExternalPostId(result.externalId());
             job.setPublishedAt(Instant.now());
@@ -111,52 +113,128 @@ public class SocialPublishService {
         publishJobRepository.save(job);
     }
 
-    private PublishResult publish(SocialProvider provider, String token, String accountId, Post post) {
+    private PublishResult publish(SocialConnection connection, String metaTarget, String token, Post post) {
         String caption = firstText(post.getCaptionEn(), post.getCaptionFr(), post.getCaptionAr(), post.getCaptionDarija());
         if (!StringUtils.hasText(caption)) throw new IllegalArgumentException("Post has no caption");
-        return switch (provider) {
-            case META -> publishMeta(token, accountId, caption, post.getImageUrl());
+        String accountId = connection.getExternalAccountId();
+        return switch (connection.getProvider()) {
+            case META -> publishMeta(token, connection, metaTarget, caption, post.getImageUrl());
             case TIKTOK -> publishTikTok(token, caption, post.getImageUrl());
             case LINKEDIN -> publishLinkedIn(token, accountId, caption, post.getImageUrl());
             case X -> publishX(token, caption, post.getImageUrl());
         };
     }
 
-    private PublishResult publishMeta(String token, String accountId, String caption, String imageUrl) {
+    /**
+     * exchangeMeta() connects a Facebook Page (its id is the connection's
+     * externalAccountId) and, when one exists, also records the Page's
+     * linked Instagram professional account id in metadataJson. Those are
+     * two different publishing targets with two different Graph API shapes:
+     * a Page photo post uses POST /{page-id}/photos, while an Instagram feed
+     * post is the two-step /media (create container) + /media_publish flow —
+     * and /media only exists for Instagram Business Account ids, not Page
+     * ids. The previous version of this method always called /media +
+     * /media_publish against the Page id, which is invalid for a real Page
+     * and would only "work" (against the wrong surface) if Meta silently
+     * treated the ids interchangeably, which it doesn't.
+     */
+    private PublishResult publishMeta(String token, SocialConnection connection, String metaTarget, String caption, String imageUrl) {
         if (!StringUtils.hasText(imageUrl)) throw new IllegalArgumentException("Meta publishing requires a public image URL");
-        String container = restClient.post().uri("https://graph.facebook.com/v20.0/" + accountId + "/media")
-                .body(Map.of("image_url", imageUrl, "caption", caption, "access_token", token))
+        Map<String, String> metadata = parseMetaMetadata(connection.getMetadataJson());
+
+        if ("INSTAGRAM".equals(metaTarget)) {
+            String igUserId = metadata.get("instagramBusinessAccountId");
+            if (!StringUtils.hasText(igUserId)) {
+                throw new IllegalArgumentException(
+                        "This Meta connection has no Instagram professional account linked to its Facebook Page. Link one in Meta Business Suite, then reconnect.");
+            }
+            String container = restClient.post().uri("https://graph.facebook.com/v20.0/" + igUserId + "/media")
+                    .body(Map.of("image_url", imageUrl, "caption", caption, "access_token", token))
+                    .retrieve().body(String.class);
+            String containerId = textField(container, "id");
+            String published = restClient.post().uri("https://graph.facebook.com/v20.0/" + igUserId + "/media_publish")
+                    .body(Map.of("creation_id", containerId, "access_token", token))
+                    .retrieve().body(String.class);
+            return new PublishResult(textField(published, "id"));
+        }
+
+        // Facebook Page post — a Page's photo edge is /photos (image_url is
+        // called "url" here, unlike Instagram's "image_url"), never /media.
+        String pageId = connection.getExternalAccountId();
+        String published = restClient.post().uri("https://graph.facebook.com/v20.0/" + pageId + "/photos")
+                .body(Map.of("url", imageUrl, "caption", caption, "access_token", token))
                 .retrieve().body(String.class);
-        String containerId = textField(container, "id");
-        String published = restClient.post().uri("https://graph.facebook.com/v20.0/" + accountId + "/media_publish")
-                .body(Map.of("creation_id", containerId, "access_token", token))
-                .retrieve().body(String.class);
-        return new PublishResult(textField(published, "id"));
+        return new PublishResult(textFieldAny(published, "post_id", "id"));
     }
 
+    private String resolveMetaTarget(SocialConnection connection, String requested) {
+        if ("INSTAGRAM".equals(requested) || "FACEBOOK_PAGE".equals(requested)) return requested;
+        // No explicit choice — default to Instagram when this connection has
+        // one linked (matches "post to Instagram" being the more common ask),
+        // otherwise fall back to the Facebook Page itself.
+        Map<String, String> metadata = parseMetaMetadata(connection.getMetadataJson());
+        return StringUtils.hasText(metadata.get("instagramBusinessAccountId")) ? "INSTAGRAM" : "FACEBOOK_PAGE";
+    }
+
+    private Map<String, String> parseMetaMetadata(String metadataJson) {
+        if (!StringUtils.hasText(metadataJson)) return Map.of();
+        try {
+            JsonNode node = objectMapper.readTree(metadataJson);
+            java.util.Map<String, String> result = new java.util.HashMap<>();
+            node.fieldNames().forEachRemaining(field -> result.put(field, node.path(field).asText("")));
+            return result;
+        } catch (Exception exception) {
+            return Map.of();
+        }
+    }
+
+    /**
+     * post.getImageUrl() is always a still image — this app has no video
+     * generation feature. The previous version sent that image URL to
+     * /v2/post/publish/video/init/ as "video_url", which is TikTok's
+     * video-only Direct Post endpoint; a real image there would be rejected
+     * (or, at best, silently mis-handled) since it isn't a video file.
+     * TikTok's Content Posting API has a separate photo endpoint —
+     * /v2/post/publish/content/init/ with post_mode "DIRECT_POST" and
+     * media_type "PHOTO" — for exactly this case.
+     */
     private PublishResult publishTikTok(String token, String caption, String imageUrl) {
         if (!StringUtils.hasText(imageUrl)) throw new IllegalArgumentException("TikTok publishing requires a media URL");
-        String response = restClient.post().uri("https://open.tiktokapis.com/v2/post/publish/video/init/")
+        String response = restClient.post().uri("https://open.tiktokapis.com/v2/post/publish/content/init/")
                 .header("Authorization", "Bearer " + token)
-                .body(Map.of("post_info", Map.of("title", caption, "privacy_level", "PUBLIC_TO_EVERYONE", "disable_duet", false, "disable_comment", false, "disable_stitch", false),
-                        "source_info", Map.of("source", "PULL_FROM_URL", "video_url", imageUrl)))
+                .body(Map.of("post_info", Map.of("title", caption, "privacy_level", "PUBLIC_TO_EVERYONE", "disable_comment", false),
+                        "source_info", Map.of("source", "PULL_FROM_URL", "photo_cover_index", 0, "photo_images", List.of(imageUrl)),
+                        "post_mode", "DIRECT_POST", "media_type", "PHOTO"))
                 .retrieve().body(String.class);
         return new PublishResult(textField(response, "publish_id"));
     }
+
+    // LinkedIn retired /v2/ugcPosts for new integrations in favor of
+    // /rest/posts, which requires an explicit LinkedIn-Version header and, on
+    // success, returns the new post's id in the x-restli-id *response
+    // header* rather than the JSON body — a caller still reading `id` out of
+    // the body (as the old ugcPosts response provided) would silently record
+    // no external post id.
+    private static final String LINKEDIN_API_VERSION = "202601";
 
     private PublishResult publishLinkedIn(String token, String accountId, String caption, String imageUrl) {
         if (StringUtils.hasText(imageUrl)) {
             throw new IllegalArgumentException("LinkedIn image publishing requires an asset-upload registration; text publishing is available after connection");
         }
-        String response = restClient.post().uri("https://api.linkedin.com/v2/ugcPosts")
+        ResponseEntity<String> response = restClient.post().uri("https://api.linkedin.com/rest/posts")
                 .header("Authorization", "Bearer " + token)
                 .header("X-Restli-Protocol-Version", "2.0.0")
+                .header("LinkedIn-Version", LINKEDIN_API_VERSION)
                 .body(Map.of("author", "urn:li:person:" + accountId,
+                        "commentary", caption,
+                        "visibility", "PUBLIC",
+                        "distribution", Map.of("feedDistribution", "MAIN_FEED", "targetEntities", List.of(), "thirdPartyDistributionChannels", List.of()),
                         "lifecycleState", "PUBLISHED",
-                        "specificContent", Map.of("com.linkedin.ugc.ShareContent", Map.of("shareCommentary", Map.of("text", caption), "shareMediaCategory", "NONE")),
-                        "visibility", Map.of("com.linkedin.ugc.MemberNetworkVisibility", "PUBLIC")))
-                .retrieve().body(String.class);
-        return new PublishResult(textField(response, "id"));
+                        "isReshareDisabledByAuthor", false))
+                .retrieve().toEntity(String.class);
+        String postId = response.getHeaders().getFirst("x-restli-id");
+        if (!StringUtils.hasText(postId)) throw new IllegalStateException("LinkedIn did not return a post id");
+        return new PublishResult(postId);
     }
 
     private PublishResult publishX(String token, String caption, String imageUrl) {
@@ -175,6 +253,18 @@ public class SocialPublishService {
                 || !userId.equals(post.getProduct().getCreatedBy().getId())) {
             throw new ResourceNotFoundException("Post not found");
         }
+    }
+
+    private String textFieldAny(String rawJson, String... names) {
+        IllegalStateException last = null;
+        for (String name : names) {
+            try {
+                return textField(rawJson, name);
+            } catch (IllegalStateException exception) {
+                last = exception;
+            }
+        }
+        throw last != null ? last : new IllegalStateException("Provider response did not include " + String.join("/", names));
     }
 
     private String textField(String rawJson, String name) {

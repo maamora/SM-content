@@ -1,9 +1,11 @@
 package com.maamora.studio.controller;
 
 import com.maamora.studio.dto.request.ChangePasswordRequest;
+import com.maamora.studio.dto.request.CompleteOnboardingRequest;
 import com.maamora.studio.dto.request.UpdateProfileRequest;
 import com.maamora.studio.dto.response.ApiResponse;
 import com.maamora.studio.dto.response.UserSummaryResponse;
+import com.maamora.studio.model.User;
 import com.maamora.studio.security.CurrentUserProvider;
 import com.maamora.studio.service.UserService;
 import jakarta.validation.Valid;
@@ -42,5 +44,17 @@ public class UserController {
         List<UserSummaryResponse> result = userService.listCoworkers(currentUser.getCurrentUserId())
                 .stream().map(UserSummaryResponse::new).toList();
         return ApiResponse.ok(result);
+    }
+
+    /**
+     * One-time setup for an account with no brand yet (currently only reached
+     * via Google sign-up — see AuthService.loginOrCreateGoogle). The JWT
+     * doesn't encode brandId, so no new token is needed after this; the
+     * frontend just re-fetches /api/users/me.
+     */
+    @PostMapping("/me/onboarding")
+    public ApiResponse<UserSummaryResponse> completeOnboarding(@RequestBody CompleteOnboardingRequest request) {
+        User user = userService.completeOnboarding(currentUser.getCurrentUserId(), request);
+        return ApiResponse.ok(new UserSummaryResponse(user));
     }
 }

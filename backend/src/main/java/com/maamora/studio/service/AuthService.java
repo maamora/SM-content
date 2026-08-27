@@ -36,7 +36,6 @@ public class AuthService {
      */
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-<<<<<<< HEAD
         // Honeypot: a real user never fills this in. Reject with the exact
         // same error a bot would get from a plausible-looking failure
         // elsewhere, so there's no observable difference that would teach it
@@ -45,11 +44,8 @@ public class AuthService {
             throw new UnauthorizedException("Registration failed. Please try again.");
         }
 
-        if (userRepository.existsByEmail(request.getEmail())) {
-=======
         String email = normalizeEmail(request.getEmail());
         if (userRepository.existsByEmailIgnoreCase(email)) {
->>>>>>> 0aaa1cfa406c946d0887dbeaa5c9c2676e5da0aa
             throw new UnauthorizedException("An account with this email already exists.");
         }
 
@@ -81,20 +77,26 @@ public class AuthService {
     public AuthResponse loginOrCreateGoogle(String email, String name) {
         String normalizedEmail = normalizeEmail(email);
         User user = userRepository.findByEmailIgnoreCase(normalizedEmail).orElseGet(() -> {
-            BrandSettings brand = brandSettingsService.getSharedBrand();
+            // Deliberately no brand yet — a brand-new Google sign-up has never
+            // chosen personal/create/join, so dropping them into an existing
+            // customer's workspace (this used to call getSharedBrand(), which
+            // resolves to whichever real brand has the most users — Labubu in
+            // practice) would hand a total stranger real customer data. The
+            // frontend checks for brandId == null after Google login and
+            // routes to the onboarding chooser instead of the dashboard.
             User created = User.builder()
                     .name(name == null || name.isBlank() ? normalizedEmail : name)
                     .email(normalizedEmail)
                     .passwordHash(passwordEncoder.encode(UUID.randomUUID().toString()))
                     .role(Role.USER)
-                    .brand(brand)
+                    .brand(null)
                     .build();
             return userRepository.save(created);
         });
 
-        if (user.getBrand() == null) user.setBrand(brandSettingsService.getSharedBrand());
         String token = jwtService.generateToken(user.getId(), user.getEmail());
-        return new AuthResponse(token, user.getEmail(), user.getBrand().getId(), user.getRole().name());
+        String brandId = user.getBrand() == null ? null : user.getBrand().getId();
+        return new AuthResponse(token, user.getEmail(), brandId, user.getRole().name());
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -105,12 +107,18 @@ public class AuthService {
             throw new UnauthorizedException("Invalid email or password.");
         }
 
-        if (user.getBrand() == null) {
+        // Regular accounts always have a brand (own workspace, joined
+        // workspace, or personal profile — see register()). ADMIN is the one
+        // deliberate exception: the platform admin isn't a member of any
+        // customer's workspace, so it has no brand at all rather than being
+        // forced to squat inside a real brand's data (see AdminSeeder).
+        if (user.getBrand() == null && user.getRole() != Role.ADMIN) {
             throw new UnauthorizedException("No brand configured for this account.");
         }
 
         String token = jwtService.generateToken(user.getId(), user.getEmail());
-        return new AuthResponse(token, user.getEmail(), user.getBrand().getId(), user.getRole().name());
+        String brandId = user.getBrand() == null ? null : user.getBrand().getId();
+        return new AuthResponse(token, user.getEmail(), brandId, user.getRole().name());
     }
 
     @Transactional(readOnly = true)

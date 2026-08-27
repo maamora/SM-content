@@ -24,3 +24,15 @@ export const changePassword = (input: { currentPassword: string; newPassword: st
 
 // Everyone else sharing your brand — powers the "Coworkers" list on the Settings page.
 export const listCoworkers = () => apiFetch<UserSummary[]>("/api/users/coworkers");
+
+// One-time setup for an account with no brand yet (Google sign-up lands here
+// instead of the dashboard) — same three-way shape as registration.
+export const completeOnboarding = (input: {
+    personal?: boolean;
+    joinCode?: string;
+    brandName?: string;
+    logoUrl?: string;
+}) => apiFetch<UserSummary>("/api/users/me/onboarding", {
+    method: "POST",
+    body: JSON.stringify(input),
+});
