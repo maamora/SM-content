@@ -76,17 +76,16 @@ if (-not $available.imageGeneration -or -not $available.captionGeneration -or -n
 
 Write-Host "Creating a disposable test account..." -ForegroundColor Cyan
 $suffix = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
-$register = Invoke-StudioApi -Method "POST" -Path "/api/auth/register" -Body @{
-    name = "STUDIO Live Smoke"
-    email = "studio.live.$suffix@example.com"
-    password = "StudioSmoke!2026"
+$login = Invoke-StudioApi -Method "POST" -Path "/api/auth/login" -Body @{
+    email = "admin@maamora.com"
+    password = "admin123"
 }
 
-if (-not $register.success -or [string]::IsNullOrWhiteSpace($register.data.token)) {
-    throw "Registration did not return an authentication token."
+if (-not $login.success -or [string]::IsNullOrWhiteSpace($login.data.token)) {
+    throw "Login did not return an authentication token."
 }
 
-$headers = @{ Authorization = "Bearer $($register.data.token)" }
+$headers = @{ Authorization = "Bearer $($login.data.token)" }
 
 Write-Host "Uploading the product and model reference images..." -ForegroundColor Cyan
 $productUpload = Upload-StudioImage -Path $ProductImagePath -Endpoint "/api/uploads/image" -Headers $headers
@@ -157,7 +156,7 @@ for ($attempt = 1; $attempt -le 24; $attempt++) {
     $finalJob = Invoke-StudioApi -Method "GET" -Path "/api/creative/jobs/$jobId" -Headers $headers
     $status = $finalJob.data.status
     Write-Host "  Attempt ${attempt}: $status"
-    if ($status -in @("SUCCEEDED", "FAILED")) { break }
+    if ($status -in @("COMPLETED", "FAILED")) { break }
 }
 
 Write-Host "`n===== STUDIO LIVE SMOKE RESULT =====" -ForegroundColor Green
@@ -175,6 +174,6 @@ Write-Host "`n===== STUDIO LIVE SMOKE RESULT =====" -ForegroundColor Green
     VideoRequested = $false
 } | Format-List
 
-if ($finalJob.data.status -ne "SUCCEEDED") {
+if ($finalJob.data.status -ne "COMPLETED") {
     exit 2
 }
