@@ -1,6 +1,7 @@
 "use client";
+/* CAMPAIGN SWITCHBOARD / AUTHENTICATED WORKSPACE: a landing-color production desk with charcoal controls, warm-paper records, lime active states, and real source → proof → delivery workflows. */
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -10,14 +11,19 @@ import {
     Sparkles, Store, ThumbsUp, Trash2, Users2,
 } from "lucide-react";
 import { StudioMark } from "./StudioShell";
+import { EditionDeskShell, MetricLedger, RouteControlBar, RouteMasthead } from "./EditionDeskPrimitives";
+import { StudioCommandPalette } from "./StudioCommandPalette";
+import { AdminControlRoom, type AdminControlNavSection } from "./AdminControlRoom";
+import { AssetDepthCarousel } from "./AssetDepthCarousel";
+import FadeContent from "@/components/FadeContent";
 import CreativeStudio from "@/components/features/studio/CreativeStudio";
 import BatchStudio from "@/components/features/studio/BatchStudio";
 import ProductList from "@/components/features/products/ProductList";
 import { ProductForm } from "@/components/features/products/ProductForm";
 import ApprovalsQueue from "@/components/features/products/ApprovalsQueue";
-import { listProducts, type Product } from "@/lib/api/products";
+import { createProduct, listProducts, type Product, type ProductInput } from "@/lib/api/products";
 import { deletePost, exportPost, listPosts, type Post } from "@/lib/api/posts";
-import { getBrand, updateBrand, type BrandSettings, type BrandSettingsInput } from "@/lib/api/brand";
+import { getBrand, updateBrand, uploadBrandLogo, type BrandSettings, type BrandSettingsInput } from "@/lib/api/brand";
 import { listTemplates, type Template } from "@/lib/api/templates";
 import { logout, getCurrentUser, type UserProfile } from "@/lib/api/auth";
 import { getMe, updateProfile, changePassword, listCoworkers, type UserSummary } from "@/lib/api/users";
@@ -28,17 +34,17 @@ import { listEmailDeliveries, type EmailDelivery } from "@/lib/api/email";
 import { acceptInvitation, declineInvitation, inviteToBrand, listMyInvitations, listSentInvitations, type BrandInvitation } from "@/lib/api/invitations";
 
 const workspaceData = {
-    dashboard: ["Overview", "Your creative operating system", "A live read on what is moving, waiting, and ready to ship.", LayoutDashboard],
-    products: ["Products", "Keep the source material close", "Organize product references, campaign inputs, and approved visual directions.", Package],
-    brand: ["Brand kit", "Make consistency feel expressive", "Your colors, voice, and rules—available before the next draft begins.", Palette],
-    studio: ["Studio", "Compose the next direction", "Bring a prompt, a product, or an unfinished thought. Leave with a visual thread.", Sparkles],
-    batch: ["Batch", "More outputs, same point of view", "Create a considered family of assets without starting from scratch each time.", Layers3],
-    assets: ["Assets", "A library with memory", "Find the approved crop, caption, and campaign state in fewer clicks.", FolderOpen],
-    posts: ["Posts", "Keep the publishing thread intact", "Move from draft to approval with the original creative context attached.", FileImage],
-    calendar: ["Calendar", "See the next move", "Map campaigns, channels, and handoffs before they become urgent.", CalendarDays],
-    social: ["Social", "Publish with intent", "Bring channel constraints into the same creative conversation.", Store],
-    notifications: ["Notifications", "Signals, not noise", "Stay close to the moments that need your point of view.", Bell],
-    settings: ["Settings", "Shape your workspace", "Tune permissions, defaults, integrations, and the way your team moves.", Settings2],
+    dashboard: ["Overview", "Workboard", "Sources, drafts, approvals, delivery.", LayoutDashboard],
+    products: ["Products", "Source library", "Products, images, and status.", Package],
+    brand: ["Brand kit", "Brand kit", "Logo, color, type, and tone.", Palette],
+    studio: ["Studio", "Post editor", "Compose, caption, approve, export.", Sparkles],
+    batch: ["Batch", "Batch composer", "Create a post set from approved sources.", Layers3],
+    assets: ["Assets", "Assets", "Source and post files.", FolderOpen],
+    posts: ["Posts", "Posts", "Drafts, approvals, and exports.", FileImage],
+    calendar: ["Calendar", "Calendar", "Post dates and delivery timing.", CalendarDays],
+    social: ["Social", "Delivery", "Channels, schedule, and receipts.", Store],
+    notifications: ["Notifications", "Activity", "Approvals and email delivery.", Bell],
+    settings: ["Settings", "Settings", "Account, capabilities, and connections.", Settings2],
 } as const;
 type WorkspaceMode = keyof typeof workspaceData;
 const workspaceNav: [WorkspaceMode, string, typeof LayoutDashboard][] = [
@@ -47,6 +53,20 @@ const workspaceNav: [WorkspaceMode, string, typeof LayoutDashboard][] = [
     ["posts", "Posts", FileImage], ["calendar", "Calendar", CalendarDays], ["social", "Social", Store],
     ["notifications", "Notifications", Bell], ["settings", "Settings", Settings2],
 ];
+
+const workspaceNavSections: { label: string; keys: WorkspaceMode[] }[] = [
+    { label: "Create", keys: ["dashboard", "products", "brand", "studio", "batch"] },
+    { label: "Library", keys: ["assets", "posts", "calendar"] },
+    { label: "Delivery", keys: ["social", "notifications", "settings"] },
+];
+
+const workspaceEditionNavigation = workspaceNavSections.map((section) => ({
+    label: section.label,
+    items: section.keys.map((key) => {
+        const [itemKey, label, icon] = workspaceNav.find(([candidate]) => candidate === key)!;
+        return { key: itemKey, label, href: `/dashboard/${itemKey}`, icon };
+    }),
+}));
 
 const adminData = {
     dashboard: ["Admin overview", "Keep the system healthy", ShieldCheck], users: ["Users", "The people moving the work", Users2],
@@ -57,6 +77,43 @@ const adminData = {
     settings: ["Admin settings", "System controls", Settings2],
 } as const;
 type AdminMode = keyof typeof adminData;
+
+const adminEditionNavigation = Object.entries(adminData).map(([key, value]) => ({
+    key,
+    label: value[0],
+    href: `/admin/${key}`,
+    icon: value[2] as typeof ShieldCheck,
+}));
+
+const adminControlNavigation: AdminControlNavSection[] = [
+    { label: "MONITOR", items: adminEditionNavigation.filter((item) => ["dashboard", "analytics"].includes(item.key)) },
+    { label: "REVIEW", items: adminEditionNavigation.filter((item) => ["products", "content", "templates", "generations", "publishing"].includes(item.key)) },
+    { label: "SYSTEM", items: adminEditionNavigation.filter((item) => ["users", "workspaces", "audit-logs", "settings"].includes(item.key)) },
+];
+
+const testingCatalog: ReadonlyArray<ProductInput & { assetPath: string }> = [
+    {
+        name: "TEST · Arc Runner sneaker",
+        description: "A STUDIO testing reference for validating the local template composition, captions, approvals, export, and scheduling workflow.",
+        sellingPoint: "Testing source material — delete when your live product catalog is ready.",
+        price: 0,
+        assetPath: "/studio/creative/arc-runner-product.jpg",
+    },
+    {
+        name: "TEST · Campaign detail",
+        description: "A close editorial product reference for checking crop behavior, headline hierarchy, and alternative visual directions in STUDIO.",
+        sellingPoint: "Testing source material — created only in your current workspace.",
+        price: 0,
+        assetPath: "/studio/creative/campaign-detail.jpg",
+    },
+    {
+        name: "TEST · Campaign wide frame",
+        description: "A wide campaign reference for testing social crops, caption variants, approval states, and scheduled delivery without using a live catalog item.",
+        sellingPoint: "Testing source material — remove after verification.",
+        price: 0,
+        assetPath: "/studio/creative/campaign-wide.jpg",
+    },
+];
 
 function Notice({ title, detail, action }: { title: string; detail: string; action?: ReactNode }) {
     return <div className="studio-unavailable"><span className="studio-kicker studio-kicker--dark">BACKEND SIGNAL</span><h3>{title}</h3><p>{detail}</p>{action}</div>;
@@ -106,11 +163,12 @@ function useLiveWorkspace() {
     const [brand, setBrand] = useState<BrandSettings | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const reload = useCallback(async () => {
-        setLoading(true); setError(null);
+    const reload = useCallback(async ({ background = false }: { background?: boolean } = {}) => {
+        if (!background) setLoading(true);
+        setError(null);
         try { const [nextProducts, nextPosts] = await Promise.all([listProducts(), listPosts()]); setProducts(nextProducts); setPosts(nextPosts); }
         catch (err) { setError(err instanceof Error ? err.message : "Unable to load workspace data"); }
-        finally { setLoading(false); }
+        finally { if (!background) setLoading(false); }
     }, []);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial fetch intentionally hydrates this client surface.
     useEffect(() => { void reload(); }, [reload]);
@@ -127,12 +185,63 @@ function Stats({ products, posts }: { products: Product[]; posts: Post[] }) {
     const approved = products.filter((product) => product.status === "APPROVED").length;
     const ready = posts.filter((post) => post.status !== "DRAFT").length;
     const last = posts[0]?.createdAt ? new Date(posts[0].createdAt).toLocaleDateString() : "No activity";
-    return <div className="studio-stat-grid"><div><span>PRODUCTS</span><strong>{products.length}</strong><small>{approved} approved</small></div><div><span>POSTS</span><strong>{posts.length}</strong><small>{ready} ready to ship</small></div><div><span>APPROVAL RATE</span><strong>{products.length ? `${Math.round(approved / products.length * 100)}%` : "—"}</strong><small>Current source material</small></div><div><span>LAST MOVEMENT</span><strong>{posts.length ? "LIVE" : "—"}</strong><small>{last}</small></div></div>;
+    return <MetricLedger className="studio-overview-stats" items={[
+        { label: "PRODUCTS", value: products.length, detail: `${approved} approved` },
+        { label: "POSTS", value: posts.length, detail: `${ready} ready to ship` },
+        { label: "READY", value: ready, detail: ready ? "Ready to review" : "Awaiting first post", accent: "ink" },
+        { label: "RECENT ACTIVITY", value: posts.length ? "LIVE" : "—", detail: last, accent: "vermilion" },
+    ]} />;
+}
+
+function WorkspaceReadiness({ products, posts }: { products: Product[]; posts: Post[] }) {
+    const [brand, setBrand] = useState<BrandSettings | null>(null);
+    const [failed, setFailed] = useState(false);
+    useEffect(() => { getBrand().then(setBrand).catch(() => setFailed(true)); }, []);
+    const hasBrand = Boolean(brand?.configured);
+    const hasProduct = products.length > 0;
+    const hasPost = posts.length > 0;
+    const steps = [
+        { label: "Direction", detail: hasBrand ? brand?.name || "Brand ready" : "Keep it neutral or set a point of view", href: "/dashboard/brand", ready: hasBrand },
+        { label: "Source", detail: hasProduct ? `${products.length} product${products.length === 1 ? "" : "s"} in the workspace` : "Add the first product reference", href: "/dashboard/products", ready: hasProduct },
+        { label: "Composition", detail: hasPost ? `${posts.length} saved post${posts.length === 1 ? "" : "s"}` : "Create the first visual direction", href: "/dashboard/studio", ready: hasPost },
+    ];
+    if (failed) return null;
+    return <section className="studio-workspace-readiness" aria-label="Workspace readiness">
+        <div className="studio-workspace-readiness__lead"><span className="studio-kicker studio-kicker--dark">WORKSPACE THREAD</span><p>{brand === null ? "Reading your workspace…" : hasBrand ? "Your brand direction is configured. Keep the next hand-off visible." : "STUDIO stays brand-neutral until you choose otherwise."}</p></div>
+        <ol>{steps.map((step, index) => <li className={step.ready ? "is-ready" : ""} key={step.label}><span>{step.ready ? <Check size={12} /> : `0${index + 1}`}</span><div><strong>{step.label}</strong><small>{step.detail}</small></div><Link href={step.href} aria-label={`Open ${step.label}`}><ChevronRight size={15} /></Link></li>)}</ol>
+    </section>;
 }
 
 function Overview({ products, posts, refresh }: { products: Product[]; posts: Post[]; refresh: () => void }) {
-    const recent = posts.slice(0, 5);
-    return <><Stats products={products} posts={posts} /><div className="studio-workspace-grid"><section className="studio-workspace-panel studio-workspace-panel--wide"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">LIVE BOARD</span><h2>Real workspace movement</h2></div><button className="studio-text-button" onClick={refresh}><RefreshCw size={14} /> Refresh</button></div>{recent.length ? <div className="studio-data-stack">{recent.map((post) => <Link className="studio-data-row" key={post.id} href="/dashboard/posts"><span className="studio-status-dot" /><div><strong>{post.productName}</strong><small>{post.status} · {post.format}</small></div><span className="studio-data-value">{post.createdAt ? new Date(post.createdAt).toLocaleDateString() : "New"}</span><ChevronRight size={14} /></Link>)}</div> : <Notice title="Your live board is waiting." detail="Create a product, then open Studio to generate the first real post." action={<Link className="studio-button studio-button--dark" href="/dashboard/products"><Plus size={14} /> Add product</Link>} />}</section><section className="studio-workspace-panel studio-workspace-panel--accent"><span className="studio-kicker studio-kicker--dark">NEXT MOVE</span><h2>Turn one approved product into a full campaign.</h2><p>Use the real product and template APIs to generate, caption, approve, and export.</p><Link href="/dashboard/studio" className="studio-button studio-button--dark">Open studio <ArrowUpRight size={15} /></Link></section></div></>;
+    const approvedSources = products.filter((product) => product.status === "APPROVED").length;
+    const pendingSources = products.filter((product) => product.status === "PENDING").length;
+    const rejectedSources = products.filter((product) => product.status === "REJECTED").length;
+    const multiImageSources = products.filter((product) => Boolean(product.imageUrl && product.imageUrl2)).length;
+    const draftPosts = posts.filter((post) => post.status === "DRAFT").length;
+    const approvedPosts = posts.filter((post) => post.status === "APPROVED").length;
+    const recentPosts = posts.slice(0, 6);
+    const funnel = [
+        { label: "Sources", value: products.length, detail: `${approvedSources} approved` },
+        { label: "Proofs", value: posts.length, detail: `${draftPosts} draft` },
+        { label: "Approved", value: approvedPosts, detail: "Ready for delivery" },
+        { label: "Source depth", value: `${multiImageSources}/${products.length}`, detail: "2+ images" },
+    ];
+    return <div className="studio-worktable studio-worktable--overview studio-analysis-dashboard">
+        <RouteMasthead kicker="WORKBOARD / ANALYSIS" title="Workboard" description="Live source, post, approval, and delivery signals." actions={<button className="studio-text-button" onClick={refresh}><RefreshCw size={14} /> Refresh</button>} />
+        <FadeContent duration={220} distance={6} threshold={0.08} className="studio-quiet-reveal"><Stats products={products} posts={posts} /></FadeContent>
+        <div className="studio-analysis-dashboard__grid">
+            <section className="studio-analysis-panel studio-analysis-panel--funnel"><div className="studio-analysis-panel__heading"><div><span className="studio-kicker">PIPELINE</span><h2>Record flow</h2></div><span>LIVE</span></div><div className="studio-analysis-funnel">{funnel.map((item, index) => <div key={item.label}><span>0{index + 1}</span><strong>{item.value}</strong><b>{item.label}</b><small>{item.detail}</small></div>)}</div></section>
+            <section className="studio-analysis-panel studio-analysis-panel--quality"><div className="studio-analysis-panel__heading"><div><span className="studio-kicker">SOURCE QUALITY</span><h2>Coverage</h2></div></div><dl><div><dt>Approved source ratio</dt><dd>{products.length ? `${Math.round((approvedSources / products.length) * 100)}%` : "—"}</dd></div><div><dt>Multi-image sources</dt><dd>{multiImageSources}</dd></div><div><dt>Pending review</dt><dd>{pendingSources}</dd></div><div><dt>Rejected source</dt><dd>{rejectedSources}</dd></div></dl></section>
+            <section className="studio-analysis-panel studio-analysis-panel--status"><div className="studio-analysis-panel__heading"><div><span className="studio-kicker">DELIVERY READINESS</span><h2>Current state</h2></div></div><div className="studio-analysis-status"><div><span className={approvedPosts ? "is-positive" : ""} /> <strong>{approvedPosts ? "Approved posts available" : "No approved post"}</strong><small>{approvedPosts ? `${approvedPosts} post${approvedPosts === 1 ? "" : "s"} can enter delivery.` : "Approval is reflected here when a saved post changes state."}</small></div><div><span className={draftPosts ? "is-warn" : ""} /> <strong>{draftPosts ? "Draft review pending" : "No drafts pending"}</strong><small>{draftPosts ? `${draftPosts} draft${draftPosts === 1 ? "" : "s"} in the current record set.` : "No draft review signal in the current record set."}</small></div></div></section>
+        </div>
+        <section className="studio-analysis-panel studio-analysis-panel--activity"><div className="studio-analysis-panel__heading"><div><span className="studio-kicker">RECENT RECORDS</span><h2>Post activity</h2></div><span>{recentPosts.length} records</span></div>{recentPosts.length ? <div className="studio-analysis-table" role="table" aria-label="Recent post activity"><div role="row" className="studio-analysis-table__head"><span role="columnheader">Product</span><span role="columnheader">Format</span><span role="columnheader">State</span><span role="columnheader">Recorded</span></div>{recentPosts.map((post) => <div role="row" key={post.id}><strong role="cell">{post.productName || "Untitled post"}</strong><span role="cell">{post.format || "—"}</span><span role="cell" className={`studio-analysis-status-tag studio-analysis-status-tag--${post.status.toLowerCase()}`}>{post.status}</span><time role="cell">{post.createdAt ? new Date(post.createdAt).toLocaleDateString() : "—"}</time></div>)}</div> : <div className="studio-analysis-empty"><strong>No post records</strong><span>Analysis will populate from saved records.</span></div>}</section>
+    </div>;
+}
+
+function BrandGuardrails({ draft }: { draft: BrandSettingsInput }) {
+    const hasLogo = Boolean(draft.logoUrl);
+    const hasTone = Boolean(draft.toneGuidelines?.trim());
+    return <div className="studio-brand-guardrails"><span className="studio-kicker">CREATIVE GUARDRAILS</span><ul><li className={hasLogo ? "is-ready" : ""}><span>{hasLogo ? <Check size={12} /> : "01"}</span><div><strong>Logo safe placement</strong><small>{hasLogo ? "Saved mark can be selectively placed in Studio." : "Optional until a saved logo is available."}</small></div></li><li className="is-ready"><span><Check size={12} /></span><div><strong>Color pair</strong><small>Primary and secondary tokens are saved with this kit.</small></div></li><li className={hasTone ? "is-ready" : ""}><span>{hasTone ? <Check size={12} /> : "03"}</span><div><strong>Voice guidance</strong><small>{hasTone ? "Tone direction is available to the creative team." : "Add optional tone guidance for consistent review."}</small></div></li></ul><div className="studio-color-pair"><span style={{ background: draft.primaryColor || "#B9DD45" }} /><span style={{ background: draft.secondaryColor || "#11130F" }} /></div><p>Brand placement remains an explicit choice for each local composition; neutral posts stay available.</p></div>;
 }
 
 function BrandSurface() {
@@ -463,17 +572,17 @@ function PostsSurface({ posts, refresh }: { posts: Post[]; refresh: () => void }
     const [busy, setBusy] = useState<string | null>(null);
     const exportOne = async (id: string) => { setBusy(id); try { const blob = await exportPost(id); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `studio-post-${id}.zip`; link.click(); URL.revokeObjectURL(url); } catch (err) { window.alert(err instanceof Error ? err.message : "Unable to export post"); } finally { setBusy(null); } };
     const remove = async (id: string) => { setBusy(id); try { await deletePost(id); refresh(); } catch (err) { window.alert(err instanceof Error ? err.message : "Unable to delete post"); } finally { setBusy(null); } };
-    return <section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">CONTENT PIPELINE</span><h2>Posts</h2></div><Link className="studio-button studio-button--dark" href="/dashboard/studio"><Plus size={14} /> New post</Link></div>{posts.length ? <div className="studio-data-stack">{posts.map((post) => <div className="studio-data-row studio-data-row--post" key={post.id}>{post.imageUrl ? <img src={post.imageUrl} alt="" /> : <span className="studio-file-thumb studio-file-thumb--1" />}<div><strong>{post.productName}</strong><small>{post.status} · {post.format} · {post.captionEn ? "Captions ready" : "Captions pending"}</small></div><span className="studio-data-actions"><button disabled={busy === post.id} onClick={() => void exportOne(post.id)}><Download size={14} /></button><button disabled={busy === post.id} onClick={() => void remove(post.id)}>×</button></span></div>)}</div> : <Notice title="No posts yet." detail="Open Studio to generate the first image from an approved product." action={<Link className="studio-button studio-button--dark" href="/dashboard/studio">Open Studio <Sparkles size={14} /></Link>} />}</section>;
+    return <section className="studio-workspace-panel studio-review-ledger"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">CONTENT PIPELINE</span><h2>Posts</h2><p className="studio-panel-caption">A review ledger for saved local compositions and their export state.</p></div><Link className="studio-button studio-button--dark" href="/dashboard/studio"><Plus size={14} /> New post</Link></div>{posts.length ? <div className="studio-data-stack studio-review-ledger__rows">{posts.map((post, index) => <div className="studio-data-row studio-data-row--post" key={post.id}><span className="studio-record-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>{post.imageUrl ? <img src={post.imageUrl} alt="" /> : <span className="studio-file-thumb studio-file-thumb--1" />}<div><strong>{post.productName}</strong><small>{post.format || "Post"} · {post.captionEn ? "Captions ready" : "Captions pending"}</small></div><span className={`studio-review-state studio-review-state--${post.status.toLowerCase()}`}>{post.status}</span><span className="studio-data-actions"><button type="button" title="Export post" aria-label={`Export ${post.productName}`} disabled={busy === post.id} onClick={() => void exportOne(post.id)}><Download size={14} /></button><button type="button" title="Delete post" aria-label={`Delete ${post.productName}`} disabled={busy === post.id} onClick={() => void remove(post.id)}>×</button></span></div>)}</div> : <Notice title="No posts yet." detail="Open Studio to compose the first image from an approved product." action={<Link className="studio-button studio-button--dark" href="/dashboard/studio">Open Studio <Sparkles size={14} /></Link>} />}</section>;
 }
 
 function AssetsSurface({ products, posts }: { products: Product[]; posts: Post[] }) {
     const assets = [...products.flatMap((product) => [product.imageUrl, product.imageUrl2, product.imageUrl3].filter(Boolean).map((url) => ({ url: url as string, label: product.name, kind: "Product" }))), ...posts.filter((post) => post.imageUrl).map((post) => ({ url: post.imageUrl as string, label: post.productName, kind: "Generated post" }))];
-    return <section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">ASSET MEMORY</span><h2>Approved visual sources</h2></div><span className="studio-chip">{assets.length} files</span></div>{assets.length ? <div className="studio-asset-grid">{assets.map((asset, index) => <a className="studio-asset-card" key={`${asset.url}-${index}`} href={asset.url} target="_blank" rel="noreferrer"><img src={asset.url} alt={asset.label} /><div><strong>{asset.label}</strong><small>{asset.kind}</small></div></a>)}</div> : <Notice title="No assets have landed yet." detail="Upload a product reference to start building the library." action={<Link className="studio-button studio-button--dark" href="/dashboard/products">Add source material <Plus size={14} /></Link>} />}</section>;
+    return <section className="studio-workspace-panel studio-assets-library"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">ASSET MEMORY</span><h2>Approved visual sources</h2><p className="studio-panel-caption">Product references and saved post files, held in one inspectable contact sheet.</p></div><span className="studio-chip">{assets.length} files</span></div>{assets.length ? <><AssetDepthCarousel items={assets.map((asset, index) => ({ ...asset, id: `${asset.url}-${index}` }))} /><div className="studio-asset-grid">{assets.map((asset, index) => <a className="studio-asset-card" key={`${asset.url}-${index}`} href={asset.url} target="_blank" rel="noreferrer"><img src={asset.url} alt={asset.label} /><div><strong>{asset.label}</strong><small>{asset.kind}</small></div></a>)}</div></> : <Notice title="No assets have landed yet." detail="Upload a product reference to start building the library." action={<Link className="studio-button studio-button--dark" href="/dashboard/products">Add source material <Plus size={14} /></Link>} />}</section>;
 }
 
 function CalendarSurface({ posts }: { posts: Post[] }) {
     const scheduled = [...posts].filter((post) => post.createdAt).sort((a, b) => new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime());
-    return <section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">CONTENT TIMELINE</span><h2>Calendar from live posts</h2></div><span className="studio-chip">{scheduled.length} dated</span></div>{scheduled.length ? <div className="studio-data-stack">{scheduled.map((post) => <Link className="studio-data-row" key={post.id} href="/dashboard/posts"><span className="studio-status-dot" /><div><strong>{post.productName}</strong><small>{post.status} · {post.format}</small></div><span className="studio-data-value">{new Date(post.createdAt as string).toLocaleDateString()}</span><ChevronRight size={14} /></Link>)}</div> : <Notice title="The calendar is waiting for a dated post." detail="Create a post in Studio and its persisted creation date will appear here." action={<Link className="studio-button studio-button--dark" href="/dashboard/studio"><Plus size={14} /> Create a post</Link>} />}</section>;
+    return <section className="studio-workspace-panel studio-calendar-ledger"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">CONTENT TIMELINE</span><h2>Recorded post dates</h2><p className="studio-calendar-caption">This lane reflects persisted creation dates. Scheduled delivery times live in Social receipts.</p></div><span className="studio-chip">{scheduled.length} dated</span></div>{scheduled.length ? <div className="studio-calendar-ledger__rows">{scheduled.map((post) => { const recordedAt = new Date(post.createdAt as string); return <Link className="studio-calendar-row" key={post.id} href="/dashboard/posts"><time dateTime={post.createdAt as string}><b>{String(recordedAt.getDate()).padStart(2, "0")}</b><small>{recordedAt.toLocaleDateString(undefined, { month: "short" })}</small></time><span className="studio-calendar-row__track" aria-hidden="true"><i /></span><div><strong>{post.productName}</strong><small>{post.status} · {post.format || "Post"}</small></div><span className={`studio-review-state studio-review-state--${post.status.toLowerCase()}`}>{post.status}</span><ChevronRight size={14} /></Link>; })}</div> : <Notice title="The date lane is waiting for a saved post." detail="Create a post in Studio and its persisted creation date will appear here." action={<Link className="studio-button studio-button--dark" href="/dashboard/studio"><Plus size={14} /> Create a post</Link>} />}</section>;
 }
 
 function WorkspaceInvitesSection() {
@@ -551,66 +660,45 @@ function SocialSurface({ posts }: { posts: Post[] }) {
     const [jobs, setJobs] = useState<PublishJob[]>([]);
     const [selectedPost, setSelectedPost] = useState("");
     const [selectedConnection, setSelectedConnection] = useState("");
-    const [metaTarget, setMetaTarget] = useState<MetaTarget>("INSTAGRAM");
+    const [scheduledFor, setScheduledFor] = useState("");
     const [status, setStatus] = useState("");
     const [busy, setBusy] = useState(false);
+    const [timezone, setTimezone] = useState("your device timezone");
     const providers: SocialProvider[] = ["META", "TIKTOK", "LINKEDIN", "X"];
     const providerLabels: Record<SocialProvider, string> = { META: "Meta / Instagram + Facebook", TIKTOK: "TikTok", LINKEDIN: "LinkedIn", X: "X" };
     const reload = useCallback(async () => { try { const [nextConnections, nextJobs] = await Promise.all([listSocialConnections(), listPublishJobs()]); setConnections(nextConnections); setJobs(nextJobs); } catch (err) { setStatus(err instanceof Error ? err.message : "Unable to load social publishing data"); } }, []);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial fetch intentionally hydrates this client surface.
     useEffect(() => { void reload(); }, [reload]);
-    // SocialController.callback() 302s back here with ?oauth=success|error&message=...
-    // once Meta/TikTok/LinkedIn/X redirects back to our backend and the OAuth
-    // exchange finishes — without this, every real failure (denied permission,
-    // no Facebook Page on the account, expired state, a raw Graph API error)
-    // landed in the URL bar and was never shown to the user. Runs once on
-    // mount, then strips the query string so a refresh doesn't re-show it.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- One-off redirect-result read, not state hydration.
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const oauthResult = params.get("oauth");
-        if (!oauthResult) return;
-        const message = params.get("message");
-        setStatus(oauthResult === "success" ? `Connected — ${message || "channel linked"}.` : message || "That provider could not be connected.");
-        window.history.replaceState({}, "", window.location.pathname);
-    }, []);
-    const connect = async (provider: SocialProvider) => { setBusy(true); setStatus(""); try { window.location.assign(await getSocialConnectUrl(provider)); } catch (err) { setStatus(err instanceof Error ? err.message : "Provider OAuth is not configured"); } finally { setBusy(false); } };
-    const disconnect = async (id: string) => { setBusy(true); try { await disconnectSocialConnection(id); await reload(); setStatus("Connection marked disconnected."); } catch (err) { setStatus(err instanceof Error ? err.message : "Unable to disconnect provider"); } finally { setBusy(false); } };
-    const selectedConnectionObj = connections.find((connection) => connection.id === selectedConnection);
-    const selectConnection = (id: string) => {
-        setSelectedConnection(id);
-        // Default to Instagram when the newly chosen connection has it linked,
-        // otherwise fall back to the Facebook Page — matches the backend's
-        // own resolveMetaTarget() default so the UI never shows a choice the
-        // publish call would silently override.
-        const next = connections.find((connection) => connection.id === id);
-        if (next?.provider === "META") setMetaTarget(next.hasInstagram ? "INSTAGRAM" : "FACEBOOK_PAGE");
-    };
-    const publish = async () => {
-        if (!selectedPost || !selectedConnection) { setStatus("Choose an approved post and an active connection first."); return; }
+    useEffect(() => { setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone || "your device timezone"); }, []);
+    const connect = async (provider: SocialProvider) => {
         setBusy(true); setStatus("");
         try {
-            await queueSocialPublish({ postId: selectedPost, connectionId: selectedConnection, metaTarget: selectedConnectionObj?.provider === "META" ? metaTarget : undefined });
-            setStatus("Publish job queued. The provider response will determine its final state.");
-            setSelectedPost("");
-            await reload();
-        } catch (err) {
-            setStatus(err instanceof Error ? err.message : "Unable to queue publish job");
-        } finally {
-            setBusy(false);
-        }
+            const capabilities = await getSystemCapabilities();
+            const configured = provider === "META" ? capabilities.metaOAuth : provider === "TIKTOK" ? capabilities.tiktokOAuth : provider === "LINKEDIN" ? capabilities.linkedinOAuth : capabilities.xOAuth;
+            if (!configured) throw new Error(`${providerLabels[provider]} needs server configuration before it can connect.`);
+            window.location.assign(await getSocialConnectUrl(provider));
+        } catch (err) { setStatus(err instanceof Error ? err.message : "Provider OAuth is not configured"); }
+        finally { setBusy(false); }
     };
+    const disconnect = async (id: string) => { setBusy(true); try { await disconnectSocialConnection(id); await reload(); setStatus("Connection marked disconnected."); } catch (err) { setStatus(err instanceof Error ? err.message : "Unable to disconnect provider"); } finally { setBusy(false); } };
+    const publish = async () => { if (!selectedPost || !selectedConnection) { setStatus("Choose an approved post and an active channel first."); return; } setBusy(true); setStatus(""); try { await queueSocialPublish({ postId: selectedPost, connectionId: selectedConnection, scheduledFor: scheduledFor ? new Date(scheduledFor).toISOString() : null }); setStatus(scheduledFor ? "Scheduled delivery saved. STUDIO will hand it to the connected channel at the selected time." : "Publish job queued. The provider response will determine its final state."); setSelectedPost(""); setScheduledFor(""); await reload(); } catch (err) { setStatus(err instanceof Error ? err.message : "Unable to queue publish job"); } finally { setBusy(false); } };
     const approvedPosts = posts.filter((post) => post.status === "APPROVED");
-    return <div className="studio-live-columns"><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">OAUTH CONNECTIONS</span><h2>Social channels</h2></div><span className="studio-chip">{connections.filter((connection) => connection.status === "ACTIVE").length} active</span></div><div className="studio-data-stack">{providers.map((provider) => { const connection = connections.find((item) => item.provider === provider && item.status === "ACTIVE"); return <div className="studio-data-row" key={provider}><span className={`studio-status-dot ${connection ? "studio-status-dot--lime" : ""}`} /><div><strong>{providerLabels[provider]}</strong><small>{connection ? `${connection.accountName || "Connected account"} · ${connection.status}` : "Not connected — provider credentials or review may be required"}</small></div>{connection ? <button className="studio-text-button" disabled={busy} onClick={() => void disconnect(connection.id)}>Disconnect</button> : <button className="studio-text-button" disabled={busy} onClick={() => void connect(provider)}>Connect</button>}</div>; })}</div>{status && <p className="studio-inline-notice">{status}</p>}</section><section className="studio-workspace-panel studio-workspace-panel--accent"><span className="studio-kicker studio-kicker--dark">PUBLISH QUEUE</span><h2>Ship an approved direction.</h2><p>Only persisted posts with APPROVED status can enter the provider queue. No success is displayed until the backend receives a confirmed provider response.</p><div className="studio-form-grid"><label>Approved post<select value={selectedPost} onChange={(event) => setSelectedPost(event.target.value)}><option value="">Choose a post</option>{approvedPosts.map((post) => <option key={post.id} value={post.id}>{post.productName} · {post.format}</option>)}</select></label><label>Active channel<select value={selectedConnection} onChange={(event) => selectConnection(event.target.value)}><option value="">Choose a connection</option>{connections.filter((connection) => connection.status === "ACTIVE").map((connection) => <option key={connection.id} value={connection.id}>{providerLabels[connection.provider]} · {connection.accountName || "Account"}</option>)}</select></label>{selectedConnectionObj?.provider === "META" && <label>Post to<select value={metaTarget} onChange={(event) => setMetaTarget(event.target.value as MetaTarget)}><option value="INSTAGRAM" disabled={!selectedConnectionObj.hasInstagram}>Instagram{!selectedConnectionObj.hasInstagram ? " (no professional account linked)" : ""}</option><option value="FACEBOOK_PAGE">Facebook Page</option></select></label>}</div><button className="studio-button studio-button--dark" disabled={busy || !approvedPosts.length || !connections.some((connection) => connection.status === "ACTIVE")} onClick={() => void publish()}><ArrowUpRight size={14} /> Queue publish</button>{!approvedPosts.length && <p className="studio-inline-notice">No approved posts are available yet.</p>}</section><section className="studio-workspace-panel studio-workspace-panel--wide"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">PROVIDER RECEIPTS</span><h2>Publish jobs</h2></div><span className="studio-chip">{jobs.length} jobs</span></div>{jobs.length ? <div className="studio-data-stack">{jobs.slice(0, 10).map((job) => <div className="studio-data-row" key={job.id}><span className={`studio-status-dot ${job.status === "SENT" ? "studio-status-dot--lime" : ""}`} /><div><strong>{providerLabels[job.provider]}{job.metaTarget ? ` · ${job.metaTarget === "INSTAGRAM" ? "Instagram" : "Facebook Page"}` : ""} · {job.status}</strong><small>{job.externalPostId ? `Provider id ${job.externalPostId}` : job.errorMessage || "Awaiting provider response"}</small></div><span className="studio-data-value">{job.createdAt ? new Date(job.createdAt).toLocaleDateString() : "Queued"}</span></div>)}</div> : <Notice title="No publish jobs yet." detail="Connect a provider, then queue an approved post to create a real delivery record." />}</section></div>;
+    const activeConnections = connections.filter((connection) => connection.status === "ACTIVE");
+    const steps = [
+        { number: "01", title: "Connect", detail: activeConnections.length ? `${activeConnections.length} active channel${activeConnections.length === 1 ? "" : "s"}` : "Choose a channel below", ready: activeConnections.length > 0 },
+        { number: "02", title: "Choose", detail: selectedPost ? "Approved post selected" : "Select an approved post", ready: Boolean(selectedPost) },
+        { number: "03", title: "Schedule", detail: scheduledFor ? `${new Date(scheduledFor).toLocaleString()} (${timezone})` : `Now or a future time · ${timezone}`, ready: Boolean(selectedConnection) },
+    ];
+    return <div className="studio-delivery-board space-y-5"><section className="studio-workspace-panel studio-publish-stepper studio-delivery-path"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">AUTOMATION SETUP</span><h2>Connect once. Schedule with intent.</h2><p>STUDIO stores the delivery time on the server; it is not a browser reminder.</p></div><span className="studio-chip">{activeConnections.length} live</span></div><ol>{steps.map((step, index) => <li className={step.ready ? "is-ready" : ""} key={step.number}><span>{step.ready ? <Check size={14} /> : step.number}</span><div><strong>{step.title}</strong><small>{step.detail}</small></div>{index < steps.length - 1 && <i />}</li>)}</ol></section><div className="studio-live-columns"><section className="studio-workspace-panel studio-channel-board"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">STEP 01 / CONNECTIONS</span><h2>Choose your channels</h2><p className="studio-panel-caption">A connection becomes available only after its server-side OAuth configuration is ready.</p></div><span className="studio-chip">OAuth</span></div><div className="studio-data-stack">{providers.map((provider) => { const connection = connections.find((item) => item.provider === provider && item.status === "ACTIVE"); return <div className="studio-data-row" key={provider}><span className={`studio-status-dot ${connection ? "studio-status-dot--lime" : ""}`} /><div><strong>{providerLabels[provider]}</strong><small>{connection ? `${connection.accountName || "Connected account"} · ready to schedule` : "Connect to enable scheduled delivery"}</small></div>{connection ? <button type="button" className="studio-text-button" disabled={busy} onClick={() => void disconnect(connection.id)}>Disconnect</button> : <button type="button" className="studio-text-button" disabled={busy} onClick={() => void connect(provider)}>Connect</button>}</div>; })}</div>{status && <p className="studio-inline-notice" role="status">{status}</p>}</section><section className="studio-workspace-panel studio-workspace-panel--accent studio-delivery-picker"><span className="studio-kicker studio-kicker--dark">STEPS 02–03 / DELIVERY</span><h2>Pick the post, then pick the moment.</h2><p>An approved post is required. A blank time publishes immediately; a future time is persisted and picked up by the delivery scheduler.</p><div className="studio-form-grid"><label>Approved post<select value={selectedPost} onChange={(event) => setSelectedPost(event.target.value)}><option value="">Choose a post</option>{approvedPosts.map((post) => <option key={post.id} value={post.id}>{post.productName} · {post.format}</option>)}</select></label><label>Connected channel<select value={selectedConnection} onChange={(event) => setSelectedConnection(event.target.value)}><option value="">Choose a channel</option>{activeConnections.map((connection) => <option key={connection.id} value={connection.id}>{providerLabels[connection.provider]} · {connection.accountName || "Account"}</option>)}</select></label><label className="studio-form-grid__wide">Schedule for <span className="studio-field-hint">Leave blank to publish now.</span><div className="studio-schedule-input"><Clock3 size={15} /><input type="datetime-local" value={scheduledFor} min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)} onChange={(event) => setScheduledFor(event.target.value)} /></div></label></div><button type="button" className="studio-button studio-button--dark" disabled={busy || !approvedPosts.length || !activeConnections.length || !selectedPost || !selectedConnection} onClick={() => void publish()}><ArrowUpRight size={14} /> {scheduledFor ? "Schedule delivery" : "Queue publish"}</button>{!approvedPosts.length && <p className="studio-inline-notice">No approved posts are available yet.</p>}</section></div><section className="studio-workspace-panel studio-workspace-panel--wide studio-delivery-receipts"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">DELIVERY RECEIPTS</span><h2>Publish jobs</h2><p className="studio-panel-caption">Server-recorded delivery outcomes, not a simulated posting feed.</p></div><span className="studio-chip">{jobs.length} jobs</span></div>{jobs.length ? <div className="studio-data-stack">{jobs.slice(0, 10).map((job) => <div className="studio-data-row" key={job.id}><span className={`studio-status-dot ${job.status === "SENT" ? "studio-status-dot--lime" : ""}`} /><div><strong>{providerLabels[job.provider]} · {job.status}</strong><small>{job.scheduledFor && job.status === "QUEUED" ? `Scheduled for ${new Date(job.scheduledFor).toLocaleString()}` : job.externalPostId ? `Provider id ${job.externalPostId}` : job.errorMessage || "Awaiting provider response"}</small></div><span className="studio-data-value">{job.publishedAt ? new Date(job.publishedAt).toLocaleDateString() : job.createdAt ? new Date(job.createdAt).toLocaleDateString() : "Queued"}</span></div>)}</div> : <Notice title="No publish jobs yet." detail="Connect a provider, choose an approved post, then save a delivery time." />}</section></div>;
 }
 
 function Unavailable({ label, reason }: { label: string; reason: string }) { return <Notice title={`${label} is ready for its backend route.`} detail={reason} action={<Link className="studio-button studio-button--dark" href="/contact">Talk to the team <ArrowUpRight size={14} /></Link>} />; }
 
-function Surface({ mode, products, posts, refresh }: { mode: WorkspaceMode; products: Product[]; posts: Post[]; refresh: () => void }) {
+function Surface({ mode, products, posts, refresh, onStudioPostChange }: { mode: WorkspaceMode; products: Product[]; posts: Post[]; refresh: () => void; onStudioPostChange: () => void }) {
     if (mode === "dashboard") return <Overview products={products} posts={posts} refresh={refresh} />;
-    if (mode === "products") return <div className="studio-live-columns"><section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">SOURCE MATERIAL</span><h2>Products</h2></div><span className="studio-chip">{products.length} total</span></div><ProductList products={products} onProductDeleted={refresh} /></section><section className="studio-workspace-panel studio-workspace-panel--accent"><span className="studio-kicker studio-kicker--dark">NEW INPUT</span><h2>Add a product reference.</h2><p>Upload source material that powers approved creative directions.</p><ProductForm onCreated={refresh} /></section></div>;
-    if (mode === "brand") return <BrandSurface />;
-    if (mode === "studio") return <section className="studio-workspace-panel studio-workspace-panel--wide"><CreativeStudio products={products} onPostChange={refresh} /></section>;
+    if (mode === "products") return <ProductsSurface products={products} refresh={refresh} />;
+    if (mode === "brand") return <BrandWorktable />;
+    if (mode === "studio") return <section className="studio-workspace-panel studio-workspace-panel--wide studio-workspace-panel--studio"><CreativeStudio products={products} onPostChange={onStudioPostChange} /></section>;
     if (mode === "batch") return <section className="studio-workspace-panel studio-workspace-panel--wide"><BatchStudio products={products} onBatchChange={refresh} /></section>;
     if (mode === "posts") return <PostsSurface posts={posts} refresh={refresh} />;
     if (mode === "assets") return <AssetsSurface products={products} posts={posts} />;
@@ -623,23 +711,20 @@ function Surface({ mode, products, posts, refresh }: { mode: WorkspaceMode; prod
 export function WorkspacePage({ mode }: { mode: WorkspaceMode }) {
     const router = useRouter();
     const [label, title, description, Icon] = workspaceData[mode];
-    const { products, posts, brand, loading, error, reload } = useLiveWorkspace();
-    // Safety net for reaching /dashboard with no brand configured — the
-    // normal path (fresh Google sign-up) already gets redirected to
-    // /onboarding from the OAuth callback, but this covers anyone who lands
-    // here directly (bookmark, back button, stale tab) before finishing setup.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- One-off redirect check, not state hydration.
-    useEffect(() => { getCurrentUser().then((me) => { if (!me.brandId) router.replace("/onboarding"); }).catch(() => {}); }, [router]);
-    return <main className="studio-app"><WorkspaceSidebar active={mode} brand={brand} /><div className="studio-workspace-main"><header className="studio-workspace-topbar"><div><span className="studio-kicker studio-kicker--dark">WORKSPACE / {label.toUpperCase()}</span><h1>{title}</h1><p>{description}</p></div><div className="studio-workspace-actions"><button className="studio-icon-button" aria-label="Search"><Search size={17} /></button><Link href="/dashboard/studio" className="studio-button studio-button--dark"><Plus size={15} /> New direction</Link></div></header><section className="studio-workspace-content"><div className="studio-command-row"><div className="studio-route-title"><Icon size={20} /><span>{label}</span></div><label className="studio-search"><Search size={15} /><input placeholder={`Search ${label.toLowerCase()}`} /></label></div>{error && <div className="studio-form-error"><strong>Live data unavailable.</strong> {error} <button onClick={() => void reload()}>Retry</button></div>}{loading ? <div className="studio-loading"><Loader2 className="studio-spin" size={18} /> Loading live workspace data…</div> : <Surface mode={mode} products={products} posts={posts} refresh={() => void reload()} />}</section></div></main>;
+    const isStudioRoute = mode === "studio";
+    const isWorktableRoute = mode === "dashboard" || mode === "products" || mode === "brand";
+    const { products, posts, loading, error, reload } = useLiveWorkspace();
+    const searchRef = useRef<HTMLInputElement>(null);
+    return <EditionDeskShell activeKey={mode} contextLabel="CREATIVE OPERATIONS" navigation={workspaceEditionNavigation}><StudioCommandPalette /><div className={`${isStudioRoute ? "studio-app--studio" : ""} studio-edition-route studio-edition-route--${mode}`}>{!isStudioRoute && !isWorktableRoute && <div className="studio-workspace-topbar"><RouteMasthead kicker={`WORKSPACE / ${label.toUpperCase()}`} title={title} description={description} actions={<><button className="studio-icon-button" aria-label={`Focus ${label.toLowerCase()} search`} onClick={() => searchRef.current?.focus()}><Search size={17} /></button><Link href="/dashboard/studio" className="studio-button studio-button--dark"><Plus size={15} /> New direction</Link></>} /></div>}<section className={`studio-workspace-content ${isWorktableRoute ? "studio-workspace-content--worktable" : ""}`}>{!isStudioRoute && !isWorktableRoute && <RouteControlBar icon={Icon} label={label}><label className="studio-search"><Search size={15} /><input ref={searchRef} placeholder={`Search ${label.toLowerCase()}`} aria-label={`Search ${label.toLowerCase()}`} /></label></RouteControlBar>}{error && <div className="studio-form-error"><strong>Live data unavailable.</strong> {error} <button onClick={() => void reload()}>Retry</button></div>}{loading ? <div className="studio-loading"><Loader2 className="studio-spin" size={18} /> Loading live workspace data…</div> : <Surface mode={mode} products={products} posts={posts} refresh={() => void reload({ background: true })} onStudioPostChange={() => void reload({ background: true })} />}</section></div></EditionDeskShell>;
 }
 
 function AdminSurface({ mode, products, posts, templates, summary, capabilities }: { mode: AdminMode; products: Product[]; posts: Post[]; templates: Template[]; summary: AdminSummary | null; capabilities: SystemCapabilities | null }) {
     if (mode === "products") return <section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">MODERATION QUEUE</span><h2>Pending products</h2></div><span className="studio-chip">ADMIN API</span></div><ApprovalsQueue /></section>;
-    if (["content", "generations", "publishing"].includes(mode)) return <section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">LIVE RECORDS</span><h2>{mode === "publishing" ? "Publishing records" : mode === "generations" ? "Generation records" : "Content records"}</h2></div><span className="studio-chip">{posts.length} posts</span></div><div className="studio-data-stack">{posts.length ? posts.map((post) => <div className="studio-data-row" key={post.id}><span className="studio-status-dot" /><div><strong>{post.productName}</strong><small>{post.status} · {post.format}</small></div><span className="studio-data-value">{post.createdAt ? new Date(post.createdAt).toLocaleDateString() : "New"}</span><ChevronRight size={14} /></div>) : <Notice title="No content records." detail="Generated posts will appear here once a workspace creates them." />}</div></section>;
+    if (["content", "generations", "publishing"].includes(mode)) return <section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">LIVE RECORDS</span><h2>{mode === "publishing" ? "Publishing records" : mode === "generations" ? "Composition records" : "Content records"}</h2></div><span className="studio-chip">{posts.length} posts</span></div><div className="studio-data-stack">{posts.length ? posts.map((post) => <div className="studio-data-row" key={post.id}><span className="studio-status-dot" /><div><strong>{post.productName}</strong><small>{post.status} · {post.format}</small></div><span className="studio-data-value">{post.createdAt ? new Date(post.createdAt).toLocaleDateString() : "New"}</span><ChevronRight size={14} /></div>) : <Notice title="No content records." detail="Composed posts will appear here once a workspace creates them." />}</div></section>;
     if (mode === "templates") return <section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">TEMPLATE LIBRARY</span><h2>Reusable scaffolds</h2></div><span className="studio-chip">{templates.length} loaded</span></div><div className="studio-data-stack">{templates.length ? templates.map((template) => <div className="studio-data-row" key={template.id}><span className="studio-status-dot studio-status-dot--lime" /><div><strong>{template.name}</strong><small>{template.format}</small></div><span className="studio-data-value">{template.thumbnailUrl ? "Preview ready" : "No thumbnail"}</span><ChevronRight size={14} /></div>) : <Notice title="No templates returned." detail="Templates are loaded from `/api/templates`." />}</div></section>;
     if (mode === "dashboard" || mode === "analytics") return <section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">BACKEND SIGNAL</span><h2>{mode === "analytics" ? "Observed workspace motion" : "System overview"}</h2></div><span className="studio-chip">{summary ? "LIVE SUMMARY" : "RECORD FALLBACK"}</span></div><div className="studio-stat-grid studio-stat-grid--admin"><div><span>USERS</span><strong>{summary?.users ?? "—"}</strong><small>Registered accounts</small></div><div><span>WORKSPACES</span><strong>{summary?.workspaces ?? "—"}</strong><small>Configured brand workspaces</small></div><div><span>PRODUCTS</span><strong>{summary?.products ?? products.length}</strong><small>Admin-visible source material</small></div><div><span>POSTS</span><strong>{summary?.posts ?? posts.length}</strong><small>Generated content records</small></div><div><span>TEMPLATES</span><strong>{summary?.templates ?? templates.length}</strong><small>Reusable creative scaffolds</small></div><div><span>PENDING</span><strong>{summary?.pendingProducts ?? "—"}</strong><small>Products awaiting review</small></div></div></section>;
     if (mode === "users" || mode === "workspaces") return <section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">LIVE DIRECTORY</span><h2>{mode === "users" ? "Account directory" : "Workspace directory"}</h2></div><span className="studio-chip">READ ONLY</span></div><div className="studio-stat-grid studio-stat-grid--admin"><div><span>{mode === "users" ? "USERS" : "WORKSPACES"}</span><strong>{mode === "users" ? summary?.users ?? "—" : summary?.workspaces ?? "—"}</strong><small>Derived from persisted records</small></div><div><span>PRODUCTS</span><strong>{summary?.products ?? products.length}</strong><small>Source material in scope</small></div><div><span>POSTS</span><strong>{summary?.posts ?? posts.length}</strong><small>Content records in scope</small></div></div><Notice title="Directory mutations are intentionally disabled." detail="The current API exposes safe counts but not user deletion, workspace reassignment, or role-management endpoints. No destructive control is presented without an audited backend route." /></section>;
-    if (mode === "publishing" || mode === "settings") return <section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">SYSTEM READINESS</span><h2>{mode === "publishing" ? "Publishing providers" : "Admin settings"}</h2></div><span className="studio-chip">CAPABILITY API</span></div><div className="studio-data-stack">{[["Caption generation", capabilities?.captionGeneration], ["Image generation", capabilities?.imageGeneration], ["Cloud storage", capabilities?.cloudStorage], ["Local storage", capabilities?.localStorage], ["Social publishing", capabilities?.socialPublishing], ["Email delivery", capabilities?.emailDelivery]].map(([label, ready]) => <div className="studio-data-row" key={String(label)}><span className={`studio-status-dot ${ready ? "studio-status-dot--lime" : ""}`} /><div><strong>{label}</strong><small>{ready ? "Configured" : "Not configured"}</small></div><span className="studio-data-value">{ready ? "READY" : "SETUP"}</span></div>)}</div><Notice title="No provider action is simulated." detail="Connect credentials in the deployment environment, then restart the backend. STUDIO will only show a capability as ready when the server confirms it." /></section>;
+    if (mode === "publishing" || mode === "settings") return <section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">SYSTEM READINESS</span><h2>{mode === "publishing" ? "Delivery readiness" : "Admin settings"}</h2></div><span className="studio-chip">LIVE STATUS</span></div><div className="studio-data-stack">{[["Caption templates", capabilities?.captionGeneration, "Local"], ["Visual composition", capabilities?.imageGeneration, "Local"], ["Cloud storage", capabilities?.cloudStorage, "Connected"], ["Local storage", capabilities?.localStorage, "Available"], ["Social publishing", capabilities?.socialPublishing, "Connected"], ["Email delivery", capabilities?.emailDelivery, "Connected"]].map(([label, ready, readyLabel]) => <div className="studio-data-row" key={String(label)}><span className={`studio-status-dot ${ready ? "studio-status-dot--lime" : ""}`} /><div><strong>{label}</strong><small>{ready ? readyLabel : "Not connected"}</small></div><span className="studio-data-value">{ready ? "READY" : "SETUP"}</span></div>)}</div><Notice title="Local creation is always self-contained." detail="Visual compositions and multilingual caption templates run inside STUDIO without image-generation or caption API keys. Connect channel credentials only when you are ready to deliver content by email or social publishing." /></section>;
     if (mode === "audit-logs") return <section className="studio-workspace-panel"><div className="studio-panel-heading"><div><span className="studio-kicker studio-kicker--dark">GOVERNANCE</span><h2>Audit log readiness</h2></div><span className="studio-chip">NOT ENABLED</span></div><Notice title="Audit persistence is not yet exposed by the current schema." detail="The control room does not invent audit entries. Add an audit-event table and append-only controller before enabling this route for compliance workflows." action={<Link className="studio-button studio-button--outline" href="/contact"><CircleHelp size={14} /> Request audit module</Link>} /></section>;
     return <Unavailable label={adminData[mode][0]} reason={`The current backend has no ${adminData[mode][0].toLowerCase()} controller.`} />;
 }

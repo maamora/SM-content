@@ -2,6 +2,7 @@ package com.maamora.studio.model;
 
 import com.maamora.studio.model.enums.CreativeJobStatus;
 import com.maamora.studio.model.enums.CreativeJobType;
+import com.maamora.studio.model.enums.GenerationMode;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -55,6 +56,13 @@ public class CreativeJob {
 
     @Column(length = 1200)
     private String errorMessage;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 32)
+    private GenerationMode outputMode;
+
+    @Column(length = 1200)
+    private String recoveryMessage;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;

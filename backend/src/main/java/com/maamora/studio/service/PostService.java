@@ -6,6 +6,7 @@ import com.maamora.studio.dto.request.CreateBrowserVisualPostRequest;
 import com.maamora.studio.exception.ResourceNotFoundException;
 import com.maamora.studio.exception.UnauthorizedException;
 import com.maamora.studio.model.*;
+import com.maamora.studio.model.enums.GenerationMode;
 import com.maamora.studio.model.enums.PostStatus;
 import com.maamora.studio.model.enums.ProductStatus;
 import com.maamora.studio.repository.PostRepository;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Slf4j
@@ -29,7 +31,7 @@ public class PostService {
     private final CaptionGenerationService captionGenerationService;
     private final StorageService storageService;
 
-    /** Every post in the shared workspace — powers the dashboard's real stats. */
+    /** Every post in the current account's workspace — powers its real dashboard stats. */
     public List<Post> listForUser(String userId) {
         BrandSettings brand = brandSettingsService.getForUser(userId);
         return postRepository.findByProduct_Brand_IdOrderByCreatedAtDesc(brand.getId());
@@ -44,18 +46,19 @@ public class PostService {
      * Same as above, but attaches the Post to a BatchJob (used by BatchJobService).
      */
     public Post generateImage(String userId, GenerateImageRequest request, BatchJob batchJob) {
+        BrandSettings brand = brandSettingsService.getForUser(userId);
         Product product = productService.getOwned(userId, request.getProductId());
-        if (product.getStatus() != ProductStatus.APPROVED) {
-            throw new UnauthorizedException("Product is pending admin approval and cannot be used yet.");
-        }
+        assertCanCreatePrivateDraft(userId, product);
         Template template = templateService.getById(request.getTemplateId());
 
-        byte[] png = imageRenderService.renderToPng(
+        ImageRenderService.RenderedVisual renderedVisual = imageRenderService.render(
                 template, product, request.getBadgeText(), request.getPromoText(),
-                request.getAccentColor(), request.getMood());
+                request.getAccentColor(), request.getMood(), brand, Boolean.TRUE.equals(request.getIncludeBrandLogo()),
+                request.getBrandLogoPlacement(), request.getHeadline(), request.getSupportingText(), request.getCtaText(),
+                request.getLayoutStyle(), request.getProductFocus(), request.getTextAlignment());
 
         String path = "posts/" + UUID.randomUUID() + ".png";
-        String imageUrl = storageService.upload(png, path, "image/png");
+        String imageUrl = storageService.upload(renderedVisual.png(), path, "image/png");
 
         Post post = Post.builder()
                 .product(product)
@@ -65,6 +68,13 @@ public class PostService {
                 .imageUrl(imageUrl)
                 .badgeText(request.getBadgeText())
                 .promoText(request.getPromoText())
+                .headline(request.getHeadline())
+                .supportingText(request.getSupportingText())
+                .ctaText(request.getCtaText())
+                .layoutStyle(request.getLayoutStyle())
+                .productFocus(request.getProductFocus())
+                .textAlignment(request.getTextAlignment())
+                .generationMode(renderedVisual.generationMode())
                 .status(PostStatus.DRAFT)
                 .build();
 
@@ -77,23 +87,53 @@ public class PostService {
      * caption editor and every downstream post action connected to the visual.
      */
     public Post createFromBrowserVisual(String userId, CreateBrowserVisualPostRequest request) {
+        BrandSettings brand = brandSettingsService.getForUser(userId);
         Product product = productService.getOwned(userId, request.getProductId());
-        if (product.getStatus() != ProductStatus.APPROVED) {
-            throw new UnauthorizedException("Product is pending admin approval and cannot be used yet.");
-        }
+        assertCanCreatePrivateDraft(userId, product);
         Template template = templateService.getById(request.getTemplateId());
+        String imageUrl = request.getImageUrl();
+        if (Boolean.TRUE.equals(request.getIncludeBrandLogo())
+                && brand.isConfigured()
+                && brand.getLogoUrl() != null && !brand.getLogoUrl().isBlank()) {
+            byte[] brandedImage = imageRenderService.overlayConfiguredLogo(imageUrl, brand.getLogoUrl(), request.getBrandLogoPlacement());
+            imageUrl = storageService.upload(brandedImage, "browser-visual-branded-" + UUID.randomUUID() + ".png", "image/png");
+        }
 
         Post post = Post.builder()
                 .product(product)
                 .template(template)
                 .format(template.getFormat())
-                .imageUrl(request.getImageUrl())
+                .imageUrl(imageUrl)
                 .badgeText(request.getBadgeText())
                 .promoText(request.getPromoText())
+                .headline(request.getHeadline())
+                .supportingText(request.getSupportingText())
+                .ctaText(request.getCtaText())
+                .layoutStyle(request.getLayoutStyle())
+                .productFocus(request.getProductFocus())
+                .textAlignment(request.getTextAlignment())
+                .generationMode(GenerationMode.BROWSER_GENERATED)
                 .status(PostStatus.DRAFT)
                 .build();
 
         return postRepository.save(post);
+    }
+
+    /**
+     * Shared products still require approval. A pending product may be used only
+     * by its own creator to make private draft output for testing or iteration;
+     * it remains invisible to teammates until an administrator approves it.
+     */
+    private void assertCanCreatePrivateDraft(String userId, Product product) {
+        if (product.getStatus() == ProductStatus.APPROVED) {
+            return;
+        }
+        boolean creatorOwnsPendingProduct = product.getStatus() == ProductStatus.PENDING
+                && product.getCreatedBy() != null
+                && userId.equals(product.getCreatedBy().getId());
+        if (!creatorOwnsPendingProduct) {
+            throw new UnauthorizedException("Only the creator can use a pending product for a private draft. Approve it before sharing it with the workspace.");
+        }
     }
 
     /**
@@ -118,10 +158,15 @@ public class PostService {
         int generatedCount = 0;
         String lastError = null;
         for (String lang : request.getLanguages()) {
+            String normalizedLanguage = lang == null ? "fr" : lang.trim().toLowerCase(Locale.ROOT);
+            if (!List.of("fr", "en", "ar", "darija").contains(normalizedLanguage)) {
+                log.warn("Ignoring unsupported caption language '{}' for post {}", lang, post.getId());
+                continue;
+            }
             try {
-                String caption = captionGenerationService.generateCaption(post, brand, lang);
+                String caption = captionGenerationService.generateCaption(post, brand, normalizedLanguage);
                 generatedCount++;
-                switch (lang) {
+                switch (normalizedLanguage) {
                     case "en" -> post.setCaptionEn(caption);
                     case "ar" -> post.setCaptionAr(caption);
                     case "darija" -> post.setCaptionDarija(caption);
@@ -129,7 +174,7 @@ public class PostService {
                 }
             } catch (Exception e) {
                 lastError = e.getMessage();
-                log.error("Caption generation failed for post {} lang {}: {}", post.getId(), lang, e.getMessage(), e);
+                log.error("Caption generation failed for post {} lang {}: {}", post.getId(), normalizedLanguage, e.getMessage(), e);
             }
         }
 

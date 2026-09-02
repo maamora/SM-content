@@ -13,6 +13,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -83,7 +88,11 @@ public class GeminiImageService implements ManagedImageService {
 
             Map<String, Object> responseFormat = new LinkedHashMap<>();
             responseFormat.put("type", "image");
-            responseFormat.put("mime_type", "image/png");
+            // The Gemini Interactions image endpoint currently accepts JPEG output
+            // only. STUDIO normalizes that response back to PNG below because the
+            // existing creative-job and storage contracts persist generated visuals
+            // as image/png files.
+            responseFormat.put("mime_type", "image/jpeg");
             responseFormat.put("aspect_ratio", normalizeAspectRatio(aspectRatio));
             responseFormat.put("image_size", "1K");
 
@@ -103,7 +112,7 @@ public class GeminiImageService implements ManagedImageService {
             try {
                 byte[] image = Base64.getDecoder().decode(stripDataPrefix(imageData));
                 if (image.length == 0) throw new IllegalStateException("Gemini returned an empty image output.");
-                return image;
+                return toPng(image);
             } catch (IllegalArgumentException invalidBase64) {
                 throw new IllegalStateException("Gemini returned an invalid image output.", invalidBase64);
             }
@@ -178,6 +187,22 @@ public class GeminiImageService implements ManagedImageService {
     private String stripDataPrefix(String value) {
         int comma = value.indexOf(',');
         return value.startsWith("data:") && comma >= 0 ? value.substring(comma + 1) : value;
+    }
+
+    private byte[] toPng(byte[] jpeg) {
+        try (ByteArrayInputStream input = new ByteArrayInputStream(jpeg);
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            BufferedImage decoded = ImageIO.read(input);
+            if (decoded == null) {
+                throw new IllegalStateException("Gemini returned an image that could not be decoded.");
+            }
+            if (!ImageIO.write(decoded, "png", output)) {
+                throw new IllegalStateException("The server could not normalize Gemini's JPEG output.");
+            }
+            return output.toByteArray();
+        } catch (IOException error) {
+            throw new IllegalStateException("The server could not normalize Gemini's JPEG output.", error);
+        }
     }
 
     private String stripTrailingSlash(String value) {

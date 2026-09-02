@@ -2,6 +2,8 @@ package com.maamora.studio.service;
 
 import com.maamora.studio.model.Product;
 import com.maamora.studio.model.Template;
+import com.maamora.studio.model.BrandSettings;
+import com.maamora.studio.model.enums.GenerationMode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -31,26 +33,26 @@ import java.util.Map;
  * 1. If the product has an imageUrl, fetch it and call Stability AI img2img
  * so the AI output is visually grounded in the real product photo.
  * Otherwise fall back to text-to-image.
- * 2. Overlay the Maamoura logo (bottom-right corner).
- * 3. Overlay the promo banner and badge text using Java Graphics2D.
+ * 2. Produce deterministic local template output when no provider is used.
+ * 3. Apply a brand mark only from a user-configured Brand-page logo.
  */
 @Slf4j
 @Service
 public class ImageRenderService {
 
+    public record RenderedVisual(byte[] png, GenerationMode generationMode, String recoveryMessage) {}
+
     @Value("${STABILITY_API_KEY:}")
     private String apiKey;
 
     private final ImageGenerationProvider imageGenerationProvider;
-
-    // Logo loaded from the classpath (placed in
-    // src/main/resources/static/maamora-logo.png)
-    private static final String LOGO_RESOURCE = "/static/maamora-logo.png";
+    private final SvgTemplateRenderer svgTemplateRenderer;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public ImageRenderService(ImageGenerationProvider imageGenerationProvider) {
+    public ImageRenderService(ImageGenerationProvider imageGenerationProvider, SvgTemplateRenderer svgTemplateRenderer) {
         this.imageGenerationProvider = imageGenerationProvider;
+        this.svgTemplateRenderer = svgTemplateRenderer;
     }
 
     // -----------------------------------------------------------------------
@@ -66,6 +68,36 @@ public class ImageRenderService {
     public byte[] renderToPng(Template template, Product product,
             String badgeText, String promoText,
             String accentColor, String mood) {
+        return render(template, product, badgeText, promoText, accentColor, mood).png();
+    }
+
+    /**
+     * Produces an AI visual when the configured provider is available, otherwise a
+     * branded composition from the source product image and template overlays.
+     */
+    public RenderedVisual render(Template template, Product product,
+            String badgeText, String promoText,
+            String accentColor, String mood) {
+        return render(template, product, badgeText, promoText, accentColor, mood, null, false);
+    }
+
+    public RenderedVisual render(Template template, Product product,
+            String badgeText, String promoText,
+            String accentColor, String mood, BrandSettings brand, boolean includeBrandLogo) {
+        return render(template, product, badgeText, promoText, accentColor, mood, brand, includeBrandLogo, "TOP_RIGHT");
+    }
+
+    public RenderedVisual render(Template template, Product product,
+            String badgeText, String promoText,
+            String accentColor, String mood, BrandSettings brand, boolean includeBrandLogo, String brandLogoPlacement) {
+        return render(template, product, badgeText, promoText, accentColor, mood, brand, includeBrandLogo,
+                brandLogoPlacement, null, null, null, null, null, null);
+    }
+
+    public RenderedVisual render(Template template, Product product,
+            String badgeText, String promoText,
+            String accentColor, String mood, BrandSettings brand, boolean includeBrandLogo, String brandLogoPlacement,
+            String headline, String supportingText, String ctaText, String layoutStyle, String productFocus, String textAlignment) {
         boolean isSquare = template.getFormat() != null
                 && template.getFormat().name().equals("SQUARE_POST");
         // SDXL only accepts a fixed set of width/height pairs; anything else is
@@ -79,34 +111,70 @@ public class ImageRenderService {
         // DeAPI, and other providers whenever a product image and a Stability
         // key were present, so the UI could appear configured while calling the
         // legacy Stability-only path.
-        boolean hasProductImage = product.getImageUrl() != null && !product.getImageUrl().isBlank();
-        if (imageGenerationProvider.isConfigured()) {
-            try {
-                String prompt = buildPrompt(product.getName(), product.getDescription(), product.getSellingPoint(),
-                        badgeText, promoText, accentColor, mood);
-                List<String> references = hasProductImage ? List.of(product.getImageUrl()) : List.of();
-                byte[] aiPng = imageGenerationProvider.generateImage(prompt, isSquare ? "1:1" : "9:16", references);
-                return compositeOverlays(aiPng, badgeText, promoText, accentColor, mood);
-            } catch (Exception e) {
-                log.error("Managed image generation failed: {}", e.getMessage(), e);
-                throw new IllegalStateException("Visual generation failed: " + e.getMessage(), e);
+        boolean hasConfiguredBrandMark = includeBrandLogo
+                && brand != null
+                && brand.isConfigured()
+                && brand.getLogoUrl() != null
+                && !brand.getLogoUrl().isBlank();
+        byte[] png = svgTemplateRenderer.render(product, width, height, badgeText, promoText, accentColor, mood,
+                brand == null ? null : brand.getName(), brand == null ? null : brand.getLogoUrl(),
+                hasConfiguredBrandMark, brandLogoPlacement, headline, supportingText, ctaText, layoutStyle,
+                productFocus, textAlignment);
+        return new RenderedVisual(png, GenerationMode.TEMPLATE_COMPOSED,
+                "Created locally from the selected SVG template. No AI provider or image-generation API was used.");
+    }
+
+    /** Adds only a logo explicitly uploaded by the active user in Brand settings. */
+    public byte[] overlayConfiguredLogo(String visualUrl, String logoUrl, String placement) {
+        try {
+            BufferedImage visual = ImageIO.read(new ByteArrayInputStream(downloadBytes(visualUrl)));
+            BufferedImage logo = ImageIO.read(new ByteArrayInputStream(downloadBytes(logoUrl)));
+            if (visual == null || logo == null) {
+                throw new IllegalArgumentException("Visual or configured logo is not a supported image format");
             }
+            int width = visual.getWidth();
+            int height = visual.getHeight();
+            BufferedImage canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D graphics = canvas.createGraphics();
+            try {
+                graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                graphics.drawImage(visual, 0, 0, null);
+                int margin = Math.max(24, Math.min(width, height) / 28);
+                int frameWidth = Math.max(120, width / 5);
+                int frameHeight = Math.max(52, height / 11);
+                String normalizedPlacement = placement == null ? "TOP_RIGHT" : placement.trim().toUpperCase();
+                int x = switch (normalizedPlacement) {
+                    case "TOP_LEFT", "BOTTOM_LEFT" -> margin;
+                    default -> width - margin - frameWidth;
+                };
+                int y = switch (normalizedPlacement) {
+                    case "BOTTOM_LEFT", "BOTTOM_RIGHT" -> height - margin - frameHeight;
+                    default -> margin;
+                };
+                graphics.setColor(new Color(245, 241, 232, 230));
+                graphics.fillRoundRect(x, y, frameWidth, frameHeight, Math.max(16, frameHeight / 3), Math.max(16, frameHeight / 3));
+                double scale = Math.min((double) (frameWidth - 20) / logo.getWidth(), (double) (frameHeight - 20) / logo.getHeight());
+                int logoWidth = Math.max(1, (int) Math.round(logo.getWidth() * scale));
+                int logoHeight = Math.max(1, (int) Math.round(logo.getHeight() * scale));
+                graphics.drawImage(logo, x + (frameWidth - logoWidth) / 2, y + (frameHeight - logoHeight) / 2, logoWidth, logoHeight, null);
+            } finally {
+                graphics.dispose();
+            }
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            ImageIO.write(canvas, "png", output);
+            return output.toByteArray();
+        } catch (IOException exception) {
+            throw new IllegalStateException("Could not apply the configured brand logo to the uploaded visual", exception);
         }
+    }
 
-        // No managed image provider is configured: keep a deterministic
-        // product-photo/canvas fallback instead of failing the whole post flow.
-        if (apiKey == null || apiKey.isEmpty()) {
-            byte[] plainBase = buildPlainBase(product.getImageUrl(), width, height);
-            return compositeOverlays(plainBase, badgeText, promoText, accentColor, mood);
-        }
-
-        // 1. Generate the AI image (img2img or text-to-image)
-        byte[] aiPng = product.getImageUrl() != null && !product.getImageUrl().isBlank()
-                ? generateImg2Img(product, badgeText, promoText, accentColor, mood, width, height)
-                : generateText2Img(product, badgeText, promoText, accentColor, mood, width, height);
-
-        // 2. Composite logo and text overlays
-        return compositeOverlays(aiPng, badgeText, promoText, accentColor, mood);
+    private RenderedVisual deterministicVisual(Product product, int width, int height,
+            String badgeText, String promoText, String accentColor, String mood, String recoveryMessage) {
+        byte[] plainBase = buildPlainBase(product.getImageUrl(), width, height);
+        return new RenderedVisual(
+                compositeOverlays(plainBase, badgeText, promoText, accentColor, mood),
+                GenerationMode.TEMPLATE_COMPOSED,
+                recoveryMessage);
     }
 
     /**
@@ -413,8 +481,8 @@ public class ImageRenderService {
             // Draw AI base image
             g.drawImage(base, 0, 0, null);
 
-            // Parse accent colour (fall back to Maamora orange)
-            Color accent = parseHex(accentColor, new Color(0xF4, 0x73, 0x15));
+            // Parse accent colour with a neutral fall back for legacy paths.
+            Color accent = parseHex(accentColor, new Color(0xC6, 0xFF, 0x5E));
 
             // ── Gradient vignette at bottom (reserved for text) ──────────────
             int vigH = H / 3;
@@ -462,9 +530,6 @@ public class ImageRenderService {
                 g.drawString(badge, bx + bPad * 2, by + fm.getAscent() + bPad);
             }
 
-            // ── Maamora logo (bottom-right) ──────────────────────────────────
-            drawLogoOverlay(g, W, H, accent);
-
             g.dispose();
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -474,57 +539,6 @@ public class ImageRenderService {
         } catch (IOException e) {
             // If compositing fails, return the raw AI image
             return aiPng;
-        }
-    }
-
-    /**
-     * Draws the Maamora logo from the classpath resource into the bottom-right
-     * corner.
-     * If the PNG file cannot be loaded a text-based fallback is drawn instead.
-     */
-    private void drawLogoOverlay(Graphics2D g, int W, int H, Color accent) {
-        // Try loading the PNG logo from classpath
-        BufferedImage logo = null;
-        try (InputStream is = getClass().getResourceAsStream(LOGO_RESOURCE)) {
-            if (is != null)
-                logo = ImageIO.read(is);
-        } catch (IOException ignored) {
-        }
-
-        int margin = W / 30;
-        int logoMaxW = W / 5; // logo occupies at most 20% of image width
-        int logoMaxH = H / 10;
-
-        if (logo != null) {
-            // Scale logo to fit within the reserved area, preserving aspect ratio
-            double scale = Math.min((double) logoMaxW / logo.getWidth(),
-                    (double) logoMaxH / logo.getHeight());
-            int lw = (int) (logo.getWidth() * scale);
-            int lh = (int) (logo.getHeight() * scale);
-            int lx = W - lw - margin;
-            int ly = H - lh - margin;
-
-            // Semi-transparent background pill for contrast
-            g.setColor(new Color(255, 255, 255, 60));
-            g.fillRoundRect(lx - 6, ly - 4, lw + 12, lh + 8, 12, 12);
-
-            g.drawImage(logo, lx, ly, lw, lh, null);
-        } else {
-            // Elegant text fallback: "MAAMORA" in brand orange
-            int fSize = Math.max(12, W / 40);
-            g.setFont(new Font("SansSerif", Font.BOLD, fSize));
-            FontMetrics fm = g.getFontMetrics();
-            String brand = "MAAMORA";
-            int tw = fm.stringWidth(brand);
-            int tx = W - tw - margin;
-            int ty = H - margin;
-
-            // Backing pill
-            g.setColor(new Color(0, 0, 0, 120));
-            g.fillRoundRect(tx - 8, ty - fm.getAscent() - 4, tw + 16, fm.getHeight() + 8, 10, 10);
-
-            g.setColor(accent);
-            g.drawString(brand, tx, ty);
         }
     }
 

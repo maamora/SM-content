@@ -1,4 +1,4 @@
-import { apiFetch } from "./client";
+import { apiFetch, apiUpload } from "./client";
 
 export interface BrandSettings {
     id: string;
@@ -25,3 +25,10 @@ export const updateBrand = (input: BrandSettingsInput) => apiFetch<BrandSettings
     method: "PUT",
     body: JSON.stringify(input),
 });
+
+/**
+ * Stores an optional logo and persists its URL in the current Brand workspace
+ * in one authenticated operation. This avoids a second client-side save racing
+ * a completed multipart request.
+ */
+export const uploadBrandLogo = (file: File) => apiUpload<BrandSettings>("/api/brand/logo", file);

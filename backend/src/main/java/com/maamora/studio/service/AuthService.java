@@ -8,6 +8,7 @@ import com.maamora.studio.exception.UnauthorizedException;
 import com.maamora.studio.model.BrandSettings;
 import com.maamora.studio.model.User;
 import com.maamora.studio.model.enums.Role;
+import com.maamora.studio.config.ProductSeeder;
 import com.maamora.studio.repository.UserRepository;
 import com.maamora.studio.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class AuthService {
     private final BrandSettingsService brandSettingsService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final ProductSeeder productSeeder;
 
     /**
      * Every new account does exactly one of three things: creates its own
@@ -69,6 +71,7 @@ public class AuthService {
                 .brand(brand)
                 .build();
         userRepository.save(user);
+        productSeeder.seedFor(brand);
 
         String token = jwtService.generateToken(user.getId(), user.getEmail());
         return new AuthResponse(token, user.getEmail(), brand.getId(), user.getRole().name());
@@ -92,7 +95,9 @@ public class AuthService {
                     .role(Role.USER)
                     .brand(null)
                     .build();
-            return userRepository.save(created);
+            User saved = userRepository.save(created);
+            productSeeder.seedFor(brand);
+            return saved;
         });
 
         String token = jwtService.generateToken(user.getId(), user.getEmail());

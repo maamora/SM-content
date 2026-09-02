@@ -112,23 +112,201 @@ public class CaptionGenerationService {
      * exhausts its retries doesn't cost the other languages their captions.
      */
     public String generateCaption(Post post, BrandSettings brand, String language) {
-        if ("openrouter".equalsIgnoreCase(captionProvider)) {
-            return generateWithOpenRouter(post, brand, language);
-        }
-        if ("groq".equalsIgnoreCase(captionProvider)) {
-            return generateWithGroq(post, brand, language);
-        }
-        if ("openai".equalsIgnoreCase(captionProvider)) {
-            return generateWithOpenAi(post, brand, language);
-        }
-        if (!configured(apiKey)) {
-            if (!ollamaEnabled) {
-                throw new IllegalStateException(
-                        "Caption generation is unavailable: configure GROQ_API_KEY with CAPTION_PROVIDER=groq, configure GEMINI_CAPTION_API_KEY with CAPTION_PROVIDER=gemini, or enable Ollama locally.");
-            }
-            return generateWithOllama(post, brand, language);
-        }
-        return generateWithGemini(post, brand, language);
+        return generateDeterministicCaption(post, brand, language);
+    }
+
+    private String generateDeterministicCaption(Post post, BrandSettings brand, String language) {
+        CaptionBrief brief = captionBrief(post, brand);
+        return switch (language == null ? "fr" : language.toLowerCase()) {
+            case "en" -> englishCaption(brief);
+            case "ar" -> arabicCaption(brief);
+            case "darija" -> darijaCaption(brief);
+            default -> frenchCaption(brief);
+        };
+    }
+
+    private CaptionBrief captionBrief(Post post, BrandSettings brand) {
+        Product product = post.getProduct();
+        String productName = clean(product == null ? null : product.getName());
+        String description = clean(product == null ? null : product.getDescription());
+        String sellingPoint = clean(product == null ? null : product.getSellingPoint());
+        String brandName = brand != null && brand.isConfigured() ? clean(brand.getName()) : "";
+        String headline = textOr(clean(post.getHeadline()), productName);
+        String supporting = clean(post.getSupportingText());
+        String promo = clean(post.getPromoText());
+        String badge = clean(post.getBadgeText());
+        String cta = clean(post.getCtaText());
+        String price = product != null && product.getPrice() != null ? trimPrice(product.getPrice()) + " MAD" : "";
+        return new CaptionBrief(textOr(productName, "Produit"), description, sellingPoint, brandName, headline, supporting, promo, badge, cta, price);
+    }
+
+    private String frenchCaption(CaptionBrief brief) {
+        return caption(
+                frenchOpening(brief),
+                frenchStory(brief),
+                frenchClose(brief),
+                tags(brief));
+    }
+
+    private String englishCaption(CaptionBrief brief) {
+        return caption(
+                englishOpening(brief),
+                englishStory(brief),
+                englishClose(brief),
+                tags(brief));
+    }
+
+    private String arabicCaption(CaptionBrief brief) {
+        return caption(
+                arabicOpening(brief),
+                arabicStory(brief),
+                arabicClose(brief),
+                tags(brief));
+    }
+
+    private String darijaCaption(CaptionBrief brief) {
+        return caption(
+                darijaOpening(brief),
+                darijaStory(brief),
+                darijaClose(brief),
+                tags(brief));
+    }
+
+    private String frenchOpening(CaptionBrief brief) {
+        String identity = productIdentity(brief);
+        if (!brief.headline().isBlank()) return brief.headline() + ".\n\n" + identity + " prend sa place.";
+        return brief.badge().isBlank() ? identity + " prend sa place." : brief.badge() + " — " + identity + " prend sa place.";
+    }
+
+    private String frenchStory(CaptionBrief brief) {
+        String facts = productFacts(brief);
+        if (facts.isBlank()) return campaignMessage(brief);
+        return campaignMessage(brief).isBlank() ? facts + "." : facts + ". " + campaignMessage(brief);
+    }
+
+    private String frenchClose(CaptionBrief brief) {
+        List<String> closing = new ArrayList<>();
+        if (!brief.promo().isBlank()) closing.add(brief.promo() + ".");
+        if (!brief.price().isBlank()) closing.add("Disponible à " + brief.price() + ".");
+        closing.add(textOr(brief.cta(), "À découvrir dès maintenant.") + endMark(textOr(brief.cta(), "")));
+        return String.join(" ", closing);
+    }
+
+    private String englishOpening(CaptionBrief brief) {
+        String identity = productIdentity(brief);
+        if (!brief.headline().isBlank()) return brief.headline() + ".\n\n" + identity + ", made for the moment.";
+        return brief.badge().isBlank() ? "Introducing " + identity + "." : brief.badge() + " — introducing " + identity + ".";
+    }
+
+    private String englishStory(CaptionBrief brief) {
+        String facts = productFacts(brief);
+        if (facts.isBlank()) return campaignMessage(brief);
+        return campaignMessage(brief).isBlank() ? facts + "." : facts + ". " + campaignMessage(brief);
+    }
+
+    private String englishClose(CaptionBrief brief) {
+        List<String> closing = new ArrayList<>();
+        if (!brief.promo().isBlank()) closing.add(brief.promo() + ".");
+        if (!brief.price().isBlank()) closing.add("Available at " + brief.price() + ".");
+        closing.add(textOr(brief.cta(), "Discover it today.") + endMark(textOr(brief.cta(), "")));
+        return String.join(" ", closing);
+    }
+
+    private String arabicOpening(CaptionBrief brief) {
+        String identity = productIdentityArabic(brief);
+        if (!brief.headline().isBlank()) return brief.headline() + "\n\n" + identity + "، بتفاصيل تترك أثرها.";
+        return brief.badge().isBlank() ? "اكتشف " + identity + "، بتفاصيل تترك أثرها." : brief.badge() + " — اكتشف " + identity + "، بتفاصيل تترك أثرها.";
+    }
+
+    private String arabicStory(CaptionBrief brief) {
+        String facts = productFacts(brief);
+        if (facts.isBlank()) return campaignMessage(brief);
+        return campaignMessage(brief).isBlank() ? facts + "." : facts + ". " + campaignMessage(brief);
+    }
+
+    private String arabicClose(CaptionBrief brief) {
+        List<String> closing = new ArrayList<>();
+        if (!brief.promo().isBlank()) closing.add(brief.promo() + ".");
+        if (!brief.price().isBlank()) closing.add("متوفر بسعر " + brief.price() + ".");
+        closing.add(textOr(brief.cta(), "اكتشفه الآن.") + endMark(textOr(brief.cta(), "")));
+        return String.join(" ", closing);
+    }
+
+    private String darijaOpening(CaptionBrief brief) {
+        String identity = productIdentityArabic(brief);
+        if (!brief.headline().isBlank()) return brief.headline() + "\n\n" + identity + "، تفاصيل كتخلي الفرق يبان.";
+        return brief.badge().isBlank() ? "تعرّف على " + identity + "، تفاصيل كتخلي الفرق يبان." : brief.badge() + " — تعرّف على " + identity + "، تفاصيل كتخلي الفرق يبان.";
+    }
+
+    private String darijaStory(CaptionBrief brief) {
+        String facts = productFacts(brief);
+        if (facts.isBlank()) return campaignMessage(brief);
+        return campaignMessage(brief).isBlank() ? facts + "." : facts + ". " + campaignMessage(brief);
+    }
+
+    private String darijaClose(CaptionBrief brief) {
+        List<String> closing = new ArrayList<>();
+        if (!brief.promo().isBlank()) closing.add(brief.promo() + ".");
+        if (!brief.price().isBlank()) closing.add("متوفر بـ " + brief.price() + ".");
+        closing.add(textOr(brief.cta(), "شوفو دابا.") + endMark(textOr(brief.cta(), "")));
+        return String.join(" ", closing);
+    }
+
+    private String caption(String... blocks) {
+        return Arrays.stream(blocks).map(this::clean).filter(value -> !value.isBlank()).collect(java.util.stream.Collectors.joining("\n\n"));
+    }
+
+    private String campaignLead(CaptionBrief brief) {
+        return brief.badge().isBlank() ? brief.headline() : brief.badge() + " · " + brief.headline();
+    }
+
+    private String productFacts(CaptionBrief brief) {
+        return distinctSentence(brief.description(), brief.sellingPoint());
+    }
+
+    private String productIdentity(CaptionBrief brief) {
+        return brief.brandName().isBlank() ? brief.productName() : brief.productName() + " · " + brief.brandName();
+    }
+
+    private String productIdentityArabic(CaptionBrief brief) {
+        return brief.brandName().isBlank() ? brief.productName() : brief.productName() + " من " + brief.brandName();
+    }
+
+    private String campaignMessage(CaptionBrief brief) {
+        return isDuplicate(brief.supporting(), brief.description()) || isDuplicate(brief.supporting(), brief.sellingPoint()) ? "" : brief.supporting();
+    }
+
+    private String distinctSentence(String first, String second) {
+        if (first.isBlank()) return second;
+        if (second.isBlank() || isDuplicate(first, second)) return first;
+        return first + " · " + second;
+    }
+
+    private String labeled(String value, String label) { return value.isBlank() ? "" : label + " : " + value; }
+    private boolean isDuplicate(String first, String second) { return !first.isBlank() && first.equalsIgnoreCase(second); }
+    private String endMark(String value) {
+        String trimmed = clean(value);
+        return trimmed.isBlank() || trimmed.matches(".*[.!?؟]$") ? "" : ".";
+    }
+    private String trimPrice(Double price) { return Math.rint(price) == price ? String.valueOf(price.longValue()) : String.format(java.util.Locale.ROOT, "%.2f", price); }
+    private String tags(CaptionBrief brief) {
+        return List.of(tag(brief.productName()), tag(brief.brandName()), tag(brief.badge())).stream()
+                .filter(value -> !value.isBlank()).map(value -> "#" + value).distinct().collect(java.util.stream.Collectors.joining(" "));
+    }
+    private record CaptionBrief(String productName, String description, String sellingPoint, String brandName,
+                                String headline, String supporting, String promo, String badge, String cta, String price) { }
+
+    private String textOr(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value.trim();
+    }
+
+    private String clean(String value) {
+        if (value == null) return "";
+        return value.replaceAll("\\s+", " ").replaceAll("[.。]{2,}", ".").trim();
+    }
+
+    private String tag(String value) {
+        return value.replaceAll("[^\\p{L}\\p{N}]", "");
     }
 
     private String generateWithGroq(Post post, BrandSettings brand, String language) {
@@ -391,6 +569,10 @@ public class CaptionGenerationService {
                 - Price: %s
                 - Promo: %s
                 - Badge Box: %s
+                - Campaign headline: %s
+                - Campaign supporting line: %s
+                - Campaign CTA: %s
+                - Layout direction: %s / product focus: %s / text alignment: %s
 
                 Instructions & Formatting:
                 - Craft a compelling hook that immediately grabs the reader's attention.
@@ -413,6 +595,12 @@ public class CaptionGenerationService {
                         product.getPrice() != null ? product.getPrice() + " MAD" : "-",
                         post.getPromoText() != null ? post.getPromoText() : "-",
                         post.getBadgeText() != null ? post.getBadgeText() : "-",
+                        post.getHeadline() != null ? post.getHeadline() : "-",
+                        post.getSupportingText() != null ? post.getSupportingText() : "-",
+                        post.getCtaText() != null ? post.getCtaText() : "-",
+                        post.getLayoutStyle() != null ? post.getLayoutStyle() : "-",
+                        post.getProductFocus() != null ? post.getProductFocus() : "-",
+                        post.getTextAlignment() != null ? post.getTextAlignment() : "-",
                         languageInstruction);
     }
 

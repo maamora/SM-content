@@ -2,7 +2,7 @@
 
 /* STUDIO editorial refresh: paper fields, uppercase metadata, sharp image slots, and lime actions. */
 
-import { useForm, FieldError } from "react-hook-form";
+import { useForm, useWatch, FieldError } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Upload, PackagePlus, Loader2, X, Pencil } from "lucide-react";
@@ -67,6 +67,11 @@ export function ProductForm({ onCreated, product, onSaved, onCancel }: ProductFo
             imageUrl3: product?.imageUrl3 ?? "",
         },
     });
+    const productImageValues = [
+        useWatch({ control: form.control, name: "imageUrl" }),
+        useWatch({ control: form.control, name: "imageUrl2" }),
+        useWatch({ control: form.control, name: "imageUrl3" }),
+    ];
 
     const onSubmit = async (data: ProductInput) => {
         setServerError(null);
@@ -198,7 +203,7 @@ export function ProductForm({ onCreated, product, onSaved, onCancel }: ProductFo
                     <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Photos produit (max. 3)</span>
                     <div className="mt-2 grid grid-cols-3 gap-3">
                         {IMAGE_FIELDS.map((field, slot) => {
-                            const value = form.watch(field);
+                            const value = productImageValues[slot];
                             const isUploading = uploadingSlot === slot;
                             return (
                                 <div key={field} className="relative">

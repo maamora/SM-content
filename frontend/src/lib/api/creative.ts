@@ -14,6 +14,8 @@ export interface CreativeJob {
     resultImageUrl: string | null;
     resultVideoUrl: string | null;
     errorMessage: string | null;
+    outputMode: "AI_GENERATED" | "TEMPLATE_COMPOSED" | null;
+    recoveryMessage: string | null;
     createdAt: string;
     updatedAt: string;
 }

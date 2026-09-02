@@ -57,6 +57,9 @@ public class PublishJob {
     @Column(nullable = false)
     private Instant updatedAt;
 
+    /** Null means dispatch immediately; a future timestamp is claimed by the scheduler. */
+    private Instant scheduledFor;
+
     private Instant publishedAt;
 
     @PrePersist

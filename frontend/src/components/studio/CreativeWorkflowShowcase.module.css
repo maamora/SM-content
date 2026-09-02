@@ -1,0 +1,144 @@
+/* STUDIO landing canvas: layered editorial paper planes and lime signals frame one model image as the only visual artwork. */
+.layeredModelCanvas {
+  min-height: 604px;
+  padding: 52px 34px 94px;
+}
+
+.backFrame {
+  position: absolute;
+  top: 68px;
+  right: 48px;
+  left: 34%;
+  height: 365px;
+  border: 1px solid rgba(185, 255, 67, .28);
+  background: linear-gradient(126deg, rgba(185, 255, 67, .11), rgba(185, 255, 67, .015) 52%, rgba(7, 8, 7, .1));
+  box-shadow: 11px 13px 0 rgba(185, 255, 67, .07);
+  transform: perspective(1300px) rotateX(1.7deg) rotateY(-2.8deg);
+}
+
+.backFrame span {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  color: var(--studio-lime);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.backFrame i {
+  position: absolute;
+  inset: 48px 18px 18px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+
+.referenceSlip {
+  position: absolute;
+  z-index: 2;
+  top: 175px;
+  left: 42px;
+  width: 174px;
+  border: 1px solid rgba(255, 255, 255, .24);
+  background: #121410;
+  padding: 12px;
+  box-shadow: 9px 10px 0 rgba(0, 0, 0, .34);
+  transform: perspective(1000px) rotateY(2deg) rotateZ(-1deg);
+}
+
+.referenceSlip span, .directionPlate > span {
+  display: block;
+  color: #a5a69e;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.referenceSlip strong {
+  display: block;
+  margin: 38px 0 28px;
+  color: var(--studio-paper);
+  font: 400 31px/.83 Georgia, "Times New Roman", serif;
+  letter-spacing: -.075em;
+}
+
+.referenceSlip small {
+  color: var(--studio-lime);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  line-height: 1.65;
+  text-transform: uppercase;
+}
+
+.modelHero {
+  position: absolute;
+  z-index: 3;
+  top: 118px;
+  right: 72px;
+  width: min(54%, 510px);
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, .28);
+  background: #0b0c0b;
+  box-shadow: 15px 17px 0 rgba(0, 0, 0, .4);
+  transform: perspective(1500px) rotateY(-1.5deg) rotateX(.7deg);
+  transition: transform .3s var(--studio-ease), box-shadow .3s var(--studio-ease);
+}
+
+.modelHero:hover { box-shadow: 20px 22px 0 rgba(185, 255, 67, .13); transform: perspective(1500px) rotateY(0) rotateX(0) translateY(-4px); }
+.modelHero img { display: block; width: 100%; height: 292px; object-fit: cover; object-position: center; }
+.modelHero::after { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 53%, rgba(4, 5, 4, .76)); content: ""; }
+.modelHero figcaption { position: absolute; z-index: 1; right: 0; bottom: 0; left: 0; display: flex; justify-content: space-between; gap: 12px; padding: 11px 13px; color: #d9dad3; font-size: 8px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.modelHero figcaption strong { color: var(--studio-lime); font-size: 8px; }
+
+.directionPlate {
+  position: absolute;
+  z-index: 4;
+  top: 397px;
+  right: 30px;
+  left: 29%;
+  display: grid;
+  grid-template-columns: 145px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  background: rgba(9, 10, 9, .93);
+  padding: 12px;
+  backdrop-filter: blur(12px);
+}
+
+.directionPlate p { margin: 0; border-left: 1px solid rgba(255, 255, 255, .15); padding-left: 13px; color: #cbcbbf; font-size: 10px; line-height: 1.45; }
+.directionPlate i { display: inline-flex; align-items: center; gap: 5px; color: var(--studio-lime); font-size: 8px; font-style: normal; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+
+.processList { margin-top: 62px; border-top: 1px solid rgba(255, 255, 255, .15); }
+.processList > div { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, .15); padding: 11px 0; }
+.processList strong { color: var(--studio-lime); font-size: 10px; }
+.processList span { color: var(--studio-paper); font-size: 11px; font-weight: 700; }
+.processList small { color: #8c8d85; font-size: 8px; letter-spacing: .1em; text-transform: uppercase; }
+
+@media (prefers-reduced-motion: reduce) { .modelHero, .modelHero:hover, .backFrame, .referenceSlip { transform: none; transition: none; } }
+
+@media (max-width: 900px) {
+  .modelHero { right: 5%; width: 58%; }
+  .directionPlate { left: 26%; }
+}
+
+@media (max-width: 620px) {
+  .layeredModelCanvas { min-height: 705px; padding: 35px 10px 140px; }
+  .backFrame { top: 62px; right: 16px; left: 19%; height: 377px; }
+  .referenceSlip { top: 234px; left: 18px; width: 136px; padding: 10px; }
+  .referenceSlip strong { margin: 28px 0 23px; font-size: 25px; }
+  .modelHero { top: 105px; right: 16px; width: 69%; transform: none; }
+  .modelHero:hover { transform: translateY(-3px); }
+  .modelHero img { height: 250px; }
+  .directionPlate { top: 390px; right: 10px; left: 10px; grid-template-columns: 1fr; gap: 7px; padding: 10px; }
+  .directionPlate p { border-top: 1px solid rgba(255, 255, 255, .15); border-left: 0; padding-top: 7px; padding-left: 0; }
+  .directionPlate i { display: none; }
+  .processList { margin-top: 44px; }
+  .processList > div { grid-template-columns: 27px 1fr; }
+  .processList small { grid-column: 2; }
+}
+

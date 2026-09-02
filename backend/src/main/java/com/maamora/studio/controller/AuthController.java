@@ -1,6 +1,8 @@
 package com.maamora.studio.controller;
 
 import com.maamora.studio.dto.request.LoginRequest;
+import com.maamora.studio.dto.request.PasswordRecoveryRequest;
+import com.maamora.studio.dto.request.PasswordResetRequest;
 import com.maamora.studio.dto.request.RegisterRequest;
 import com.maamora.studio.dto.response.ApiResponse;
 import com.maamora.studio.dto.response.AuthResponse;
@@ -27,6 +29,7 @@ public class AuthController {
     private final RateLimiterService rateLimiter;
     private final CurrentUserProvider currentUserProvider;
     private final com.maamora.studio.service.GoogleAuthService googleAuthService;
+    private final PasswordRecoveryService passwordRecoveryService;
 
     // Covers both spam brand-creation (a bot registering many brands) and
     // brute-forcing a specific brand's join code: 6 tries per IP per 15
@@ -48,6 +51,18 @@ public class AuthController {
     @PostMapping("/login")
     public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.ok(authService.login(request));
+    }
+
+    @PostMapping("/password-recovery")
+    public ApiResponse<String> requestPasswordRecovery(@Valid @RequestBody PasswordRecoveryRequest request) {
+        passwordRecoveryService.requestReset(request.email());
+        return ApiResponse.ok("If an account exists for that email, a reset link is on its way.");
+    }
+
+    @PostMapping("/reset-password")
+    public ApiResponse<String> resetPassword(@Valid @RequestBody PasswordResetRequest request) {
+        passwordRecoveryService.resetPassword(request.token(), request.password());
+        return ApiResponse.ok("Your password has been reset. You can now sign in.");
     }
 
     @GetMapping("/google/start")

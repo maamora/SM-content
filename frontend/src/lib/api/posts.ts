@@ -11,6 +11,7 @@ export interface Post {
     captionAr: string | null;
     captionDarija: string | null;
     status: "DRAFT" | "APPROVED" | "EXPORTED";
+    generationMode: "AI_GENERATED" | "TEMPLATE_COMPOSED" | "BROWSER_GENERATED";
     productName: string;
     createdAt: string | null;
 }
@@ -27,6 +28,14 @@ export const generateImage = (input: {
     promoText?: string;
     accentColor?: string;
     mood?: string;
+    includeBrandLogo?: boolean;
+    brandLogoPlacement?: "TOP_RIGHT" | "TOP_LEFT" | "BOTTOM_RIGHT" | "BOTTOM_LEFT";
+    headline?: string;
+    supportingText?: string;
+    ctaText?: string;
+    layoutStyle?: "BOLD" | "MINIMAL" | "CATALOG" | "POSTER";
+    productFocus?: "CENTER" | "CLOSE_UP" | "FLOATING" | "WIDE";
+    textAlignment?: "LEFT" | "CENTER";
 }) => apiFetch<Post>("/api/posts/generate-image", { method: "POST", body: JSON.stringify(input) });
 
 type UploadResponse = { url: string };
@@ -37,6 +46,14 @@ export const createBrowserVisualPost = async (input: {
     image: Blob;
     badgeText?: string;
     promoText?: string;
+    headline?: string;
+    supportingText?: string;
+    ctaText?: string;
+    layoutStyle?: "BOLD" | "MINIMAL" | "CATALOG" | "POSTER";
+    productFocus?: "CENTER" | "CLOSE_UP" | "FLOATING" | "WIDE";
+    textAlignment?: "LEFT" | "CENTER";
+    includeBrandLogo?: boolean;
+    brandLogoPlacement?: "TOP_RIGHT" | "TOP_LEFT" | "BOTTOM_RIGHT" | "BOTTOM_LEFT";
 }) => {
     const contentType = input.image.type.startsWith("image/") ? input.image.type : "image/png";
     const extension = contentType === "image/jpeg" ? "jpg" : contentType === "image/webp" ? "webp" : "png";
@@ -51,6 +68,14 @@ export const createBrowserVisualPost = async (input: {
             imageUrl: upload.url,
             badgeText: input.badgeText,
             promoText: input.promoText,
+            headline: input.headline,
+            supportingText: input.supportingText,
+            ctaText: input.ctaText,
+            layoutStyle: input.layoutStyle,
+            productFocus: input.productFocus,
+            textAlignment: input.textAlignment,
+            includeBrandLogo: input.includeBrandLogo,
+            brandLogoPlacement: input.brandLogoPlacement,
         }),
     });
 };

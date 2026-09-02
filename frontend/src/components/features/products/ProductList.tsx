@@ -6,6 +6,7 @@ import { PackageSearch, Trash2, Loader2 } from "lucide-react";
 import { deleteProduct, type Product } from "@/lib/api/products";
 import { getUserId, isAdmin } from "@/lib/api/client";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { TiltedMedia } from "@/components/studio/TiltedMedia";
 
 interface ProductListProps {
     products: Product[];
@@ -100,15 +101,15 @@ export default function ProductList({ products, onProductDeleted }: ProductListP
                             </button>
                         )}
                         {product.imageUrl ? (
-                            <Image
+                            <TiltedMedia><Image
                                 src={product.imageUrl}
                                 alt={`Image of ${product.name}`}
                                 fill
                                 sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                className="object-cover"
                                 loading="lazy"
                                 quality={85}
-                            />
+                            /></TiltedMedia>
                         ) : (
                             <div className="flex h-full flex-col items-center justify-center bg-[#dfded6] text-[#777870]">
                                 <span className="text-[10px] font-mono font-black uppercase tracking-widest">Pas d&apos;image</span>

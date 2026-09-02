@@ -60,6 +60,16 @@ export async function login(input: { email: string; password: string; brandIdent
     return res;
 }
 
+export const requestPasswordRecovery = (email: string) => apiFetch<string>("/api/auth/password-recovery", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+});
+
+export const resetPassword = (token: string, password: string) => apiFetch<string>("/api/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, password }),
+});
+
 export function startGoogleAuth() {
     window.location.assign(`${API_BASE_URL}/api/auth/google/start`);
 }

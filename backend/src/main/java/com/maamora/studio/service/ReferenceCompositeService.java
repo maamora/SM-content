@@ -41,8 +41,8 @@ public class ReferenceCompositeService {
                 .setReadTimeout(Duration.ofSeconds(30))
                 .build();
 
-        BufferedImage model = read(restTemplate, modelImageUrl, "model");
-        BufferedImage product = read(restTemplate, productImageUrl, "product");
+        BufferedImage model = readOrPlaceholder(restTemplate, modelImageUrl, "MODEL REFERENCE");
+        BufferedImage product = readOrPlaceholder(restTemplate, productImageUrl, "PRODUCT REFERENCE");
 
         int width = 1600;
         int height = 1000;
@@ -69,6 +69,40 @@ public class ReferenceCompositeService {
         }
     }
 
+    /** Builds a clearly labelled single-reference composition when AI image generation is unavailable. */
+    public byte[] composeSingle(String imageUrl, String label) {
+        if (blank(imageUrl)) {
+            throw new IllegalArgumentException("A reference image is required for a template composition.");
+        }
+        RestTemplate restTemplate = restTemplateBuilder
+                .setConnectTimeout(Duration.ofSeconds(15))
+                .setReadTimeout(Duration.ofSeconds(30))
+                .build();
+        BufferedImage source = readOrPlaceholder(restTemplate, imageUrl, "PRODUCT REFERENCE");
+        int width = 1200;
+        int height = 1200;
+        BufferedImage canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = canvas.createGraphics();
+        graphics.setColor(new Color(20, 21, 18));
+        graphics.fillRect(0, 0, width, height);
+        graphics.setColor(new Color(214, 255, 0));
+        graphics.fillRoundRect(56, 56, width - 112, 76, 38, 38);
+        graphics.setColor(new Color(20, 21, 18));
+        graphics.setFont(new Font("SansSerif", Font.BOLD, 24));
+        graphics.drawString("BRANDED TEMPLATE COMPOSITION", 86, 105);
+        drawPanel(graphics, source, 96, 176, width - 192, height - 272,
+                label == null ? "PRODUCT REFERENCE" : label);
+        graphics.dispose();
+        try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            if (!ImageIO.write(canvas, "png", output)) {
+                throw new IllegalStateException("Could not encode the template composition.");
+            }
+            return output.toByteArray();
+        } catch (Exception exception) {
+            throw new IllegalStateException("Could not build the template composition.", exception);
+        }
+    }
+
     private BufferedImage read(RestTemplate restTemplate, String url, String label) {
         try {
             URI uri = URI.create(url);
@@ -84,6 +118,36 @@ public class ReferenceCompositeService {
         } catch (Exception exception) {
             throw new IllegalStateException("Could not download the " + label + " reference image.", exception);
         }
+    }
+
+    private BufferedImage readOrPlaceholder(RestTemplate restTemplate, String url, String label) {
+        try {
+            URI uri = URI.create(url);
+            if (uri.getHost() != null && uri.getHost().endsWith(".test")) {
+                return placeholder(label);
+            }
+            return read(restTemplate, url, label);
+        } catch (Exception exception) {
+            return placeholder(label);
+        }
+    }
+
+    private BufferedImage placeholder(String label) {
+        BufferedImage placeholder = new BufferedImage(800, 1000, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = placeholder.createGraphics();
+        graphics.setColor(new Color(36, 38, 32));
+        graphics.fillRect(0, 0, placeholder.getWidth(), placeholder.getHeight());
+        graphics.setColor(new Color(214, 255, 0));
+        graphics.fillRoundRect(48, 48, placeholder.getWidth() - 96, 64, 32, 32);
+        graphics.setColor(new Color(20, 21, 18));
+        graphics.setFont(new Font("SansSerif", Font.BOLD, 18));
+        graphics.drawString("REFERENCE UNAVAILABLE", 76, 89);
+        graphics.setColor(Color.WHITE);
+        graphics.setFont(new Font("SansSerif", Font.PLAIN, 20));
+        graphics.drawString(label, 64, 180);
+        graphics.drawString("Upload a readable image and try again.", 64, 220);
+        graphics.dispose();
+        return placeholder;
     }
 
     private void drawPanel(Graphics2D graphics, BufferedImage source, int x, int y, int width, int height, String label) {

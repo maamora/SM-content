@@ -57,6 +57,7 @@ export interface PublishJob {
     errorMessage: string | null;
     createdAt: string | null;
     updatedAt: string | null;
+    scheduledFor: string | null;
     publishedAt: string | null;
 }
 

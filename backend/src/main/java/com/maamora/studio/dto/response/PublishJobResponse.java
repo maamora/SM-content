@@ -15,6 +15,7 @@ public record PublishJobResponse(
         String errorMessage,
         Instant createdAt,
         Instant updatedAt,
+        Instant scheduledFor,
         Instant publishedAt
 ) {
     public static PublishJobResponse from(PublishJob job) {

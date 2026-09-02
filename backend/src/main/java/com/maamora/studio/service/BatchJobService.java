@@ -9,7 +9,6 @@ import com.maamora.studio.model.BrandSettings;
 import com.maamora.studio.model.Post;
 import com.maamora.studio.model.enums.BatchStatus;
 import com.maamora.studio.repository.BatchJobRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -32,7 +31,6 @@ import java.util.concurrent.Semaphore;
  * doesn't force restarting the whole batch (see processOneProduct's catch).
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class BatchJobService {
 
@@ -41,8 +39,19 @@ public class BatchJobService {
     private final BatchJobRepository batchJobRepository;
     private final BrandSettingsService brandSettingsService;
     private final PostService postService;
-    @Qualifier("creativeTaskExecutor")
     private final Executor executor;
+
+    public BatchJobService(
+            BatchJobRepository batchJobRepository,
+            BrandSettingsService brandSettingsService,
+            PostService postService,
+            @Qualifier("creativeTaskExecutor") Executor executor
+    ) {
+        this.batchJobRepository = batchJobRepository;
+        this.brandSettingsService = brandSettingsService;
+        this.postService = postService;
+        this.executor = executor;
+    }
 
     public BatchJob create(String userId, BatchCreateRequest request) {
         BrandSettings brand = brandSettingsService.getForUser(userId);

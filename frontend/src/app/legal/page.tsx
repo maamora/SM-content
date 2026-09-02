@@ -1,2 +1,3 @@
-import { MarketingPage } from "@/components/studio/StudioShell";
-export default function LegalPage() { return <MarketingPage slug="about" />; }
+import { LegalPage as StudioLegalPage } from "@/components/studio/StudioShell";
+
+export default function LegalPage() { return <StudioLegalPage />; }

@@ -21,6 +21,7 @@ import com.maamora.studio.security.SecretCipher;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -77,6 +78,9 @@ public class SocialPublishService {
         if (connection.getStatus().name().equals("DISCONNECTED")) {
             throw new IllegalArgumentException("Social connection is disconnected");
         }
+        if (request.scheduledFor() != null && !request.scheduledFor().isAfter(Instant.now().plusSeconds(30))) {
+            throw new IllegalArgumentException("Scheduled publishing must be at least 30 seconds in the future.");
+        }
 
         PublishJob job = PublishJob.builder()
                 .user(user)
@@ -85,9 +89,12 @@ public class SocialPublishService {
                 .provider(connection.getProvider())
                 .metaTarget(connection.getProvider() == SocialProvider.META ? resolveMetaTarget(connection, request.metaTarget()) : null)
                 .status(DeliveryStatus.QUEUED)
+                .scheduledFor(request.scheduledFor())
                 .build();
         PublishJob saved = publishJobRepository.save(job);
-        processAsync(saved.getId());
+        if (saved.getScheduledFor() == null) {
+            processAsync(saved.getId());
+        }
         return PublishJobResponse.from(saved);
     }
 
@@ -106,6 +113,8 @@ public class SocialPublishService {
     public void processAsync(String jobId) {
         PublishJob job = publishJobRepository.findById(jobId).orElse(null);
         if (job == null) return;
+        if (job.getStatus() != DeliveryStatus.QUEUED) return;
+        if (job.getScheduledFor() != null && job.getScheduledFor().isAfter(Instant.now())) return;
         job.setStatus(DeliveryStatus.PROCESSING);
         publishJobRepository.save(job);
         try {
