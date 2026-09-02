@@ -559,6 +559,21 @@ function SocialSurface({ posts }: { posts: Post[] }) {
     const reload = useCallback(async () => { try { const [nextConnections, nextJobs] = await Promise.all([listSocialConnections(), listPublishJobs()]); setConnections(nextConnections); setJobs(nextJobs); } catch (err) { setStatus(err instanceof Error ? err.message : "Unable to load social publishing data"); } }, []);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial fetch intentionally hydrates this client surface.
     useEffect(() => { void reload(); }, [reload]);
+    // SocialController.callback() 302s back here with ?oauth=success|error&message=...
+    // once Meta/TikTok/LinkedIn/X redirects back to our backend and the OAuth
+    // exchange finishes — without this, every real failure (denied permission,
+    // no Facebook Page on the account, expired state, a raw Graph API error)
+    // landed in the URL bar and was never shown to the user. Runs once on
+    // mount, then strips the query string so a refresh doesn't re-show it.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- One-off redirect-result read, not state hydration.
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const oauthResult = params.get("oauth");
+        if (!oauthResult) return;
+        const message = params.get("message");
+        setStatus(oauthResult === "success" ? `Connected — ${message || "channel linked"}.` : message || "That provider could not be connected.");
+        window.history.replaceState({}, "", window.location.pathname);
+    }, []);
     const connect = async (provider: SocialProvider) => { setBusy(true); setStatus(""); try { window.location.assign(await getSocialConnectUrl(provider)); } catch (err) { setStatus(err instanceof Error ? err.message : "Provider OAuth is not configured"); } finally { setBusy(false); } };
     const disconnect = async (id: string) => { setBusy(true); try { await disconnectSocialConnection(id); await reload(); setStatus("Connection marked disconnected."); } catch (err) { setStatus(err instanceof Error ? err.message : "Unable to disconnect provider"); } finally { setBusy(false); } };
     const selectedConnectionObj = connections.find((connection) => connection.id === selectedConnection);

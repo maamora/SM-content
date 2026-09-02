@@ -50,7 +50,7 @@ export async function register(input: {
     return res;
 }
 
-export async function login(input: { email: string; password: string }) {
+export async function login(input: { email: string; password: string; brandIdentifier?: string }) {
     const res = await apiFetch<AuthResponse>("/api/auth/login", {
         method: "POST",
         body: JSON.stringify(input),

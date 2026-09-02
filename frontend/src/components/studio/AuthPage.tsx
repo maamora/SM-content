@@ -24,6 +24,10 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoError, setLogoError] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
+  // Login-only, optional. Not used to pick between brands — this account
+  // only ever has one at a time (see AuthService.login) — it's a sanity
+  // check that you're signing into the workspace you think you are.
+  const [brandIdentifier, setBrandIdentifier] = useState("");
   // Honeypot — never shown to a real user (positioned off-screen, not just
   // display:none, since some bots skip visually-hidden-but-still-"visible"
   // fields differently). Left blank by any real submission.
@@ -65,7 +69,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     setError(null);
     setLoading(true);
     try {
-      if (mode === "login") await login({ email, password });
+      if (mode === "login") await login({ email, password, brandIdentifier: brandIdentifier.trim() || undefined });
       else if (signupMode === "personal") await registerAccount({ name, email, password, personal: true, website });
       else if (signupMode === "join") await registerAccount({ name, email, password, joinCode, website });
       else await registerAccount({ name, email, password, brandName, logoUrl, website });
@@ -221,6 +225,15 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
             <label>Password
               <input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="8 characters minimum" />
             </label>
+            {mode === "login" && (
+              <label>Brand name or code <span className="text-[10px] font-normal normal-case tracking-normal text-[#8b8b83]">(optional)</span>
+                <input
+                  value={brandIdentifier}
+                  onChange={(event) => setBrandIdentifier(event.target.value)}
+                  placeholder="e.g. Labubu or 7K4M9XPQ"
+                />
+              </label>
+            )}
             {error && <p className="studio-form-error" role="alert">{error}</p>}
             <button disabled={loading || logoUploading} className="studio-button studio-button--lime studio-button--large" type="submit">
               {loading ? <LoaderCircle size={16} className="studio-spin" /> : null}

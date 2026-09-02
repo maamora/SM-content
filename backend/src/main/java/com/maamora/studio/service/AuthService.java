@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.Locale;
 import java.util.UUID;
@@ -114,6 +115,24 @@ public class AuthService {
         // forced to squat inside a real brand's data (see AdminSeeder).
         if (user.getBrand() == null && user.getRole() != Role.ADMIN) {
             throw new UnauthorizedException("No brand configured for this account.");
+        }
+
+        // Optional third field on the login form: a brand name or join code.
+        // It doesn't pick between brands (this account only ever has one at
+        // a time — see BrandInvitationService for how switching works), it's
+        // a sanity check that you're signing into the workspace you think
+        // you are. Left blank, this is skipped entirely and login behaves as
+        // it always has.
+        if (StringUtils.hasText(request.getBrandIdentifier())) {
+            if (user.getBrand() == null) {
+                throw new UnauthorizedException("This account isn't part of any brand yet — leave the brand field blank.");
+            }
+            String identifier = request.getBrandIdentifier().trim();
+            boolean matchesName = identifier.equalsIgnoreCase(user.getBrand().getName());
+            boolean matchesCode = identifier.equalsIgnoreCase(user.getBrand().getJoinCode());
+            if (!matchesName && !matchesCode) {
+                throw new UnauthorizedException("That brand name or code doesn't match this account's workspace.");
+            }
         }
 
         String token = jwtService.generateToken(user.getId(), user.getEmail());

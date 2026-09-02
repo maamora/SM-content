@@ -11,12 +11,14 @@ import com.maamora.studio.model.SocialConnection;
 import com.maamora.studio.model.User;
 import com.maamora.studio.model.enums.DeliveryStatus;
 import com.maamora.studio.model.enums.PostStatus;
+import com.maamora.studio.model.enums.SocialConnectionStatus;
 import com.maamora.studio.model.enums.SocialProvider;
 import com.maamora.studio.repository.PostRepository;
 import com.maamora.studio.repository.PublishJobRepository;
 import com.maamora.studio.repository.SocialConnectionRepository;
 import com.maamora.studio.repository.UserRepository;
 import com.maamora.studio.security.SecretCipher;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,7 @@ import org.springframework.web.client.RestClient;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -37,19 +40,26 @@ public class SocialPublishService {
     private final SecretCipher cipher;
     private final ObjectMapper objectMapper;
     private final RestClient restClient = RestClient.builder().build();
+    // Was hardcoded as a literal "v20.0" in every Graph API call below,
+    // independent of SocialOAuthService's own (configurable)
+    // app.social.meta.graph-version — meaning bumping that setting silently
+    // did nothing for publishing. Both now read the same property.
+    private final String metaGraphVersion;
 
     public SocialPublishService(PublishJobRepository publishJobRepository,
                                  SocialConnectionRepository connectionRepository,
                                  PostRepository postRepository,
                                  UserRepository userRepository,
                                  SecretCipher cipher,
-                                 ObjectMapper objectMapper) {
+                                 ObjectMapper objectMapper,
+                                 @Value("${app.social.meta.graph-version:v23.0}") String metaGraphVersion) {
         this.publishJobRepository = publishJobRepository;
         this.connectionRepository = connectionRepository;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.cipher = cipher;
         this.objectMapper = objectMapper;
+        this.metaGraphVersion = metaGraphVersion;
     }
 
     @Transactional
@@ -109,8 +119,31 @@ public class SocialPublishService {
         } catch (Exception exception) {
             job.setStatus(DeliveryStatus.FAILED);
             job.setErrorMessage(safeMessage(exception));
+            // SocialConnectionStatus.EXPIRED existed as an enum value but
+            // nothing ever set it — a connection with a dead token (revoked,
+            // password changed, or the pre-fix short-lived Page token from
+            // before the long-lived-exchange change above) stayed "ACTIVE"
+            // forever, so the UI kept offering it as a working channel and
+            // every future publish attempt just failed again the same way
+            // with no signal to reconnect. Flag it here instead so it's
+            // visible and future queue() calls could route around it.
+            if (looksLikeExpiredToken(exception)) {
+                SocialConnection connection = job.getConnection();
+                connection.setStatus(SocialConnectionStatus.EXPIRED);
+                connectionRepository.save(connection);
+            }
         }
         publishJobRepository.save(job);
+    }
+
+    private boolean looksLikeExpiredToken(Exception exception) {
+        String message = exception.getMessage();
+        if (message == null) return false;
+        String lower = message.toLowerCase(Locale.ROOT);
+        return lower.contains("oauthexception")
+                || lower.contains("\"code\":190")
+                || lower.contains("code\\\":190")
+                || (lower.contains("access token") && (lower.contains("expired") || lower.contains("invalid") || lower.contains("session")));
     }
 
     private PublishResult publish(SocialConnection connection, String metaTarget, String token, Post post) {
@@ -148,11 +181,11 @@ public class SocialPublishService {
                 throw new IllegalArgumentException(
                         "This Meta connection has no Instagram professional account linked to its Facebook Page. Link one in Meta Business Suite, then reconnect.");
             }
-            String container = restClient.post().uri("https://graph.facebook.com/v20.0/" + igUserId + "/media")
+            String container = restClient.post().uri("https://graph.facebook.com/" + metaGraphVersion + "/" + igUserId + "/media")
                     .body(Map.of("image_url", imageUrl, "caption", caption, "access_token", token))
                     .retrieve().body(String.class);
             String containerId = textField(container, "id");
-            String published = restClient.post().uri("https://graph.facebook.com/v20.0/" + igUserId + "/media_publish")
+            String published = restClient.post().uri("https://graph.facebook.com/" + metaGraphVersion + "/" + igUserId + "/media_publish")
                     .body(Map.of("creation_id", containerId, "access_token", token))
                     .retrieve().body(String.class);
             return new PublishResult(textField(published, "id"));
@@ -161,7 +194,7 @@ public class SocialPublishService {
         // Facebook Page post — a Page's photo edge is /photos (image_url is
         // called "url" here, unlike Instagram's "image_url"), never /media.
         String pageId = connection.getExternalAccountId();
-        String published = restClient.post().uri("https://graph.facebook.com/v20.0/" + pageId + "/photos")
+        String published = restClient.post().uri("https://graph.facebook.com/" + metaGraphVersion + "/" + pageId + "/photos")
                 .body(Map.of("url", imageUrl, "caption", caption, "access_token", token))
                 .retrieve().body(String.class);
         return new PublishResult(textFieldAny(published, "post_id", "id"));

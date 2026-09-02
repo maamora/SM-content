@@ -58,7 +58,7 @@ public class SocialOAuthService {
             @Value("${app.social.meta.app-id:}") String metaAppId,
             @Value("${META_APP_SECRET:}") String metaAppSecret,
             @Value("${app.social.meta.redirect-uri}") String metaRedirectUri,
-            @Value("${app.social.meta.graph-version:v20.0}") String metaGraphVersion,
+            @Value("${app.social.meta.graph-version:v23.0}") String metaGraphVersion,
             @Value("${app.social.tiktok.client-key:}") String tiktokClientKey,
             @Value("${TIKTOK_CLIENT_SECRET:}") String tiktokClientSecret,
             @Value("${app.social.tiktok.redirect-uri}") String tiktokRedirectUri,
@@ -148,9 +148,33 @@ public class SocialOAuthService {
     }
 
     private TokenIdentity exchangeMeta(String code) {
-        String shortToken = restClient.get().uri("https://graph.facebook.com/" + metaGraphVersion + "/oauth/access_token?client_id=" + enc(metaAppId) + "&client_secret=" + enc(metaAppSecret) + "&redirect_uri=" + enc(metaRedirectUri) + "&code=" + enc(code)).retrieve().body(String.class);
-        JsonNode token = json(shortToken);
-        String accessToken = text(token, "access_token");
+        String shortTokenResponse = restClient.get().uri("https://graph.facebook.com/" + metaGraphVersion + "/oauth/access_token?client_id=" + enc(metaAppId) + "&client_secret=" + enc(metaAppSecret) + "&redirect_uri=" + enc(metaRedirectUri) + "&code=" + enc(code)).retrieve().body(String.class);
+        String shortLivedAccessToken = text(json(shortTokenResponse), "access_token");
+
+        // The code exchange above only ever returns a SHORT-LIVED (~1-2 hour)
+        // User Access Token. A Page token minted from that (below) inherits
+        // the same short lifetime — so without this extra hop, every
+        // connection looked healthy right after connecting and then silently
+        // failed to publish anything from an hour or two later onward, with
+        // nothing in the UI ever explaining why. Exchanging first for a
+        // LONG-LIVED (~60 day) User token makes the resulting Page token
+        // effectively non-expiring instead (Meta doesn't return an
+        // expires_in for Page tokens derived from a long-lived User token —
+        // they last until the user revokes access or changes their
+        // password, not on a fixed clock).
+        // If the upgrade call itself fails for some reason (rate limit,
+        // transient Graph error), fall back to the short-lived token rather
+        // than failing the whole connect attempt over an optional upgrade —
+        // worse token lifetime, but still a working connection today.
+        String longLivedAccessToken;
+        try {
+            String longLivedResponse = restClient.get().uri("https://graph.facebook.com/" + metaGraphVersion + "/oauth/access_token?grant_type=fb_exchange_token&client_id=" + enc(metaAppId) + "&client_secret=" + enc(metaAppSecret) + "&fb_exchange_token=" + enc(shortLivedAccessToken)).retrieve().body(String.class);
+            longLivedAccessToken = text(json(longLivedResponse), "access_token");
+        } catch (Exception exception) {
+            longLivedAccessToken = "";
+        }
+        String accessToken = longLivedAccessToken.isBlank() ? shortLivedAccessToken : longLivedAccessToken;
+
         String accounts = restClient.get().uri("https://graph.facebook.com/" + metaGraphVersion + "/me/accounts?fields=id,name,access_token&access_token=" + enc(accessToken)).retrieve().body(String.class);
         JsonNode data = json(accounts).path("data").path(0);
         String pageToken = text(data, "access_token");

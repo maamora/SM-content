@@ -172,7 +172,11 @@ app:
       app-id: ${META_APP_ID:}
       app-secret: ${META_APP_SECRET:}
       redirect-uri: ${META_REDIRECT_URI:http://localhost:8080/api/social/callback/meta}
-      graph-version: ${META_GRAPH_VERSION:v20.0}
+      # v20.0 (the old default here) is deprecated by Meta on 2026-09-24 — see
+      # https://developers.facebook.com/docs/graph-api/changelog/version20.0/.
+      # Bump this periodically; Meta guarantees ~2 years of support per
+      # version, counted from when the *next* version ships, not this one.
+      graph-version: ${META_GRAPH_VERSION:v23.0}
     tiktok:
       client-key: ${TIKTOK_CLIENT_KEY:}
       client-secret: ${TIKTOK_CLIENT_SECRET:}

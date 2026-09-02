@@ -11,4 +11,10 @@ public class LoginRequest {
 
     @NotBlank
     private String password;
+
+    // Optional — matched against the account's brand name OR its join code
+    // (either one is enough, per the product ask). Left blank, login behaves
+    // exactly as before; provided, it must match the account's actual brand
+    // or the login is rejected. See AuthService.login().
+    private String brandIdentifier;
 }
