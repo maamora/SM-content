@@ -3,6 +3,8 @@ package com.maamora.studio.dto.response;
 import com.maamora.studio.model.Product;
 import lombok.Getter;
 
+import java.time.Instant;
+
 @Getter
 public class ProductResponse {
     private final String id;
@@ -16,6 +18,7 @@ public class ProductResponse {
     private final String status;
     private final String createdByName;
     private final String createdById;
+    private final Instant createdAt;
 
     public ProductResponse(Product p) {
         this.id = p.getId();
@@ -29,5 +32,6 @@ public class ProductResponse {
         this.status = p.getStatus().name();
         this.createdByName = p.getCreatedBy() != null ? p.getCreatedBy().getName() : null;
         this.createdById = p.getCreatedBy() != null ? p.getCreatedBy().getId() : null;
+        this.createdAt = p.getCreatedAt();
     }
 }

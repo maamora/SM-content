@@ -9,6 +9,7 @@ import java.util.Optional;
 
 public interface BrandInvitationRepository extends JpaRepository<BrandInvitation, String> {
     List<BrandInvitation> findByBrand_IdOrderByCreatedAtDesc(String brandId);
+    List<BrandInvitation> findByInvitedById(String userId);
 
     List<BrandInvitation> findByInvitedEmailIgnoreCaseAndStatusOrderByCreatedAtDesc(String email, InvitationStatus status);
 

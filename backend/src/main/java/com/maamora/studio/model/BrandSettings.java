@@ -48,6 +48,18 @@ public class BrandSettings {
     @Column(length = 2000)
     private String toneGuidelines;
 
+    // Tracks whether this brand has actually filled in its own details (name
+    // beyond the placeholder, logo, colors, tone) vs. still being the bare
+    // shell created at signup/onboarding — BrandSettingsService.update() and
+    // .uploadLogo() flip this true. PostService/ImageRenderService/
+    // CaptionGenerationService check it before applying the brand's own
+    // name/logo to generated content, so an unconfigured brand's placeholder
+    // name or missing logo never leaks into a real caption or image. Not
+    // "nullable = false" for the same ddl-auto=update reason as joinCode
+    // above; defaults false for both new rows and any pre-existing row.
+    @Builder.Default
+    private boolean configured = false;
+
     @OneToMany(mappedBy = "brand", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Product> products = new ArrayList<>();

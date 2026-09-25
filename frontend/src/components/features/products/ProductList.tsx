@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { PackageSearch, Trash2, Loader2 } from "lucide-react";
 import { deleteProduct, type Product } from "@/lib/api/products";
-import { getUserId, isAdmin } from "@/lib/api/client";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { TiltedMedia } from "@/components/studio/TiltedMedia";
 
@@ -13,18 +12,6 @@ interface ProductListProps {
     /** Called after a successful delete so the parent can refetch the list. */
     onProductDeleted?: () => void;
 }
-
-const STATUS_STYLES: Record<Product["status"], string> = {
-    PENDING: "studio-chip studio-chip--warning",
-    APPROVED: "studio-chip studio-chip--lime",
-    REJECTED: "studio-chip studio-chip--danger",
-};
-
-const STATUS_LABELS: Record<Product["status"], string> = {
-    PENDING: "En attente",
-    APPROVED: "Approuvé",
-    REJECTED: "Rejeté",
-};
 
 export default function ProductList({ products, onProductDeleted }: ProductListProps) {
     const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -57,11 +44,18 @@ export default function ProductList({ products, onProductDeleted }: ProductListP
         return (
             <div className="studio-product-empty">
                 <div>
-                    <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center border border-[#b7b6ad] bg-[#e8e7df] text-[#777870]">
+                    <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center border border-[rgba(255,255,255,.28)] bg-[rgba(255,255,255,.06)] text-[#9a9b91]">
                         <PackageSearch className="h-5 w-5" />
                     </div>
-                    <p>Aucun produit enregistré</p>
-                    <small>Ajoutez un produit depuis le panneau de gauche pour l&apos;afficher ici.</small>
+                    {/* Inline style, not just a class: an older, higher-specificity
+                        ".studio-product-empty p{color:#4f504a}" rule elsewhere in
+                        globals.css (written for a light-background version of this
+                        empty state) was still winning over a later dark-theme
+                        override, leaving this text a near-invisible dark gray on
+                        the dark page background. Inline style always wins over any
+                        external stylesheet rule, so this can't lose that fight again. */}
+                    <p style={{ color: "#f4f3ed" }}>Aucun produit enregistré</p>
+                    <small style={{ color: "#9a9b91" }}>Ajoutez un produit depuis le panneau de gauche pour l&apos;afficher ici.</small>
                 </div>
             </div>
         );
@@ -82,24 +76,19 @@ export default function ProductList({ products, onProductDeleted }: ProductListP
                     className="studio-product-card group"
                 >
                     <div className="studio-product-card__media">
-                        <span className={`absolute right-3 top-3 z-10 ${STATUS_STYLES[product.status]}`}>
-                            {STATUS_LABELS[product.status]}
-                        </span>
-                        {(isAdmin() || product.createdById === getUserId()) && (
-                            <button
-                                type="button"
-                                onClick={(e) => requestDelete(e, product)}
-                                disabled={deletingId === product.id}
-                                aria-label={`Supprimer ${product.name}`}
-                                className="studio-product-card__delete"
-                            >
-                                {deletingId === product.id ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                )}
-                            </button>
-                        )}
+                        <button
+                            type="button"
+                            onClick={(e) => requestDelete(e, product)}
+                            disabled={deletingId === product.id}
+                            aria-label={`Supprimer ${product.name}`}
+                            className="studio-product-card__delete"
+                        >
+                            {deletingId === product.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                                <Trash2 className="h-3.5 w-3.5" />
+                            )}
+                        </button>
                         {product.imageUrl ? (
                             <TiltedMedia><Image
                                 src={product.imageUrl}
@@ -115,6 +104,12 @@ export default function ProductList({ products, onProductDeleted }: ProductListP
                                 <span className="text-[10px] font-mono font-black uppercase tracking-widest">Pas d&apos;image</span>
                             </div>
                         )}
+                        {product.description && (
+                            <div className="studio-product-card__hover-details">
+                                <p>{product.description}</p>
+                                {product.sellingPoint && <small>{product.sellingPoint}</small>}
+                            </div>
+                        )}
                     </div>
 
                     <div className="studio-product-card__body">
@@ -126,9 +121,9 @@ export default function ProductList({ products, onProductDeleted }: ProductListP
                         ) : (
                             <p className="studio-product-card__price text-[#91918b]">Prix non défini</p>
                         )}
-                        {product.status === "PENDING" && product.createdByName && (
+                        {product.createdByName && (
                             <p className="studio-product-card__meta">
-                                Soumis par {product.createdByName}
+                                Ajouté par {product.createdByName}
                             </p>
                         )}
                     </div>

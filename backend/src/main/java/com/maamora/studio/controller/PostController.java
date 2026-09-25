@@ -8,6 +8,7 @@ import com.maamora.studio.dto.response.ApiResponse;
 import com.maamora.studio.dto.response.PostResponse;
 import com.maamora.studio.security.CurrentUserProvider;
 import com.maamora.studio.service.ExportService;
+import com.maamora.studio.service.ImageGenerationProvider;
 import com.maamora.studio.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,17 @@ public class PostController {
     private final PostService postService;
     private final ExportService exportService;
     private final CurrentUserProvider currentUser;
+    private final ImageGenerationProvider imageGenerationProvider;
+
+    /**
+     * Lets the Studio UI show a "temporarily unavailable" notice (rate limit,
+     * or out of credit/quota) instead of a confusing per-post error when the
+     * configured AI image provider is currently down.
+     */
+    @GetMapping("/image-provider-status")
+    public ApiResponse<ImageGenerationProvider.ImageProviderStatus> imageProviderStatus() {
+        return ApiResponse.ok(imageGenerationProvider.status());
+    }
 
     @GetMapping
     public ApiResponse<List<PostResponse>> list() {

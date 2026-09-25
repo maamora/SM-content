@@ -13,10 +13,8 @@ import org.springframework.web.client.RestClient;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Semaphore;
 
 @Slf4j
@@ -52,46 +50,14 @@ public class CaptionGenerationService {
     @Value("${app.caption.provider:gemini}")
     private String captionProvider;
 
-    @Value("${app.groq.api-key:}")
-    private String groqApiKey;
+    @Value("${app.meta.api-key:}")
+    private String metaApiKey;
 
-    @Value("${app.groq.model:llama-3.3-70b-versatile}")
-    private String groqModel;
+    @Value("${app.meta.model:muse-spark-1.3}")
+    private String metaModel;
 
-    @Value("${app.groq.base-url:https://api.groq.com/openai/v1}")
-    private String groqBaseUrl;
-
-    @Value("${app.openrouter.api-key:}")
-    private String openRouterApiKey;
-
-    @Value("${app.openai.api-key:}")
-    private String openAiApiKey;
-
-    @Value("${app.openai.text-model:gpt-4o-mini}")
-    private String openAiTextModel;
-
-    @Value("${app.openai.base-url:https://api.openai.com/v1}")
-    private String openAiBaseUrl;
-
-    @Value("${app.openrouter.models:}")
-    private String openRouterModels;
-
-    @Value("${app.openrouter.base-url:https://openrouter.ai/api/v1}")
-    private String openRouterBaseUrl;
-
-    @Value("${app.openrouter.max-attempts:2}")
-    private int openRouterMaxAttempts;
-
-    @Value("${app.ollama.enabled:false}")
-    private boolean ollamaEnabled;
-
-    @Value("${app.ollama.model:qwen2.5:7b}")
-    private String ollamaModel;
-
-    @Value("${app.ollama.base-url:http://localhost:11434/api}")
-    private String ollamaBaseUrl;
-
-    private final Semaphore ollamaThrottle = new Semaphore(1);
+    @Value("${app.meta.base-url:https://api.meta.ai/v1}")
+    private String metaBaseUrl;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -112,7 +78,22 @@ public class CaptionGenerationService {
      * exhausts its retries doesn't cost the other languages their captions.
      */
     public String generateCaption(Post post, BrandSettings brand, String language) {
-        return generateDeterministicCaption(post, brand, language);
+        String provider = captionProvider == null || captionProvider.isBlank()
+                ? "local-templates" : captionProvider.trim().toLowerCase();
+        if (provider.equals("local-templates") || provider.equals("local") || provider.equals("disabled")) {
+            return generateDeterministicCaption(post, brand, language);
+        }
+        try {
+            return switch (provider) {
+                case "gemini" -> generateWithGemini(post, brand, language);
+                case "meta", "llama", "muse" -> generateWithMeta(post, brand, language);
+                default -> generateDeterministicCaption(post, brand, language);
+            };
+        } catch (RuntimeException e) {
+            log.warn("Caption provider {} failed for lang {}; falling back to local templates: {}",
+                    provider, language, e.getMessage());
+            return generateDeterministicCaption(post, brand, language);
+        }
     }
 
     private String generateDeterministicCaption(Post post, BrandSettings brand, String language) {
@@ -309,19 +290,19 @@ public class CaptionGenerationService {
         return value.replaceAll("[^\\p{L}\\p{N}]", "");
     }
 
-    private String generateWithGroq(Post post, BrandSettings brand, String language) {
-        if (!configured(groqApiKey)) {
-            throw new IllegalStateException("Caption generation is unavailable: configure GROQ_API_KEY.");
+    private String generateWithMeta(Post post, BrandSettings brand, String language) {
+        if (!configured(metaApiKey)) {
+            throw new IllegalStateException("Caption generation is unavailable: configure MODEL_API_KEY.");
         }
         Map<String, Object> body = Map.of(
-                "model", groqModel,
+                "model", metaModel,
                 "messages", List.of(Map.of("role", "user", "content", buildPrompt(post, brand, language))),
                 "temperature", 0.8,
                 "max_tokens", 1200);
         try {
             String rawResponse = RestClient.builder()
-                    .baseUrl(groqBaseUrl)
-                    .defaultHeader("Authorization", "Bearer " + groqApiKey)
+                    .baseUrl(metaBaseUrl)
+                    .defaultHeader("Authorization", "Bearer " + metaApiKey)
                     .defaultHeader("content-type", "application/json")
                     .build()
                     .post()
@@ -329,108 +310,11 @@ public class CaptionGenerationService {
                     .body(body)
                     .retrieve()
                     .body(String.class);
-            return extractCompatibleText(rawResponse, "Groq");
+            return extractCompatibleText(rawResponse, "Meta Model API");
         } catch (HttpStatusCodeException e) {
-            throw new IllegalStateException("Groq caption generation failed with HTTP "
+            throw new IllegalStateException("Meta Model API caption generation failed with HTTP "
                     + e.getStatusCode().value() + ": " + compactProviderBody(e.getResponseBodyAsString()), e);
         }
-    }
-
-    private String generateWithOpenAi(Post post, BrandSettings brand, String language) {
-        if (!configured(openAiApiKey)) {
-            throw new IllegalStateException("Caption generation is unavailable: configure OPENAI_API_KEY.");
-        }
-        Map<String, Object> body = Map.of(
-                "model", openAiTextModel,
-                "messages", List.of(Map.of("role", "user", "content", buildPrompt(post, brand, language))),
-                "temperature", 0.8,
-                "max_completion_tokens", 1200);
-        try {
-            String rawResponse = RestClient.builder()
-                    .baseUrl(openAiBaseUrl)
-                    .defaultHeader("Authorization", "Bearer " + openAiApiKey)
-                    .defaultHeader("content-type", "application/json")
-                    .build()
-                    .post()
-                    .uri("/chat/completions")
-                    .body(body)
-                    .retrieve()
-                    .body(String.class);
-            return extractCompatibleText(rawResponse, "OpenAI");
-        } catch (HttpStatusCodeException e) {
-            throw new IllegalStateException("OpenAI caption generation failed with HTTP "
-                    + e.getStatusCode().value() + ": " + compactProviderBody(e.getResponseBodyAsString()), e);
-        }
-    }
-
-    private String generateWithOpenRouter(Post post, BrandSettings brand, String language) {
-        if (!configured(openRouterApiKey)) {
-            throw new IllegalStateException("Caption generation is unavailable: configure OPENROUTER_API_KEY.");
-        }
-
-        Set<String> models = new LinkedHashSet<>();
-        if (openRouterModels != null) {
-            Arrays.stream(openRouterModels.split(","))
-                    .map(String::trim)
-                    .filter(this::configured)
-                    .forEach(models::add);
-        }
-        if (models.isEmpty()) {
-            throw new IllegalStateException("Caption generation is unavailable: configure OPENROUTER_MODELS as an ordered comma-separated model list.");
-        }
-
-        String prompt = buildPrompt(post, brand, language);
-        Map<String, Object> bodyBase = Map.of(
-                "messages", List.of(Map.of("role", "user", "content", prompt)),
-                "temperature", 0.8,
-                "max_tokens", 1200);
-        List<String> attempted = new ArrayList<>();
-        RuntimeException lastError = null;
-        int maxModels = Math.max(1, Math.min(openRouterMaxAttempts, models.size()));
-
-        for (String modelId : models.stream().limit(maxModels).toList()) {
-            attempted.add(modelId);
-            Map<String, Object> body = new java.util.HashMap<>(bodyBase);
-            body.put("model", modelId);
-            try {
-                String rawResponse = RestClient.builder()
-                        .baseUrl(openRouterBaseUrl)
-                        .defaultHeader("Authorization", "Bearer " + openRouterApiKey)
-                        .defaultHeader("HTTP-Referer", "http://localhost:3000")
-                        .defaultHeader("X-Title", "STUDIO")
-                        .defaultHeader("content-type", "application/json")
-                        .build()
-                        .post()
-                        .uri("/chat/completions")
-                        .body(body)
-                        .retrieve()
-                        .body(String.class);
-                return extractCompatibleText(rawResponse, "OpenRouter");
-            } catch (HttpStatusCodeException e) {
-                lastError = new RuntimeException("OpenRouter model " + modelId + " failed ("
-                        + e.getStatusCode().value() + "): " + compactProviderBody(e.getResponseBodyAsString()), e);
-                if (!isOpenRouterFallbackError(e) || attempted.size() >= maxModels) {
-                    throw lastError;
-                }
-                log.warn("OpenRouter model fallback {}/{} for lang {} after {}: {}",
-                        attempted.size(), maxModels, language, e.getStatusCode(), modelId);
-            } catch (EmptyCaptionException e) {
-                lastError = e;
-                if (attempted.size() >= maxModels) {
-                    throw e;
-                }
-                log.warn("OpenRouter model fallback {}/{} for lang {} after empty response: {}",
-                        attempted.size(), maxModels, language, modelId);
-            }
-        }
-
-        throw new IllegalStateException("OpenRouter caption generation failed for models " + attempted, lastError);
-    }
-
-    private boolean isOpenRouterFallbackError(HttpStatusCodeException e) {
-        int status = e.getStatusCode().value();
-        return status == 400 || status == 404 || status == 408 || status == 409
-                || status == 413 || status == 429 || e.getStatusCode().is5xxServerError();
     }
 
     private String compactProviderBody(String body) {
@@ -486,40 +370,6 @@ public class CaptionGenerationService {
             throw lastError;
         } finally {
             geminiThrottle.release();
-        }
-    }
-
-    private String generateWithOllama(Post post, BrandSettings brand, String language) {
-        String prompt = buildPrompt(post, brand, language);
-        Map<String, Object> body = Map.of(
-                "model", ollamaModel,
-                "messages", List.of(Map.of("role", "user", "content", prompt)),
-                "stream", false,
-                "options", Map.of("temperature", 0.8));
-
-        try {
-            ollamaThrottle.acquire();
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while waiting for local Ollama caption generation.", ie);
-        }
-
-        try {
-            String rawResponse = RestClient.builder()
-                    .baseUrl(ollamaBaseUrl)
-                    .defaultHeader("content-type", "application/json")
-                    .build()
-                    .post()
-                    .uri("chat")
-                    .body(body)
-                    .retrieve()
-                    .body(String.class);
-            return extractOllamaText(rawResponse);
-        } catch (HttpStatusCodeException e) {
-            throw new IllegalStateException("Ollama caption request failed with HTTP "
-                    + e.getStatusCode().value() + ". Is Ollama running and is the model installed?", e);
-        } finally {
-            ollamaThrottle.release();
         }
     }
 
@@ -676,28 +526,13 @@ public class CaptionGenerationService {
         return "";
     }
 
-    private String extractOllamaText(String rawJson) {
-        try {
-            JsonNode root = objectMapper.readTree(rawJson);
-            JsonNode textNode = root.path("message").path("content");
-            if (!textNode.isTextual() || textNode.asText().isBlank()) {
-                throw new EmptyCaptionException("Ollama returned no caption text.");
-            }
-            return textNode.asText().trim();
-        } catch (EmptyCaptionException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IllegalStateException("Could not parse Ollama response.", e);
-        }
-    }
-
     private boolean configured(String value) {
         return value != null && !value.isBlank()
                 && !value.equalsIgnoreCase("placeholder")
                 && !value.equalsIgnoreCase("changeme");
     }
 
-    /** Thrown when Gemini or Ollama responds successfully but with no usable caption text. */
+    /** Thrown when Gemini responds successfully but with no usable caption text. */
     private static class EmptyCaptionException extends RuntimeException {
         EmptyCaptionException(String message) {
             super(message);

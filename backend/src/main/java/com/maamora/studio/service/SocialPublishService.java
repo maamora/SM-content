@@ -28,6 +28,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
 import java.time.Instant;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -259,35 +261,106 @@ public class SocialPublishService {
     // no external post id.
     private static final String LINKEDIN_API_VERSION = "202601";
 
+    /**
+     * Image publishing was previously a hard error ("requires an asset-upload
+     * registration") — every post this app produces is an image, so LinkedIn
+     * delivery never actually worked. LinkedIn's Images API is a 3-step
+     * dance: register the upload (get back a pre-signed uploadUrl + an
+     * urn:li:image id), PUT the raw bytes to that URL, then reference the
+     * urn in the post's content.media.id. Unlike Meta/TikTok, LinkedIn's
+     * upload URL is fetched FROM the bytes we send it, not by LinkedIn
+     * fetching post.getImageUrl() itself — so this works even against a
+     * local dev image URL, since it's our own backend doing the download.
+     */
     private PublishResult publishLinkedIn(String token, String accountId, String caption, String imageUrl) {
+        String ownerUrn = "urn:li:person:" + accountId;
+        Map<String, Object> body = new HashMap<>(Map.of(
+                "author", ownerUrn,
+                "commentary", caption,
+                "visibility", "PUBLIC",
+                "distribution", Map.of("feedDistribution", "MAIN_FEED", "targetEntities", List.of(), "thirdPartyDistributionChannels", List.of()),
+                "lifecycleState", "PUBLISHED"));
+        body.put("isReshareDisabledByAuthor", false);
         if (StringUtils.hasText(imageUrl)) {
-            throw new IllegalArgumentException("LinkedIn image publishing requires an asset-upload registration; text publishing is available after connection");
+            body.put("content", Map.of("media", Map.of("id", uploadLinkedInImage(token, ownerUrn, imageUrl))));
         }
         ResponseEntity<String> response = restClient.post().uri("https://api.linkedin.com/rest/posts")
                 .header("Authorization", "Bearer " + token)
                 .header("X-Restli-Protocol-Version", "2.0.0")
                 .header("LinkedIn-Version", LINKEDIN_API_VERSION)
-                .body(Map.of("author", "urn:li:person:" + accountId,
-                        "commentary", caption,
-                        "visibility", "PUBLIC",
-                        "distribution", Map.of("feedDistribution", "MAIN_FEED", "targetEntities", List.of(), "thirdPartyDistributionChannels", List.of()),
-                        "lifecycleState", "PUBLISHED",
-                        "isReshareDisabledByAuthor", false))
+                .body(body)
                 .retrieve().toEntity(String.class);
         String postId = response.getHeaders().getFirst("x-restli-id");
         if (!StringUtils.hasText(postId)) throw new IllegalStateException("LinkedIn did not return a post id");
         return new PublishResult(postId);
     }
 
+    private String uploadLinkedInImage(String token, String ownerUrn, String imageUrl) {
+        String initResponse = restClient.post().uri("https://api.linkedin.com/rest/images?action=initializeUpload")
+                .header("Authorization", "Bearer " + token)
+                .header("X-Restli-Protocol-Version", "2.0.0")
+                .header("LinkedIn-Version", LINKEDIN_API_VERSION)
+                .body(Map.of("initializeUploadRequest", Map.of("owner", ownerUrn)))
+                .retrieve().body(String.class);
+        JsonNode value = json(initResponse).path("value");
+        String uploadUrl = value.path("uploadUrl").asText("");
+        String imageUrn = value.path("image").asText("");
+        if (!StringUtils.hasText(uploadUrl) || !StringUtils.hasText(imageUrn)) {
+            throw new IllegalStateException("LinkedIn did not return an image upload URL");
+        }
+        byte[] imageBytes = downloadBytes(imageUrl);
+        // Per LinkedIn's docs, this PUT (unlike the video-upload equivalent)
+        // requires the same bearer token in the Authorization header.
+        restClient.put().uri(uploadUrl).header("Authorization", "Bearer " + token).body(imageBytes).retrieve().toBodilessEntity();
+        return imageUrn;
+    }
+
+    /**
+     * Image publishing was previously a hard error ("requires an X media
+     * upload adapter") — same underlying gap as LinkedIn above. X's current
+     * (v2) media endpoint is a single call: base64-encode the bytes, POST
+     * them with a media_category, get back a media id, then attach it via
+     * media.media_ids on the tweet body.
+     */
     private PublishResult publishX(String token, String caption, String imageUrl) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("text", caption);
         if (StringUtils.hasText(imageUrl)) {
-            throw new IllegalArgumentException("X media publishing requires an X media upload adapter; text publishing is available");
+            byte[] imageBytes = downloadBytes(imageUrl);
+            String uploadResponse = restClient.post().uri("https://api.x.com/2/media/upload")
+                    .header("Authorization", "Bearer " + token)
+                    .body(Map.of("media", Base64.getEncoder().encodeToString(imageBytes), "media_category", "tweet_image"))
+                    .retrieve().body(String.class);
+            String mediaId = textField(uploadResponse, "id");
+            body.put("media", Map.of("media_ids", List.of(mediaId)));
         }
         String response = restClient.post().uri("https://api.x.com/2/tweets")
                 .header("Authorization", "Bearer " + token)
-                .body(Map.of("text", caption))
+                .body(body)
                 .retrieve().body(String.class);
         return new PublishResult(textField(response, "id"));
+    }
+
+    private byte[] downloadBytes(String url) {
+        try {
+            byte[] bytes = restClient.get().uri(url).retrieve().body(byte[].class);
+            if (bytes == null || bytes.length == 0) throw new IllegalStateException("Downloaded image was empty");
+            return bytes;
+        } catch (Exception exception) {
+            throw new IllegalStateException("Unable to download the post image for upload: " + compact(String.valueOf(exception.getMessage())), exception);
+        }
+    }
+
+    private JsonNode json(String rawJson) {
+        try {
+            return objectMapper.readTree(rawJson == null ? "{}" : rawJson);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Invalid provider response", exception);
+        }
+    }
+
+    private String compact(String value) {
+        return value.length() > 200 ? value.substring(0, 200) : value;
     }
 
     private void assertPostOwnership(Post post, String userId) {

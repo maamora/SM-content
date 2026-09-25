@@ -1,5 +1,6 @@
 package com.maamora.studio.model;
 
+import com.maamora.studio.model.enums.BrandRole;
 import com.maamora.studio.model.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
@@ -35,6 +36,14 @@ public class User {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_id")
     private BrandSettings brand;
+
+    // Standing within `brand` above — not the platform Role. Not
+    // "nullable = false" for the same ddl-auto=update reason as
+    // BrandSettings.joinCode/configured: existing rows predate this column.
+    // A null value is treated as MEMBER everywhere it's read.
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private BrandRole brandRole = BrandRole.MEMBER;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;

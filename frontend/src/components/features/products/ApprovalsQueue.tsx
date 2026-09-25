@@ -96,7 +96,7 @@ export default function ApprovalsQueue({ onChange }: ApprovalsQueueProps) {
                             )}
                         </div>
                         <div className="min-w-0">
-                            <p className="truncate text-sm font-extrabold text-[var(--studio-ink)]">{product.name}</p>
+                            <p className="truncate text-sm font-extrabold text-white">{product.name}</p>
                             <p className="mt-0.5 line-clamp-1 text-xs font-medium text-[#777870]">{product.description}</p>
                             <div className="flex items-center gap-2 mt-1">
                                 {product.price != null && (

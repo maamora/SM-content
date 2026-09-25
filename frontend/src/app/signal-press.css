@@ -1,13 +1,13 @@
 /* SIGNAL PRESS / AUTHENTICATED STUDIO: contemporary editorial proof sheets, raw paper, ink rails, registration marks, and acid lime only for committed movement. */
 
 :root {
-  --press-paper: #f0eee3;
-  --press-stock: #e2dfd1;
-  --press-ink: #161714;
+  --press-paper: #1a1b16;
+  --press-stock: #121309;
+  --press-ink: #f2f1e9;
   --press-charcoal: #20211d;
-  --press-sage: #84916c;
+  --press-sage: #9dad88;
   --press-signal: #c8ef55;
-  --press-rule: rgba(22, 23, 20, 0.22);
+  --press-rule: rgba(255, 255, 255, 0.14);
 }
 
 .studio-app {
@@ -170,7 +170,13 @@
   font-size: 13px;
 }
 
-.studio-button--dark,
+/* Scoped to .studio-app (this file's own header says "AUTHENTICATED
+   STUDIO"). It was unscoped before, so it also hit the public auth/register
+   page — and --press-ink is a near-white color (#f2f1e9) meant as this
+   theme's paper tone, not a dark button fill, so .studio-button--dark there
+   rendered near-white text (#f7f6ef) on a near-white background: invisible.
+   Same bug as the quiet-studio.css one on the same buttons. */
+.studio-app .studio-button--dark,
 .studio-app--studio .studio-artboard-renderbar__action button {
   border-radius: 0;
   background: var(--press-ink);
@@ -178,7 +184,7 @@
   color: #f7f6ef;
 }
 
-.studio-button--dark:hover,
+.studio-app .studio-button--dark:hover,
 .studio-app--studio .studio-artboard-renderbar__action button:hover:not(:disabled) {
   background: #383a32;
   transform: translate(-2px, -2px);
@@ -354,7 +360,7 @@
 }
 
 .studio-product-card:hover {
-  background: #f7f5eb;
+  background: #22231d;
   box-shadow: inset 0 4px 0 var(--press-signal);
   transform: none;
 }
@@ -378,8 +384,8 @@
 .studio-product-form,
 .studio-worktable--brand .studio-workspace-panel {
   border-radius: 0;
-  background: #f7f5eb;
-  box-shadow: 7px 7px 0 rgba(22, 23, 20, 0.14);
+  background: #1a1b16;
+  box-shadow: 7px 7px 0 rgba(0, 0, 0, 0.3);
 }
 
 .studio-worktable--brand .studio-workspace-panel--accent {

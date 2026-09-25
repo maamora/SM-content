@@ -37,19 +37,11 @@ app:
     provider: ${IMAGE_PROVIDER:local-svg}
     fallback-provider: ${IMAGE_PROVIDER_FALLBACK:disabled}
 
-  fal-reference-mode: ${FAL_REFERENCE_MODE:product-only}
-
   stability:
     api-key: ${STABILITY_API_KEY:}
     model: ${STABILITY_IMAGE_MODEL:ultra}
     base-url: ${STABILITY_BASE_URL:https://api.stability.ai}
     timeout-ms: ${STABILITY_TIMEOUT_MS:180000}
-
-  fal:
-    key: ${FAL_KEY:}
-    model: ${FAL_IMAGE_MODEL:fal-ai/flux-pro/kontext}
-    base-url: ${FAL_BASE_URL:https://fal.run}
-    timeout-ms: ${FAL_TIMEOUT_MS:180000}
 
   anthropic:
     api-key: ${ANTHROPIC_API_KEY:}
@@ -72,59 +64,6 @@ app:
   caption:
     provider: ${CAPTION_PROVIDER:local-templates}
 
-  cloudflare:
-    account-id: ${CLOUDFLARE_ACCOUNT_ID:}
-    api-token: ${CLOUDFLARE_API_TOKEN:}
-    base-url: ${CLOUDFLARE_AI_BASE_URL:https://api.cloudflare.com/client/v4}
-    image-model: ${CLOUDFLARE_AI_MODEL:@cf/black-forest-labs/flux-2-dev}
-    timeout-ms: ${CLOUDFLARE_AI_TIMEOUT_MS:180000}
-    poll-interval-ms: ${CLOUDFLARE_AI_POLL_INTERVAL_MS:3000}
-    steps: ${CLOUDFLARE_AI_STEPS:25}
-    guidance: ${CLOUDFLARE_AI_GUIDANCE:4.0}
-    retry-attempts: ${CLOUDFLARE_AI_RETRY_ATTEMPTS:3}
-    retry-backoff-ms: ${CLOUDFLARE_AI_RETRY_BACKOFF_MS:1500}
-
-  deapi:
-    api-key: ${DEAPI_API_KEY:}
-    image-model: ${DEAPI_IMAGE_MODEL:Flux1schnell}
-    edit-model: ${DEAPI_EDIT_MODEL:QwenImageEdit_Plus_NF4}
-    base-url: ${DEAPI_BASE_URL:https://api.deapi.ai}
-    steps: ${DEAPI_STEPS:4}
-    guidance: ${DEAPI_GUIDANCE:7.5}
-    poll-interval-ms: ${DEAPI_POLL_INTERVAL_MS:3000}
-    timeout-ms: ${DEAPI_TIMEOUT_MS:180000}
-
-  apiframe:
-    api-key: ${APIFRAME_API_KEY:}
-    model: ${APIFRAME_IMAGE_MODEL:flux-2-pro}
-    base-url: ${APIFRAME_BASE_URL:https://api.apiframe.ai/v2}
-    poll-interval-ms: ${APIFRAME_POLL_INTERVAL_MS:3000}
-    timeout-ms: ${APIFRAME_TIMEOUT_MS:180000}
-    output-format: ${APIFRAME_OUTPUT_FORMAT:png}
-
-
-  openai:
-    api-key: ${OPENAI_API_KEY:}
-    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
-    image-model: ${OPENAI_IMAGE_MODEL:gpt-image-1}
-    text-model: ${OPENAI_TEXT_MODEL:gpt-4o-mini}
-    image-quality: ${OPENAI_IMAGE_QUALITY:medium}
-    image-timeout-ms: ${OPENAI_IMAGE_TIMEOUT_MS:180000}
-
-  openrouter:
-    api-key: ${OPENROUTER_API_KEY:}
-    models: ${OPENROUTER_MODELS:openai/gpt-4o-mini,google/gemini-2.0-flash-001}
-    image-model: ${OPENROUTER_IMAGE_MODEL:bytedance-seed/seedream-4.5}
-    base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1}
-    max-attempts: ${OPENROUTER_MAX_ATTEMPTS:2}
-    image-timeout-ms: ${OPENROUTER_IMAGE_TIMEOUT_MS:180000}
-    image-api-path: ${OPENROUTER_IMAGE_API_PATH:/images}
-
-  groq:
-    api-key: ${GROQ_API_KEY:}
-    model: ${GROQ_MODEL:llama-3.3-70b-versatile}
-    base-url: ${GROQ_BASE_URL:https://api.groq.com/openai/v1}
-
   video:
     provider: ${VIDEO_PROVIDER:disabled}
 
@@ -142,21 +81,22 @@ app:
     video-timeout-ms: ${GEMINI_VIDEO_TIMEOUT_MS:600000}
     video-poll-interval-ms: ${GEMINI_VIDEO_POLL_INTERVAL_MS:5000}
 
-  higgsfield:
-    api-key-id: ${HIGGSFIELD_API_KEY_ID:}
-    api-key-secret: ${HIGGSFIELD_API_KEY_SECRET:}
-    model: ${HIGGSFIELD_MODEL:flux-pro/kontext/max/text-to-image}
-    reference-model: ${HIGGSFIELD_REFERENCE_MODEL:flux-pro/kontext/max/image-to-image}
-    video-model: ${HIGGSFIELD_VIDEO_MODEL:}
-    base-url: ${HIGGSFIELD_BASE_URL:https://platform.higgsfield.ai}
-    timeout-ms: ${HIGGSFIELD_TIMEOUT_MS:180000}
-    poll-interval-ms: ${HIGGSFIELD_POLL_INTERVAL_MS:3000}
+  xai:
+    api-key: ${XAI_API_KEY:}
+    image-model: ${XAI_IMAGE_MODEL:grok-imagine-image-2.0}
+    base-url: ${XAI_BASE_URL:https://api.x.ai/v1}
+    image-timeout-ms: ${XAI_IMAGE_TIMEOUT_MS:180000}
 
-  ollama:
-    enabled: ${OLLAMA_ENABLED:false}
-    model: ${OLLAMA_MODEL:qwen2.5:7b}
-    base-url: ${OLLAMA_BASE_URL:http://localhost:11434/api}
-    
+  meta:
+    # Meta's Model API (formerly "Llama API"; models are now the Muse family).
+    # One MODEL_API_KEY covers both Muse Spark (captions/text) and Muse Image
+    # (image generation) — they're separate model IDs on the same account.
+    api-key: ${MODEL_API_KEY:}
+    base-url: ${MODEL_API_BASE_URL:https://api.meta.ai/v1}
+    model: ${MODEL_API_MODEL:muse-spark-1.3}
+    image-model: ${MODEL_API_IMAGE_MODEL:muse-image-1.0}
+    image-timeout-ms: ${MODEL_API_IMAGE_TIMEOUT_MS:180000}
+
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 

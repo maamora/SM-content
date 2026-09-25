@@ -12,6 +12,7 @@ export interface Product {
     status: "PENDING" | "APPROVED" | "REJECTED";
     createdByName: string | null;
     createdById: string | null;
+    createdAt: string;
 }
 
 export interface ProductInput {

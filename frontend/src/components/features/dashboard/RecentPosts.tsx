@@ -65,7 +65,7 @@ function CaptionEditor({ post, onSaved }: { post: Post; onSaved: () => void }) {
                             value={values[key]}
                             onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
                             rows={2}
-                            className="min-w-0 flex-1 resize-none border border-[#bdbdb4] bg-[#faf9f4] px-3 py-2 text-xs text-[var(--studio-ink)] outline-none focus:border-[var(--studio-lime)]"
+                            className="min-w-0 flex-1 resize-none border border-[#bdbdb4] bg-[#faf9f4] px-3 py-2 text-xs text-white outline-none focus:border-[var(--studio-lime)]"
                         />
                         <button
                             type="button"
@@ -115,7 +115,7 @@ export default function RecentPosts({ posts, onChange }: RecentPostsProps) {
 
     return (
         <div className="studio-workspace-panel">
-            <h3 className="mb-4 flex items-center gap-2 font-serif text-2xl font-normal text-[var(--studio-ink)]">
+            <h3 className="mb-4 flex items-center gap-2 font-serif text-2xl font-normal text-white">
                 <Clock className="h-5 w-5 text-[#5f762a]" />
                 Posts récents
             </h3>
@@ -140,7 +140,7 @@ export default function RecentPosts({ posts, onChange }: RecentPostsProps) {
                             )}
                         </div>
                         <div className="studio-recent-post-card__body">
-                            <p className="truncate text-xs font-extrabold text-[var(--studio-ink)]" title={post.productName}>
+                            <p className="truncate text-xs font-extrabold text-white" title={post.productName}>
                                 {post.productName}
                             </p>
                             <div className="mt-2 flex gap-2">

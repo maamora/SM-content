@@ -4,10 +4,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
     AlignLeft, Check, CheckCircle2, Copy, Download, Eye, FileUp, Frame,
-    ImagePlus, Keyboard, Layers3, Loader2, Maximize2, Minus, Palette, Plus, Search, Sparkles, Stamp, UploadCloud,
+    ImagePlus, Keyboard, Layers3, Loader2, Minus, Palette, Plus, Search, Sparkles, Stamp, UploadCloud,
 } from "lucide-react";
 import { getBrand, type BrandSettings } from "@/lib/api/brand";
-import { createBrowserVisualPost, editCaption, exportPost, generateCaptions, generateImage, approvePost, type Post } from "@/lib/api/posts";
+import { createBrowserVisualPost, editCaption, exportPost, generateCaptions, generateImage, approvePost, getImageProviderStatus, type ImageProviderStatus, type Post } from "@/lib/api/posts";
 import { listTemplates, type Template } from "@/lib/api/templates";
 import { SourceStack } from "@/components/studio/SourceStack";
 
@@ -41,6 +41,17 @@ const moods = [
     { id: "mint", label: "Menthe", color: "#BDE8D8", ink: "#1B5E4F" },
     { id: "eclipse", label: "Nuit", color: "#191A18", ink: "#B9FF43" },
 ] as const;
+
+// Mirrors the mood → background mapping in SvgTemplateRenderer.java so the live client-side
+// preview actually matches what the server renders, instead of every mood but "Nuit" looking
+// like the same flat dark gray.
+const moodPreviewBackgrounds: Record<string, string> = {
+    sunset: "#3D4A1F",
+    moss: "#183D33",
+    ochre: "#5A2E1F",
+    mint: "#153B38",
+    eclipse: "#101018",
+};
 
 const languages: { id: CaptionLang; label: string; shortLabel: string; direction?: "rtl" }[] = [
     { id: "fr", label: "Français", shortLabel: "FR" },
@@ -106,15 +117,17 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
     const [savingCaptionLanguage, setSavingCaptionLanguage] = useState<CaptionLang | null>(null);
     const [busy, setBusy] = useState<"render" | "upload" | "captions" | "approve" | "export" | null>(null);
     const [canvasZoom, setCanvasZoom] = useState(1);
-    const [safeAreaVisible, setSafeAreaVisible] = useState(true);
+    const [imageProviderStatus, setImageProviderStatus] = useState<ImageProviderStatus | null>(null);
     const pickerRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // The API exposes approved products plus pending products created by the
     // current user. Keeping those owner-visible drafts available here makes
     // product testing possible without exposing a teammate's unapproved work.
-    const availableProducts = useMemo(() => products.filter((product) => product.status === "APPROVED" || product.status === "PENDING"), [products]);
-    const selectedProduct = availableProducts.find((product) => product.id === productId) ?? availableProducts[0] ?? null;
+    // Every product in the brand's catalog is available to compose with —
+    // there's no approval status gating this anymore.
+    const availableProducts = products;
+    const selectedProduct = availableProducts.find((product) => product.id === productId) ?? null;
     const selectedMood = moods.find((mood) => mood.id === moodId) ?? moods[0];
     const activeTemplates = useMemo(() => templates.filter((template) => template.format === format), [templates, format]);
     const selectedTemplate = activeTemplates.find((template) => template.id === templateId) ?? null;
@@ -139,10 +152,29 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
 
     useEffect(() => {
         void Promise.all([listTemplates(), getBrand()])
-            .then(([nextTemplates, nextBrand]) => { setTemplates(nextTemplates); setBrand(nextBrand); })
+            .then(([nextTemplates, nextBrand]) => {
+                setTemplates(nextTemplates);
+                setBrand(nextBrand);
+                // Default the accent to the brand's primary color the first time it loads,
+                // but only if the user hasn't already picked a different one this session.
+                setAccentColor((current) => (current === "#B9FF43" && nextBrand?.primaryColor ? nextBrand.primaryColor : current));
+            })
             .catch(() => {
                 // The parent workspace already owns backend readiness messaging. Keep this artboard usable as a neutral local preview while it reconnects.
             });
+    }, []);
+
+    // Lets the Composer show a "temporarily unavailable" notice instead of a
+    // confusing per-post error when the AI image provider is rate-limited or
+    // out of credit/access. Polled periodically since the cooldown can clear
+    // on its own (rate limit) without the user doing anything.
+    const refreshImageProviderStatus = () => {
+        void getImageProviderStatus().then(setImageProviderStatus).catch(() => {});
+    };
+    useEffect(() => {
+        refreshImageProviderStatus();
+        const interval = window.setInterval(refreshImageProviderStatus, 60_000);
+        return () => window.clearInterval(interval);
     }, []);
 
     useEffect(() => {
@@ -189,7 +221,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
             const result = await generateImage({ productId: selectedProduct.id, templateId, promoText, badgeText, accentColor, mood: moodId, includeBrandLogo: includeBrandLogo && canAddBrandMark, brandLogoPlacement, headline, supportingText, ctaText, layoutStyle, productFocus, textAlignment });
             setPost(result); onPostChange?.();
         } catch (err) { setError(err instanceof Error ? err.message : "Le rendu local n’a pas abouti."); }
-        finally { setBusy(null); }
+        finally { setBusy(null); refreshImageProviderStatus(); }
     };
     const saveUploadedPost = async () => {
         if (!selectedProduct || !templateId || !uploadedFile) return;
@@ -254,7 +286,6 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                 event.preventDefault();
                 void (mode === "template" ? renderTemplate() : saveUploadedPost());
             }
-            if (!editingText && event.key.toLowerCase() === "g") setSafeAreaVisible((value) => !value);
         };
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
@@ -270,13 +301,20 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                 </div>
                 <div className="studio-artboard-header__meta">
                     <span>{format === "SQUARE_POST" ? "1080 × 1080" : "1080 × 1920"}</span>
-                    <span>LOCAL SVG</span>
-                    <button type="button" onClick={() => setSafeAreaVisible((value) => !value)} className="studio-artboard-reset" aria-pressed={safeAreaVisible} title="Toggle safe-area guides (G)"><Maximize2 className="h-3.5 w-3.5" /> Guides</button>
+                    <span>{post?.generationMode === "AI_GENERATED" ? "AI RENDER" : "LOCAL SVG"}</span>
                     <button type="button" onClick={resetDirection} className="studio-artboard-reset">Réinitialiser la direction</button>
                 </div>
             </header>
 
             {error && <div className="studio-artboard-error" role="alert">{error}</div>}
+            {mode === "template" && imageProviderStatus && !imageProviderStatus.available && (
+                <div className="studio-artboard-notice" role="status">
+                    <strong>Génération IA temporairement indisponible ({imageProviderStatus.provider}).</strong>
+                    <span>{imageProviderStatus.retryAt
+                        ? `Nouvelle tentative possible vers ${new Date(imageProviderStatus.retryAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}.`
+                        : "Crédit ou accès épuisé — ajoutez du crédit ou changez de fournisseur."} Les posts utilisent la composition locale en attendant.</span>
+                </div>
+            )}
 
             <div className="studio-artboard-workspace">
                 <aside className="studio-artboard-inspector" aria-label="Contrôles de composition">
@@ -309,7 +347,7 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                     {mode === "template" ? <>
                         <section className="studio-artboard-section">
                             <Label>Atmosphère</Label>
-                            <div className="studio-artboard-moods">{moods.map((mood) => <button key={mood.id} type="button" aria-pressed={moodId === mood.id} onClick={() => { setMoodId(mood.id); clearWorkingPost(); }} title={mood.label} style={{ "--mood": mood.color } as React.CSSProperties}><span>{mood.label}</span></button>)}</div>
+                            <div className="studio-artboard-moods">{moods.map((mood) => <button key={mood.id} type="button" aria-pressed={moodId === mood.id} onClick={() => { setMoodId(mood.id); clearWorkingPost(); }} title={mood.label} style={{ "--mood": mood.color, "--mood-ink": mood.ink } as React.CSSProperties}><span>{mood.label}</span></button>)}</div>
                             <p className="studio-artboard-hint">Choose a palette.</p>
                         </section>
                         <section className="studio-artboard-section studio-artboard-section--fine-tune">
@@ -321,6 +359,22 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                                 <div className="mt-3"><Label>Cadrage produit</Label><div className="studio-artboard-choice-row mt-2">{productFocuses.map((focus) => <button key={focus.id} type="button" aria-pressed={productFocus === focus.id} onClick={() => { setProductFocus(focus.id); clearWorkingPost(); }}>{focus.label}</button>)}</div></div>
                                 <div className="mt-3 flex items-center justify-between"><Label>Alignement du texte</Label><div className="studio-artboard-choice-row"><button type="button" aria-pressed={textAlignment === "LEFT"} onClick={() => { setTextAlignment("LEFT"); clearWorkingPost(); }}>Gauche</button><button type="button" aria-pressed={textAlignment === "CENTER"} onClick={() => { setTextAlignment("CENTER"); clearWorkingPost(); }}>Centré</button></div></div>
                                 <div className="mt-3 flex items-center justify-between"><span className="text-xs font-semibold text-[#d9dbd1]">Signal couleur</span><label className="flex items-center gap-2 text-[10px] font-mono uppercase text-[#9c9f94]"><span>{accentColor}</span><input type="color" value={accentColor} onChange={(event) => { setAccentColor(event.target.value); clearWorkingPost(); }} /></label></div>
+                                {(brand?.primaryColor || brand?.secondaryColor) && (
+                                    <div className="mt-2 flex items-center gap-2">
+                                        <span className="text-[9px] font-mono uppercase text-[#787c72]">Marque</span>
+                                        {[brand?.primaryColor, brand?.secondaryColor].filter((value): value is string => Boolean(value)).map((value) => (
+                                            <button
+                                                key={value}
+                                                type="button"
+                                                title={value}
+                                                aria-pressed={accentColor.toLowerCase() === value.toLowerCase()}
+                                                onClick={() => { setAccentColor(value); clearWorkingPost(); }}
+                                                className="h-5 w-5 rounded-full border border-white/20 transition-transform hover:scale-110 aria-[pressed=true]:ring-2 aria-[pressed=true]:ring-[#c6ff5e] aria-[pressed=true]:ring-offset-1 aria-[pressed=true]:ring-offset-[#111209]"
+                                                style={{ background: value }}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </details>
                         </section>
                         <section className="studio-artboard-section studio-artboard-section--fine-tune">
@@ -346,11 +400,10 @@ export default function CreativeStudio({ products, onPostChange }: CreativeStudi
                     <div className={`studio-artboard-canvas ${isStory ? "studio-artboard-canvas--story" : ""}`}>
                         <div className="studio-artboard-canvas__ruler studio-artboard-canvas__ruler--top" /><div className="studio-artboard-canvas__ruler studio-artboard-canvas__ruler--side" />
                         <div className="studio-artboard-canvas__paper" style={{ transform: `scale(${canvasZoom})` }}>
-                            {safeAreaVisible && <div className="studio-artboard-safe-area" aria-hidden="true"><span>SAFE AREA</span></div>}
-                            {previewImage ? <img src={previewImage} alt="Aperçu du post" /> : <svg viewBox="0 0 1000 1000" role="img" aria-label="Aperçu SVG du post"><rect width="1000" height="1000" fill={layoutStyle === "MINIMAL" ? "#F4F1E8" : layoutStyle === "CATALOG" ? "#DDE5D7" : selectedMood.id === "eclipse" ? "#141512" : "#1b201c"} />{layoutStyle === "MINIMAL" ? <path d="M0 120 L1000 40 V170 L0 250 Z" fill={accentColor} opacity=".45" /> : layoutStyle === "CATALOG" ? <rect x="50" y="50" width="900" height="900" rx="32" fill="none" stroke="#10110f" strokeOpacity=".18" strokeWidth="3" /> : <circle cx="790" cy="220" r="270" fill={accentColor} opacity={layoutStyle === "POSTER" ? ".20" : ".55"} />}{productFocus === "FLOATING" ? <rect x={previewProductBox.x - 18} y={previewProductBox.y - 14} width={previewProductBox.width + 36} height={previewProductBox.height + 30} rx="42" fill="#F5F1E8" opacity=".14" /> : null}<rect x="56" y="62" width="310" height="75" fill={accentColor} /><text x="80" y="110" fill="#10110f" fontSize="30" fontWeight="800" letterSpacing="4">{badgeText || "NOUVEAU"}</text>{includeBrandLogo && canAddBrandMark ? <g><rect x={previewBrandFrame.x} y={previewBrandFrame.y} width={previewBrandFrame.width} height={previewBrandFrame.height} rx="16" fill="#F5F1E8" opacity=".9" />{brand?.logoUrl ? <image href={brand.logoUrl} x={previewBrandFrame.x + previewBrandFrame.padding} y={previewBrandFrame.y + previewBrandFrame.padding} width={previewBrandFrame.width - previewBrandFrame.padding * 2} height={previewBrandFrame.height - previewBrandFrame.padding * 2} preserveAspectRatio="xMidYMid meet" /> : configuredBrandName ? <text x={previewBrandFrame.x + previewBrandFrame.width / 2} y={previewBrandFrame.y + 53} textAnchor="middle" fill="#11120f" fontSize="22" fontWeight="700" letterSpacing="2">{configuredBrandName}</text> : null}</g> : null}{selectedProduct?.imageUrl ? <image href={selectedProduct.imageUrl} x={previewProductBox.x} y={previewProductBox.y} width={previewProductBox.width} height={previewProductBox.height} preserveAspectRatio={`xMidYMid ${previewProductBox.mode}`} /> : <rect x={previewProductBox.x} y={previewProductBox.y} width={previewProductBox.width} height={previewProductBox.height} rx="40" fill="#c9c7bb" opacity=".55" />}<rect x="0" y="680" width="1000" height="320" fill={layoutStyle === "MINIMAL" ? "#F4F1E8" : layoutStyle === "CATALOG" ? "#EAF0E6" : "#11120f"} opacity={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? ".96" : ".88"} /><text x={previewCopyX} y="755" textAnchor={previewTextAnchor} fill={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? "#10110f" : "#F5F1E8"} fontSize="58" fontWeight="800">{headline || selectedProduct?.name || "VOTRE PRODUIT"}</text><text x={previewCopyX} y="815" textAnchor={previewTextAnchor} fill={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? "#10110f" : accentColor} fontSize="28" fontWeight="700">{promoText || "Votre prochaine direction"}</text><text x={previewCopyX} y="862" textAnchor={previewTextAnchor} fill={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? "#4a4d45" : "#bdbdb4"} fontSize="18">{supportingText || selectedProduct?.description || "Définissez votre bénéfice produit."}</text>{ctaText ? <g><rect x={textAlignment === "CENTER" ? 375 : 70} y="895" width="250" height="48" rx="24" fill={accentColor} /><text x={textAlignment === "CENTER" ? 500 : 195} y="926" textAnchor="middle" fill="#10110f" fontSize="16" fontWeight="700" letterSpacing="1">{ctaText}</text></g> : null}<text x={previewCopyX} y="978" textAnchor={previewTextAnchor} fill={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? "#4a4d45" : "#bdbdb4"} fontSize="14" letterSpacing="3">LOCAL SVG TEMPLATE COMPOSITION</text></svg>}
+                            {previewImage ? <img src={previewImage} alt="Aperçu du post" /> : <svg viewBox="0 0 1000 1000" role="img" aria-label="Aperçu SVG du post"><rect width="1000" height="1000" fill={layoutStyle === "MINIMAL" ? "#F4F1E8" : layoutStyle === "CATALOG" ? "#DDE5D7" : moodPreviewBackgrounds[selectedMood.id] ?? "#1b201c"} />{layoutStyle === "MINIMAL" ? <path d="M0 120 L1000 40 V170 L0 250 Z" fill={accentColor} opacity=".45" /> : layoutStyle === "CATALOG" ? <rect x="50" y="50" width="900" height="900" rx="32" fill="none" stroke="#10110f" strokeOpacity=".18" strokeWidth="3" /> : <circle cx="790" cy="220" r="270" fill={accentColor} opacity={layoutStyle === "POSTER" ? ".20" : ".55"} />}{productFocus === "FLOATING" ? <rect x={previewProductBox.x - 18} y={previewProductBox.y - 14} width={previewProductBox.width + 36} height={previewProductBox.height + 30} rx="42" fill="#F5F1E8" opacity=".14" /> : null}<rect x="56" y="62" width="310" height="75" fill={accentColor} /><text x="80" y="110" fill="#10110f" fontSize="30" fontWeight="800" letterSpacing="4">{badgeText || "NOUVEAU"}</text>{includeBrandLogo && canAddBrandMark ? <g><rect x={previewBrandFrame.x} y={previewBrandFrame.y} width={previewBrandFrame.width} height={previewBrandFrame.height} rx="16" fill="#F5F1E8" opacity=".9" />{brand?.logoUrl ? <image href={brand.logoUrl} x={previewBrandFrame.x + previewBrandFrame.padding} y={previewBrandFrame.y + previewBrandFrame.padding} width={previewBrandFrame.width - previewBrandFrame.padding * 2} height={previewBrandFrame.height - previewBrandFrame.padding * 2} preserveAspectRatio="xMidYMid meet" /> : configuredBrandName ? <text x={previewBrandFrame.x + previewBrandFrame.width / 2} y={previewBrandFrame.y + 53} textAnchor="middle" fill="#11120f" fontSize="22" fontWeight="700" letterSpacing="2">{configuredBrandName}</text> : null}</g> : null}{selectedProduct?.imageUrl ? <image href={selectedProduct.imageUrl} x={previewProductBox.x} y={previewProductBox.y} width={previewProductBox.width} height={previewProductBox.height} preserveAspectRatio={`xMidYMid ${previewProductBox.mode}`} /> : <rect x={previewProductBox.x} y={previewProductBox.y} width={previewProductBox.width} height={previewProductBox.height} rx="40" fill="#c9c7bb" opacity=".55" />}<rect x="0" y="680" width="1000" height="320" fill={layoutStyle === "MINIMAL" ? "#F4F1E8" : layoutStyle === "CATALOG" ? "#EAF0E6" : "#11120f"} opacity={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? ".96" : ".88"} /><text x={previewCopyX} y="755" textAnchor={previewTextAnchor} fill={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? "#10110f" : "#F5F1E8"} fontSize="58" fontWeight="800">{headline || selectedProduct?.name || "VOTRE PRODUIT"}</text><text x={previewCopyX} y="815" textAnchor={previewTextAnchor} fill={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? "#10110f" : accentColor} fontSize="28" fontWeight="700">{promoText || "Votre prochaine direction"}</text><text x={previewCopyX} y="862" textAnchor={previewTextAnchor} fill={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? "#4a4d45" : "#bdbdb4"} fontSize="18">{supportingText || selectedProduct?.description || "Définissez votre bénéfice produit."}</text>{ctaText ? <g><rect x={textAlignment === "CENTER" ? 375 : 70} y="895" width="250" height="48" rx="24" fill={accentColor} /><text x={textAlignment === "CENTER" ? 500 : 195} y="926" textAnchor="middle" fill="#10110f" fontSize="16" fontWeight="700" letterSpacing="1">{ctaText}</text></g> : null}<text x={previewCopyX} y="978" textAnchor={previewTextAnchor} fill={layoutStyle === "MINIMAL" || layoutStyle === "CATALOG" ? "#4a4d45" : "#bdbdb4"} fontSize="14" letterSpacing="3">LOCAL SVG TEMPLATE COMPOSITION</text></svg>}
                         </div>
                     </div>
-                    <div className="studio-artboard-renderbar"><ol className="studio-artboard-progress" aria-label="Étapes du post"><li className="is-active"><span />Composer</li><li className={post ? "is-active" : ""}><span />Légendes</li><li className={post?.status === "APPROVED" || post?.status === "EXPORTED" ? "is-active" : ""}><span />Validation</li><li><span />Diffusion</li><li className={post?.status === "EXPORTED" ? "is-active" : ""}><span />Export</li></ol><div className="studio-artboard-renderbar__action"><p><strong>{mode === "template" ? "Local SVG render." : uploadedFile ? "File ready." : "Select a file."}</strong><span>{mode === "template" ? "⌘/Ctrl + Enter · G guides" : "No edits applied."}</span></p><button type="button" disabled={!canCreate || busy !== null} onClick={() => void (mode === "template" ? renderTemplate() : saveUploadedPost())}>{busy === "render" || busy === "upload" ? <Loader2 className="h-4 w-4 animate-spin" /> : mode === "template" ? <Sparkles className="h-4 w-4" /> : <FileUp className="h-4 w-4" />}{busy === "render" ? "Rendu…" : busy === "upload" ? "Ajout…" : mode === "template" ? "Rendre le post" : "Ajouter au studio"}</button></div></div>
+                    <div className="studio-artboard-renderbar"><ol className="studio-artboard-progress" aria-label="Étapes du post"><li className="is-active"><span />Composer</li><li className={post ? "is-active" : ""}><span />Légendes</li><li className={post?.status === "APPROVED" || post?.status === "EXPORTED" ? "is-active" : ""}><span />Validation</li><li><span />Diffusion</li><li className={post?.status === "EXPORTED" ? "is-active" : ""}><span />Export</li></ol><div className="studio-artboard-renderbar__action"><p><strong>{mode === "template" ? (post ? (post.generationMode === "AI_GENERATED" ? "AI render." : "Local SVG render.") : "Local SVG render.") : uploadedFile ? "File ready." : "Select a file."}</strong><span>{mode === "template" ? "⌘/Ctrl + Enter to render" : "No edits applied."}</span></p><button type="button" disabled={!canCreate || busy !== null} onClick={() => void (mode === "template" ? renderTemplate() : saveUploadedPost())}>{busy === "render" || busy === "upload" ? <Loader2 className="h-4 w-4 animate-spin" /> : mode === "template" ? <Sparkles className="h-4 w-4" /> : <FileUp className="h-4 w-4" />}{busy === "render" ? "Rendu…" : busy === "upload" ? "Ajout…" : mode === "template" ? "Rendre le post" : "Ajouter au studio"}</button></div></div>
                 </main>
 
                 <aside className="studio-artboard-publish" aria-label="Contrôles de marque et publication">

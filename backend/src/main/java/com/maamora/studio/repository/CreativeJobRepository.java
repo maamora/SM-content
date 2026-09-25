@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface CreativeJobRepository extends JpaRepository<CreativeJob, String> {
     List<CreativeJob> findTop20ByUserIdOrderByCreatedAtDesc(String userId);
+    List<CreativeJob> findAllByUserId(String userId);
 
     Optional<CreativeJob> findByIdAndUserId(String id, String userId);
 }

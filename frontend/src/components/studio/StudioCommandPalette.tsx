@@ -8,9 +8,8 @@ import { Command, CornerDownLeft, Search, X } from "lucide-react";
 const commands = [
   { label: "Start a new post", detail: "Open the local-SVG artboard", href: "/dashboard/studio", group: "Create" },
   { label: "Add product source", detail: "Open the source library and upload form", href: "/dashboard/products", group: "Create" },
-  { label: "Open Brand kit", detail: "Set logo, color, typography, and tone", href: "/dashboard/brand", group: "Create" },
-  { label: "Run a batch", detail: "Create a family of local compositions", href: "/dashboard/batch", group: "Create" },
-  { label: "Review posts", detail: "Inspect saved posts and export files", href: "/dashboard/posts", group: "Library" },
+  { label: "Open Brand kit", detail: "Set logo, color, typography, and tone", href: "/dashboard/settings?tab=brand", group: "Create" },
+  { label: "Run a batch", detail: "Send several approved posts out together", href: "/dashboard/batch", group: "Create" },
   { label: "Browse source assets", detail: "Open product and post media", href: "/dashboard/assets", group: "Library" },
   { label: "Open delivery desk", detail: "Connect channels and schedule an approved post", href: "/dashboard/social", group: "Delivery" },
   { label: "Read workspace signals", detail: "Open approval and email activity", href: "/dashboard/notifications", group: "Delivery" },
@@ -53,9 +52,8 @@ export function StudioCommandPalette() {
   };
 
   return <>
-    <button type="button" className="studio-command-trigger" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-label="Open command palette">
-      <Command size={15} /><span>Command</span><kbd>⌘ K</kbd>
-    </button>
+    {/* Visible "Command ⌘K" trigger pill removed per request — the palette is
+        still reachable via the ⌘K/Ctrl+K keyboard shortcut listened for above. */}
     {open && <div className="studio-command-overlay" role="presentation" onMouseDown={() => setOpen(false)}>
       <section className="studio-command-palette" role="dialog" aria-modal="true" aria-label="STUDIO command palette" onMouseDown={(event) => event.stopPropagation()}>
         <header><div><Command size={16} /><span>STUDIO / COMMAND</span></div><button type="button" onClick={() => setOpen(false)} aria-label="Close command palette"><X size={16} /></button></header>

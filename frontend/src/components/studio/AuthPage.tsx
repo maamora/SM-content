@@ -131,7 +131,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
                   <input required value={name} onChange={(event) => setName(event.target.value)} placeholder="Your name" />
                 </label>
 
-                <div className="flex gap-2">
+                <div className="studio-mode-switch">
                   <button
                     type="button"
                     onClick={() => setSignupMode("create")}
@@ -226,11 +226,10 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
               <input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="8 characters minimum" />
             </label>
             {mode === "login" && (
-              <label>Brand name or code <span className="text-[10px] font-normal normal-case tracking-normal text-[#8b8b83]">(optional)</span>
+              <label>Brand name or code <span className="text-[10px] font-normal normal-case tracking-normal text-[#8b8b83]">(only if you belong to more than one)</span>
                 <input
                   value={brandIdentifier}
                   onChange={(event) => setBrandIdentifier(event.target.value)}
-                  placeholder="e.g. Labubu or 7K4M9XPQ"
                 />
               </label>
             )}

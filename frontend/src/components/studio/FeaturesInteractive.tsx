@@ -18,7 +18,7 @@ type Chapter = {
 const chapters: Chapter[] = [
   { id: "brief", index: "01", label: "Brief to direction", title: "Keep the why attached to the work.", body: "Drop the rough idea into a living brief, then give every visual, caption, and variation the same point of view.", stat: "one brief / many moves" },
   { id: "visuals", index: "02", label: "Visual families", title: "Make more without making noise.", body: "Generate a considered set of directions, compare the family, and pull the strongest frame forward for refinement.", stat: "12 directions / 01 signal" },
-  { id: "language", index: "03", label: "Language in motion", title: "Let every market sound like the same brand.", body: "Translate and adapt captions in context, with tone and campaign intent visible beside the visual it belongs to.", stat: "EN / FR / AR ready" },
+  { id: "language", index: "03", label: "Language in motion", title: "Let every market sound like the same brand.", body: "Translate and adapt captions in context, with tone and campaign intent visible beside the visual it belongs to.", stat: "EN / FR / AR / DARIJA " },
   { id: "ship", index: "04", label: "Approval to publish", title: "Move the final draft forward.", body: "Keep review, status, and publishing decisions in the same thread so the handoff doesn&apos;t become a second project.", stat: "review / approve / ship" },
 ];
 

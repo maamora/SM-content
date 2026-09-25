@@ -47,11 +47,27 @@ public class SvgTemplateRenderer {
                          String brandName, String logoUrl, boolean includeBrandLogo, String brandLogoPlacement,
                          String headline, String supportingText, String ctaText, String layoutStyle,
                          String productFocus, String textAlignment) {
+        return render(product, width, height, badge, promo, accent, mood, brandName, logoUrl, includeBrandLogo,
+                brandLogoPlacement, headline, supportingText, ctaText, layoutStyle, productFocus, textAlignment, null);
+    }
+
+    /**
+     * Same as above, but {@code heroImageOverride} — a "data:image/...;base64,..."
+     * string — replaces the product's own photo as the hero visual when present.
+     * Used to drop an AI-generated creative into this template's layout instead
+     * of the raw uploaded product photo, while keeping every other control
+     * (headline, CTA, layout, brand mark) exactly as configured.
+     */
+    public byte[] render(Product product, int width, int height, String badge, String promo, String accent, String mood,
+                         String brandName, String logoUrl, boolean includeBrandLogo, String brandLogoPlacement,
+                         String headline, String supportingText, String ctaText, String layoutStyle,
+                         String productFocus, String textAlignment, String heroImageOverride) {
         String safeAccent = color(accent, "#D9FF4A");
         String layout = choice(layoutStyle, "BOLD", "BOLD", "MINIMAL", "CATALOG", "POSTER");
         String focus = choice(productFocus, "CENTER", "CENTER", "CLOSE_UP", "FLOATING", "WIDE");
         String alignment = choice(textAlignment, "LEFT", "LEFT", "CENTER");
         String moodBackground = switch (mood == null ? "" : mood.toLowerCase()) {
+            case "sunset" -> "#3D4A1F";
             case "moss" -> "#183D33";
             case "ochre" -> "#5A2E1F";
             case "mint" -> "#153B38";
@@ -69,7 +85,9 @@ public class SvgTemplateRenderer {
         String visualPromo = compact(promo, sellingPoint, 72);
         String visualSupporting = compact(supportingText, sellingPoint, 86);
         String visualCta = compact(ctaText, "", 28);
-        String image = product == null ? "" : value(product.getImageUrl());
+        String image = heroImageOverride != null && !heroImageOverride.isBlank()
+                ? heroImageOverride
+                : (product == null ? "" : value(product.getImageUrl()));
         String embeddedProductImage = inlineImage(image, "product");
         ImageFrame imageFrame = imageFrame(focus, width, height);
         String visual = embeddedProductImage.isBlank()

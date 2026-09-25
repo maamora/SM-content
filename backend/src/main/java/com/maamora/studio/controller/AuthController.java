@@ -10,6 +10,7 @@ import com.maamora.studio.dto.response.UserProfileResponse;
 import com.maamora.studio.exception.RateLimitExceededException;
 import com.maamora.studio.security.CurrentUserProvider;
 import com.maamora.studio.service.AuthService;
+import com.maamora.studio.service.PasswordRecoveryService;
 import com.maamora.studio.service.RateLimiterService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;

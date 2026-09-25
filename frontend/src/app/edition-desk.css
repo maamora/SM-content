@@ -1,21 +1,21 @@
 /* EDITION DESK / AUTHENTICATED PRODUCT ONLY: a precise editorial proofing desk with cool-paper fields, edition-blue structural signals, vermilion delivery states, hairline rules, and minimal elevation. This file is deliberately scoped to .studio-app so the public landing remains unchanged. */
 
 :root {
-  --edition-paper: #f5f6f5;
-  --edition-sheet: #ffffff;
-  --edition-ink: #171a1f;
-  --edition-muted: #69717d;
-  --edition-faint: #929aa6;
-  --edition-rule: #dce1e7;
-  --edition-rule-strong: #bdc6d2;
-  --edition-blue: #2255d7;
-  --edition-blue-soft: #eaf0ff;
-  --edition-blue-ink: #13318a;
-  --edition-vermilion: #cf4b35;
-  --edition-vermilion-soft: #fff0ed;
-  --edition-success: #166e58;
-  --edition-success-soft: #e8f5ef;
-  --edition-shadow: 0 14px 34px rgba(18, 24, 34, 0.07);
+  --edition-paper: #16171a;
+  --edition-sheet: #1c1e21;
+  --edition-ink: #f2f3f5;
+  --edition-muted: #9aa1ab;
+  --edition-faint: #6c727c;
+  --edition-rule: #30343a;
+  --edition-rule-strong: #454b53;
+  --edition-blue: #6d93ef;
+  --edition-blue-soft: #202b45;
+  --edition-blue-ink: #cddaff;
+  --edition-vermilion: #e0694f;
+  --edition-vermilion-soft: #341f1b;
+  --edition-success: #4fb894;
+  --edition-success-soft: #17322a;
+  --edition-shadow: 0 14px 34px rgba(0, 0, 0, 0.3);
   --edition-radius: 4px;
   --edition-ease: cubic-bezier(0.23, 1, 0.32, 1);
 }
@@ -963,13 +963,25 @@
 }
 
 .studio-app .studio-unavailable,
-.studio-app .studio-form-error,
-.studio-app .studio-inline-notice {
+.studio-app .studio-form-error {
   border: 1px solid #e5c2bb;
   border-left: 3px solid var(--edition-vermilion);
   border-radius: 3px;
   background: var(--edition-vermilion-soft);
   color: #723326;
+}
+
+/* Inline notices (save/upload confirmations, etc.) default to a success tone —
+   only .studio-form-error is the red/error treatment above. Most call sites
+   reuse the same status string for both success and failure text, so this is
+   the neutral-good default; error copy still reads correctly since it's plain
+   text, but no longer looks like a red alert box by default. */
+.studio-app .studio-inline-notice {
+  border: 1px solid #3a5a4d;
+  border-left: 3px solid var(--edition-success);
+  border-radius: 3px;
+  background: var(--edition-success-soft);
+  color: var(--edition-success);
 }
 
 .studio-app .studio-unavailable h3,
@@ -1080,10 +1092,10 @@
 }
 
 .studio-app--studio .studio-artboard-reset {
-  border: 1px solid var(--edition-rule-strong);
+  border: 1px solid #343832;
   border-radius: 3px;
-  background: #fff;
-  color: var(--edition-muted);
+  background: transparent;
+  color: #9a9b91;
 }
 
 .studio-app--studio .studio-artboard-reset:hover {
@@ -1236,7 +1248,7 @@
 .studio-app--studio .studio-artboard-publish article {
   border-color: var(--edition-rule) !important;
   border-radius: 3px;
-  background: #f7f9fd !important;
+  background: #1c1e21 !important;
 }
 
 .studio-app--studio .studio-artboard-publish article strong,

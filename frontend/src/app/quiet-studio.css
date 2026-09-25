@@ -1,18 +1,18 @@
 /* QUIET STUDIO / AUTHENTICATED PRODUCT: a calm warm-gray canvas, white working sheets, charcoal navigation, muted sage state, and one restrained lime commitment signal. Landing-page styles are intentionally untouched. */
 
 :root {
-  --quiet-canvas: #f5f5f1;
-  --quiet-sheet: #ffffff;
-  --quiet-subtle: #ecefe8;
-  --quiet-ink: #1d211e;
-  --quiet-muted: #6e766d;
-  --quiet-rule: #dde1d9;
-  --quiet-sage: #70836c;
-  --quiet-sage-soft: #e5ebe0;
+  --quiet-canvas: #16180f;
+  --quiet-sheet: #1c1e17;
+  --quiet-subtle: #23261d;
+  --quiet-ink: #f2f3ec;
+  --quiet-muted: #9a9d92;
+  --quiet-rule: #34372c;
+  --quiet-sage: #9dad88;
+  --quiet-sage-soft: #2a2f22;
   --quiet-lime: #c7ee75;
-  --quiet-danger: #a95045;
+  --quiet-danger: #d9614f;
   --quiet-radius: 12px;
-  --quiet-shadow: 0 10px 26px rgba(29, 33, 30, 0.05);
+  --quiet-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
 }
 
 .studio-app {
@@ -194,10 +194,20 @@
   align-items: center;
 }
 
-.studio-button,
-.studio-button--dark,
-.studio-button--lime,
-.studio-button--paper,
+/* Every selector below is deliberately scoped to .studio-app (this file's
+   own stated rule: "Landing-page styles are intentionally untouched"). These
+   were previously unscoped, so they also silently hit the public auth/
+   register page (which uses .studio-utility, not .studio-app) — and since
+   --quiet-ink is a near-white color (#f2f3ec) meant for light text on this
+   theme's dark canvas, that made .studio-button--paper render near-white
+   text on a white background, and .studio-button--dark a near-white
+   background with white text: both effectively invisible. That's exactly
+   what made "Join with a code" / "Personal profile" / "New brand" unreadable
+   on the Create Account page. */
+.studio-app .studio-button,
+.studio-app .studio-button--dark,
+.studio-app .studio-button--lime,
+.studio-app .studio-button--paper,
 .studio-app--studio .studio-artboard-renderbar__action button {
   min-height: 38px;
   border: 1px solid transparent;
@@ -207,29 +217,29 @@
   font-weight: 700;
 }
 
-.studio-button--dark,
+.studio-app .studio-button--dark,
 .studio-app--studio .studio-artboard-renderbar__action button {
   background: var(--quiet-ink);
   color: #fff;
 }
 
-.studio-button--dark:hover:not(:disabled),
+.studio-app .studio-button--dark:hover:not(:disabled),
 .studio-app--studio .studio-artboard-renderbar__action button:hover:not(:disabled) {
   background: #313831;
   transform: translateY(-1px);
 }
 
-.studio-button--lime {
+.studio-app .studio-button--lime {
   background: var(--quiet-lime);
   color: #1d231d;
 }
 
-.studio-button--lime:hover:not(:disabled) {
+.studio-app .studio-button--lime:hover:not(:disabled) {
   background: #d5f68a;
   transform: translateY(-1px);
 }
 
-.studio-button--paper {
+.studio-app .studio-button--paper {
   border-color: var(--quiet-rule);
   background: #fff;
   color: var(--quiet-ink);
@@ -595,13 +605,20 @@
 }
 
 .studio-unavailable,
-.studio-form-error,
-.studio-inline-notice {
+.studio-form-error {
   border-color: #d7c2bd;
   border-radius: 9px;
   background: #fff8f6;
   color: #6d3c35;
 }
+
+/* .studio-inline-notice is deliberately left out of the block above — this is
+   a legacy warm-light treatment (near-white background, reddish-brown text)
+   left over from an earlier theme pass. It was overriding the neutral-good
+   green success style set for .studio-inline-notice in edition-desk.css,
+   making plain success messages (e.g. "X is now an admin") read as an error
+   or warning. edition-desk.css's .studio-app .studio-inline-notice rule is
+   the one actually intended to apply here. */
 
 .studio-unavailable h3,
 .studio-unavailable p {
@@ -650,10 +667,10 @@
 }
 
 .studio-app--studio .studio-artboard-reset {
-  border: 1px solid var(--quiet-rule);
+  border: 1px solid #343832;
   border-radius: 7px;
-  background: #fff;
-  color: var(--quiet-muted);
+  background: transparent;
+  color: #9a9b91;
 }
 
 .studio-app--studio .studio-artboard-workspace {

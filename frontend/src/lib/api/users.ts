@@ -5,6 +5,9 @@ export interface UserSummary {
     name: string;
     email: string;
     role: string;
+    // Per-brand standing — OWNER / ADMIN / MEMBER. Unrelated to `role`, which
+    // is the platform-wide staff/customer flag.
+    brandRole: "OWNER" | "ADMIN" | "MEMBER";
     createdAt: string;
 }
 
@@ -19,6 +22,13 @@ export const updateProfile = (input: { name: string; email: string }) =>
 export const changePassword = (input: { currentPassword: string; newPassword: string }) =>
     apiFetch<void>("/api/users/me/password", {
         method: "PUT",
+        body: JSON.stringify(input),
+    });
+
+// Permanent — the backend rejects this unless confirmName exactly matches the account's current name.
+export const deleteAccount = (input: { confirmName: string }) =>
+    apiFetch<void>("/api/users/me", {
+        method: "DELETE",
         body: JSON.stringify(input),
     });
 

@@ -120,12 +120,21 @@ export async function apiFetch<T>(
         return (await res.blob()) as unknown as T;
     }
 
-    // Only treat 401/403 as "session expired" when we actually had a token —
-    // meaning we were authenticated but the backend rejected it (restart wiped
-    // the H2 DB, token expired, etc.).  If there's no token (e.g. a /login
-    // request that returned 401 for wrong credentials) we fall through to the
-    // normal JSON envelope handler so the real error message is shown.
-    if ((res.status === 401 || res.status === 403) && token) {
+    // Only treat 401 as "session expired" when we actually had a token —
+    // meaning we were authenticated but the backend rejected the token itself
+    // (restart wiped the H2 DB, token expired, etc.). If there's no token
+    // (e.g. a /login request that returned 401 for wrong credentials) we fall
+    // through to the normal JSON envelope handler so the real error message
+    // is shown.
+    //
+    // 403 is deliberately NOT included here: it means the session is valid
+    // but the account isn't allowed to do this one thing (e.g. a plain
+    // MEMBER hitting a moderator-only brand-membership endpoint). Treating
+    // that the same as an expired session used to force-log-out anyone who
+    // opened Settings → Members without being an OWNER/ADMIN — the backend
+    // now returns 403 for those cases specifically so this falls through to
+    // the normal error message instead.
+    if (res.status === 401 && token) {
         clearToken();
         if (typeof window !== "undefined") {
             window.location.href = "/login";
@@ -163,7 +172,7 @@ export async function apiUpload<T>(path: string, file: File): Promise<T> {
         throw new Error(`Could not reach the backend at ${API_BASE_URL}. Is it running?`);
     }
 
-    if ((res.status === 401 || res.status === 403) && token) {
+    if (res.status === 401 && token) {
         clearToken();
         if (typeof window !== "undefined") {
             window.location.href = "/login";

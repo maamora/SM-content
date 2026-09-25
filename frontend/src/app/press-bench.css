@@ -1,24 +1,25 @@
 /* PRESS BENCH / AUTHENTICATED PRODUCT ONLY: a tactile production board using STUDIO landing charcoal, paper, olive, and lime tokens. Public marketing is never selected here. */
 
 .studio-app--press-bench {
-  /* Closed authenticated palette: every interface surface derives from a public landing token. */
+  /* Dark authenticated palette: surfaces derive from a near-black bench with warm off-white text. */
   --bench-ink: #11130f;
-  --bench-panel: #1a1c19;
-  --bench-paper: #faf9f4;
-  --bench-stock: #f4f3ed;
-  --bench-sage: #5f762a;
+  --bench-panel: #24261e;
+  --bench-paper: #1a1c19;
+  --bench-stock: #15170f;
+  --bench-sage: #9dad88;
   --bench-lime: #b9dd45;
-  --bench-red: #11130f;
-  --bench-line: #c5c4bb;
-  --bench-muted: #777870;
+  --bench-red: #d9614f;
+  --bench-line: #343832;
+  --bench-muted: #9a9b91;
+  --bench-text: #f4f3ed;
   --studio-ink: #11130f;
-  --studio-paper: #faf9f4;
+  --studio-paper: #1a1c19;
   --studio-lime: #b9dd45;
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr);
   min-height: 100vh;
   background: var(--bench-paper);
-  color: var(--bench-ink);
+  color: var(--bench-text);
 }
 
 .studio-app--press-bench .studio-bench-dock {
@@ -47,9 +48,11 @@
 .studio-app--press-bench .studio-bench-dock__brand > span { display: none; }
 .studio-app--press-bench .studio-bench-dock__brand .studio-mark { gap: 0; }
 .studio-app--press-bench .studio-bench-dock__brand .studio-mark__icon { width: 30px; height: 30px; }
+.studio-app--press-bench .studio-bench-dock__brand-logo { width: 30px; height: 30px; object-fit: contain; border-radius: 4px; background: var(--bench-stock); }
 
 .studio-app--press-bench .studio-bench-dock__nav {
   display: grid;
+  align-content: start;
   gap: 13px;
   padding: 13px 12px;
 }
@@ -81,7 +84,7 @@
   border-radius: 2px;
   background: var(--bench-panel);
   box-shadow: 4px 4px 0 rgb(0 0 0 / 24%);
-  color: var(--bench-paper);
+  color: var(--bench-text);
   content: attr(data-label);
   font-size: 11px;
   font-weight: 800;
@@ -89,23 +92,113 @@
   white-space: nowrap;
 }
 .studio-app--press-bench .studio-bench-dock nav a:hover,
-.studio-app--press-bench .studio-bench-dock nav a:focus-visible { border-color: #343832; background: var(--bench-panel); color: var(--bench-paper); outline: 0; }
+.studio-app--press-bench .studio-bench-dock nav a:focus-visible { border-color: #343832; background: var(--bench-panel); color: var(--bench-text); outline: 0; }
 .studio-app--press-bench .studio-bench-dock nav a:hover::after,
 .studio-app--press-bench .studio-bench-dock nav a:focus-visible::after { display: block; }
 .studio-app--press-bench .studio-bench-dock nav a.is-active { border-color: var(--bench-lime); background: var(--bench-lime); color: var(--bench-ink); }
-.studio-app--press-bench .studio-bench-dock nav a.is-active::after { color: var(--bench-ink); }
+.studio-app--press-bench .studio-bench-dock nav a.is-active::after { color: var(--bench-text); }
 
 .studio-app--press-bench .studio-bench-dock__footer { display: grid; gap: 5px; margin-top: auto; padding: 10px 12px 13px; border-top: 1px solid #343832; }
 .studio-app--press-bench .studio-bench-dock__footer a { display: grid; width: 46px; height: 33px; place-items: center; padding: 0; color: var(--bench-muted); }
 .studio-app--press-bench .studio-bench-dock__footer a > span:last-child { display: none; }
 .studio-app--press-bench .studio-bench-dock__footer a:hover { color: var(--bench-lime); }
+.studio-app--press-bench .studio-bench-dock__profile {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 999px;
+  border: 2px solid var(--bench-lime);
+  background: var(--bench-ink);
+  margin-top: 4px;
+  justify-self: start;
+  color: var(--bench-lime);
+}
+.studio-app--press-bench .studio-bench-dock__profile:hover {
+  background: var(--bench-lime);
+  color: var(--bench-ink);
+}
+.studio-app--press-bench .studio-bench-dock__profile-wrap {
+  position: relative;
+  margin-top: 4px;
+}
+.studio-app--press-bench .studio-bench-dock__profile-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  display: grid;
+  width: 176px;
+  overflow: hidden;
+  border: 1px solid var(--bench-lime);
+  border-radius: 4px;
+  background: var(--bench-ink);
+  box-shadow: 5px 5px 0 rgb(185 221 69 / 35%);
+}
+.studio-app--press-bench .studio-bench-dock__profile-menu a,
+.studio-app--press-bench .studio-bench-dock__profile-menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: auto;
+  height: auto;
+  border: 0;
+  border-bottom: 1px solid #2a2d26;
+  background: transparent;
+  padding: 10px 12px;
+  color: var(--bench-text);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.studio-app--press-bench .studio-bench-dock__profile-menu a:last-child,
+.studio-app--press-bench .studio-bench-dock__profile-menu button:last-child {
+  border-bottom: 0;
+}
+.studio-app--press-bench .studio-bench-dock__profile-menu a:hover,
+.studio-app--press-bench .studio-bench-dock__profile-menu button:hover {
+  background: var(--bench-lime);
+  color: var(--bench-ink);
+}
 
+/* Same dotted-grid + soft color-glow language as the pre-login marketing
+   pages (.studio-starfield / .studio-onboarding__glow), carried into the
+   authenticated app so it doesn't feel like a different product once you're
+   inside. Baked into layered background-images (no extra DOM/animation cost)
+   with a per-route glow position/color so pages read as related, not identical. */
 .studio-app--press-bench .studio-bench-workspace {
   min-width: 0;
   min-height: 100vh;
+  background-color: #121410;
+  background-image:
+    radial-gradient(rgba(185, 221, 69, .1) .8px, transparent .8px),
+    radial-gradient(circle at 50% 0%, rgba(185, 221, 69, .05), transparent 55%);
+  background-size: 26px 26px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+}
+.studio-app--press-bench .studio-bench-workspace:has(.studio-edition-route--products),
+.studio-app--press-bench .studio-bench-workspace:has(.studio-edition-route--studio),
+.studio-app--press-bench .studio-bench-workspace:has(.studio-edition-route--batch),
+.studio-app--press-bench .studio-bench-workspace:has(.studio-edition-route--assets),
+.studio-app--press-bench .studio-bench-workspace:has(.studio-edition-route--social),
+.studio-app--press-bench .studio-bench-workspace:has(.studio-edition-route--notifications) {
+  background-color: #121410;
+  background-image:
+    radial-gradient(rgba(185, 221, 69, .1) .8px, transparent .8px),
+    radial-gradient(circle at 50% 0%, rgba(185, 221, 69, .05), transparent 55%);
+  background-size: 26px 26px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+}
+.studio-app--press-bench .studio-bench-workspace:has(.studio-edition-route--settings) {
   background-color: var(--bench-paper);
-  background-image: linear-gradient(90deg, rgb(17 19 15 / 4%) 1px, transparent 1px), linear-gradient(rgb(17 19 15 / 4%) 1px, transparent 1px);
-  background-size: 36px 36px;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, .05) .8px, transparent .8px),
+    radial-gradient(circle at 50% -15%, rgba(185, 221, 69, .07), transparent 42%),
+    radial-gradient(circle at 105% 80%, rgba(120, 170, 255, .06), transparent 42%),
+    radial-gradient(circle at -5% 80%, rgba(217, 97, 79, .05), transparent 42%);
+  background-size: 26px 26px, 100% 100%, 100% 100%, 100% 100%;
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat;
 }
 
 .studio-app--press-bench .studio-workspace-topbar {
@@ -113,7 +206,7 @@
   margin: 0;
   padding: 0;
   border-bottom: 1px solid var(--bench-line);
-  background: rgb(250 249 244 / 96%);
+  background: rgb(26 28 25 / 94%);
 }
 .studio-app--press-bench .studio-route-masthead,
 .studio-app--press-bench .studio-worktable__masthead,
@@ -132,7 +225,7 @@
 .studio-app--press-bench .studio-job-strip__record { display: flex; min-width: 0; align-items: center; gap: 16px; }
 .studio-app--press-bench .studio-job-strip__record .studio-kicker { flex: 0 0 auto; color: var(--bench-sage); font-size: 9px; letter-spacing: .15em; }
 .studio-app--press-bench .studio-job-strip__record > div { display: grid; min-width: 0; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 12px; }
-.studio-app--press-bench .studio-route-masthead h1 { margin: 0; color: var(--bench-ink); font-family: Georgia, "Times New Roman", serif; font-size: clamp(24px, 3vw, 39px); font-weight: 400; letter-spacing: -.055em; line-height: .95; }
+.studio-app--press-bench .studio-route-masthead h1 { margin: 0; color: var(--bench-text); font-family: Georgia, "Times New Roman", serif; font-size: clamp(24px, 3vw, 39px); font-weight: 400; letter-spacing: -.055em; line-height: .95; }
 .studio-app--press-bench .studio-route-masthead p { margin: 0; max-width: 38rem; color: var(--bench-muted); font-size: 11px; line-height: 1.4; }
 .studio-app--press-bench .studio-route-masthead__actions { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; }
 
@@ -150,19 +243,79 @@
   background: var(--bench-stock);
   padding: 0 12px;
 }
-.studio-app--press-bench .studio-route-controlbar__label { color: var(--bench-ink); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+.studio-app--press-bench .studio-route-controlbar__label { color: var(--bench-text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; font-weight: 800; letter-spacing: .12em; }
 .studio-app--press-bench .studio-route-controlbar__label svg { color: var(--bench-sage); }
+.studio-app--press-bench input,
+.studio-app--press-bench textarea,
+.studio-app--press-bench select {
+  background: var(--bench-stock);
+  border: 1px solid var(--bench-line);
+  color: var(--bench-text);
+  color-scheme: dark;
+}
+.studio-app--press-bench input::placeholder,
+.studio-app--press-bench textarea::placeholder { color: var(--bench-muted); opacity: 1; }
+.studio-app--press-bench input:focus,
+.studio-app--press-bench textarea:focus,
+.studio-app--press-bench select:focus { outline: none; border-color: var(--bench-lime); }
+.studio-app--press-bench .studio-search input { background: transparent; border: 0; }
+
+/* Admin control room renders "studio-app studio-admin-app" without the studio-app--press-bench wrapper,
+   so form controls there need their own dark styling instead of relying on the bench input rule above. */
+.studio-admin-app input,
+.studio-admin-app textarea,
+.studio-admin-app select {
+  background: var(--admin-stock);
+  border: 1px solid var(--admin-line);
+  color: var(--admin-text);
+  color-scheme: dark;
+}
+.studio-admin-app input::placeholder,
+.studio-admin-app textarea::placeholder { color: var(--admin-muted); opacity: 1; }
+.studio-admin-app input:focus,
+.studio-admin-app textarea:focus,
+.studio-admin-app select:focus { outline: none; border-color: var(--admin-lime); }
+.studio-admin-app .studio-search { border-color: var(--admin-line); background: var(--admin-paper); }
+.studio-admin-app .studio-search input { background: transparent; border: 0; }
+
+/* StudioWorkspaceLive.tsx's AdminPage (the route actually wired at /admin/[page]) renders
+   "studio-app studio-admin" -- a different, older class than AdminControlRoom's "studio-admin-app".
+   Cover it defensively too so any future input/search added to that surface starts dark. */
+.studio-admin input,
+.studio-admin textarea,
+.studio-admin select {
+  background: #15170f;
+  border: 1px solid #343832;
+  color: #f4f3ed;
+  color-scheme: dark;
+}
+.studio-admin input::placeholder,
+.studio-admin textarea::placeholder { color: #9a9b91; opacity: 1; }
+.studio-admin .studio-search { border-color: #343832; background: #1a1c19; }
+.studio-admin .studio-search input { background: transparent; border: 0; }
+
+/* Batch composer product-selection rows: force a dark row surface regardless of which legacy
+   stylesheet's .studio-batch-source background wins the cascade, and drop the light row border. */
+.studio-app--press-bench .studio-batch-source label {
+  background: var(--bench-stock);
+  border-color: var(--bench-line);
+  color: var(--bench-text);
+}
+.studio-app--press-bench .studio-batch-source label:hover {
+  border-color: var(--bench-lime);
+}
+
 .studio-app--press-bench .studio-search { border-color: var(--bench-line); border-radius: 1px; background: var(--bench-paper); box-shadow: none; }
-.studio-app--press-bench .studio-search:focus-within { border-color: var(--bench-ink); box-shadow: 3px 3px 0 rgb(185 221 69 / 55%); }
+.studio-app--press-bench .studio-search:focus-within { border-color: var(--bench-sage); box-shadow: 3px 3px 0 rgb(185 221 69 / 55%); }
 
 .studio-app--press-bench .studio-button,
 .studio-app--press-bench .studio-icon-button,
 .studio-app--press-bench .studio-text-button { border-radius: 2px; }
-.studio-app--press-bench .studio-button--dark { border-color: var(--bench-ink); background: var(--bench-ink); color: var(--bench-paper); }
+.studio-app--press-bench .studio-button--dark { border-color: var(--bench-ink); background: var(--bench-ink); color: var(--bench-text); }
 .studio-app--press-bench .studio-button--dark:hover { background: var(--bench-lime); color: var(--bench-ink); }
 .studio-app--press-bench .studio-button--lime { border-color: var(--bench-lime); background: var(--bench-lime); color: var(--bench-ink); }
 .studio-app--press-bench .studio-icon-button { border-color: var(--bench-line); background: transparent; box-shadow: none; }
-.studio-app--press-bench .studio-icon-button:hover { border-color: var(--bench-ink); background: var(--bench-stock); transform: none; }
+.studio-app--press-bench .studio-icon-button:hover { border-color: var(--bench-sage); background: var(--bench-stock); transform: none; }
 .studio-app--press-bench button:focus-visible,.studio-app--press-bench a:focus-visible,.studio-app--press-bench input:focus-visible,.studio-app--press-bench textarea:focus-visible,.studio-app--press-bench select:focus-visible { outline: 2px solid var(--bench-sage); outline-offset: 2px; }
 
 .studio-app--press-bench .studio-workspace-panel,
@@ -172,20 +325,66 @@
   border-radius: 2px;
   background: var(--bench-paper);
   box-shadow: 5px 5px 0 rgb(17 17 15 / 10%);
-  color: var(--bench-ink);
+  color: var(--bench-text);
 }
 .studio-app--press-bench .studio-workspace-panel:hover { border-color: var(--bench-line); box-shadow: 5px 5px 0 rgb(17 19 15 / 14%); transform: none; }
 .studio-app--press-bench .studio-workspace-panel--accent { background: var(--bench-lime); color: var(--bench-ink); }
 .studio-app--press-bench .studio-workspace-panel--accent::after { display: none; }
-.studio-app--press-bench .studio-workspace-panel--dark { background: var(--bench-ink); color: var(--bench-paper); }
+
+/* Defensive override: an earlier, un-scoped rule in globals.css sets accent-panel headings to
+   var(--studio-lime), which — now that this panel's own background legitimately resolves dark
+   in some contexts — can end up as low-contrast text. Force a guaranteed-readable combination
+   here, last in the cascade, rather than debug every possible interaction. */
+.studio-app--press-bench .studio-workspace-panel--accent,
+.studio-app--press-bench .studio-workspace-panel--accent h2,
+.studio-app--press-bench .studio-workspace-panel--accent p,
+.studio-app--press-bench .studio-workspace-panel--accent .studio-kicker { color: var(--bench-text) !important; }
+.studio-app--press-bench .studio-workspace-panel--accent .studio-kicker { color: var(--bench-lime) !important; }
+
+/* The product search results dropdown had NO styling anywhere in the cascade — it rendered as a
+   bare, unstyled, unpositioned block, which read as "only one result, bursting out of its box". */
+.studio-app--studio .studio-artboard-section--source { position: relative; }
+.studio-app--studio .studio-artboard-product-menu {
+  position: absolute;
+  z-index: 30;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid rgba(255,255,255,.23);
+  border-radius: 2px;
+  background: #1a1b17;
+  box-shadow: 0 8px 0 rgb(0 0 0 / 24%);
+}
+.studio-app--studio .studio-artboard-product-menu button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 0;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  background: transparent;
+  padding: 9px 12px;
+  color: var(--signal-text, #f4f3ed);
+  font-size: 12px;
+  text-align: left;
+}
+.studio-app--studio .studio-artboard-product-menu button:last-child { border-bottom: 0; }
+.studio-app--studio .studio-artboard-product-menu button:hover { background: rgba(185,255,67,.1); color: var(--signal-lime); }
+.studio-app--studio .studio-artboard-product-menu button small { color: #9a9b91; font-size: 10px; }
+.studio-app--studio .studio-artboard-product-menu p { margin: 0; padding: 10px 12px; color: #9a9b91; font-size: 11px; }
+.studio-app--press-bench .studio-workspace-panel--dark { background: var(--bench-ink); color: var(--bench-text); }
 .studio-app--press-bench .studio-panel-heading { border-bottom: 1px solid var(--bench-line); padding-bottom: 13px; }
 .studio-app--press-bench .studio-panel-heading h2 { color: inherit; font-family: Georgia, "Times New Roman", serif; font-size: clamp(23px, 2.4vw, 34px); font-weight: 400; letter-spacing: -.05em; }
 .studio-app--press-bench .studio-kicker,.studio-app--press-bench .studio-kicker--dark { color: var(--bench-sage); font-size: 9px; font-weight: 800; letter-spacing: .15em; }
-.studio-app--press-bench .studio-chip { border-radius: 2px; border-color: var(--bench-line); background: var(--bench-stock); color: var(--bench-ink); }
+.studio-app--press-bench .studio-chip { border-radius: 2px; border-color: var(--bench-line); background: var(--bench-stock); color: var(--bench-text); }
 .studio-app--press-bench .studio-data-row { border-top-color: var(--bench-line); }
 .studio-app--press-bench .studio-data-row:hover { margin-inline: -5px; background: var(--bench-stock); padding-inline: 7px; }
 .studio-app--press-bench .studio-status-dot--lime { background: var(--bench-sage); box-shadow: 0 0 0 3px rgb(95 118 42 / 16%); }
-.studio-app--press-bench .studio-form-error { border-color: var(--bench-red); background: var(--bench-paper); color: var(--bench-ink); }
+.studio-app--press-bench .studio-form-error { border-color: var(--bench-red); background: var(--bench-paper); color: var(--bench-text); }
 .studio-app--press-bench .studio-unavailable { border: 1px dashed var(--bench-line); border-radius: 2px; background: var(--bench-stock); }
 
 /* Overview becomes a production queue, not a metric dashboard. */
@@ -193,11 +392,11 @@
 .studio-app--press-bench .studio-overview-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--bench-line); background: var(--bench-paper); box-shadow: 5px 5px 0 rgb(17 19 15 / 10%); }
 .studio-app--press-bench .studio-metric-ledger__cell { min-height: 108px; border-left: 1px solid var(--bench-line); background: transparent; padding: 15px; }
 .studio-app--press-bench .studio-metric-ledger__cell:first-child { border-left: 0; }
-.studio-app--press-bench .studio-metric-ledger__cell strong { font-family: Georgia, "Times New Roman", serif; font-size: 33px; font-weight: 400; }
+.studio-app--press-bench .studio-metric-ledger__cell strong { color: var(--bench-text); font-family: Georgia, "Times New Roman", serif; font-size: 33px; font-weight: 400; }
 .studio-app--press-bench .studio-continue-queue { border: 1px solid var(--bench-ink); border-radius: 2px; background: var(--bench-ink); box-shadow: 5px 5px 0 rgb(185 221 69 / 65%); }
-.studio-app--press-bench .studio-continue-queue > div { color: var(--bench-paper); }
+.studio-app--press-bench .studio-continue-queue > div { color: var(--bench-text); }
 .studio-app--press-bench .studio-continue-queue li { border-left-color: #343832; }
-.studio-app--press-bench .studio-continue-queue li strong { color: var(--bench-paper); }
+.studio-app--press-bench .studio-continue-queue li strong { color: var(--bench-text); }
 .studio-app--press-bench .studio-continue-queue li small { color: var(--bench-muted); }
 .studio-app--press-bench .studio-continue-queue li > span { color: var(--bench-lime); }
 .studio-app--press-bench .studio-overview-runway { border: 1px solid var(--bench-line); border-radius: 2px; background: var(--bench-paper); box-shadow: none; }
@@ -219,25 +418,25 @@
 .studio-app--press-bench .studio-analysis-funnel > div:nth-child(3)::before { width: 65px; background: var(--bench-lime); }
 .studio-app--press-bench .studio-analysis-funnel > div:nth-child(4)::before { width: 78px; background: var(--bench-ink); }
 .studio-app--press-bench .studio-analysis-funnel span { color: var(--bench-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; font-weight: 800; letter-spacing: .1em; }
-.studio-app--press-bench .studio-analysis-funnel strong { font-family: Georgia, "Times New Roman", serif; font-size: clamp(31px, 4vw, 46px); font-weight: 400; letter-spacing: -.06em; line-height: .9; }
+.studio-app--press-bench .studio-analysis-funnel strong { color: var(--bench-text); font-family: Georgia, "Times New Roman", serif; font-size: clamp(31px, 4vw, 46px); font-weight: 400; letter-spacing: -.06em; line-height: .9; }
 .studio-app--press-bench .studio-analysis-funnel b { font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
 .studio-app--press-bench .studio-analysis-funnel small { color: var(--bench-muted); font-size: 10px; }
 .studio-app--press-bench .studio-analysis-panel--quality dl { display: grid; margin: 0; }
 .studio-app--press-bench .studio-analysis-panel--quality dl > div { display: flex; min-height: 43px; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--bench-line); padding: 0 16px; }
 .studio-app--press-bench .studio-analysis-panel--quality dl > div:last-child { border-bottom: 0; }
 .studio-app--press-bench .studio-analysis-panel--quality dt { color: var(--bench-muted); font-size: 10px; }
-.studio-app--press-bench .studio-analysis-panel--quality dd { margin: 0; color: var(--bench-ink); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; font-weight: 800; }
-.studio-app--press-bench .studio-analysis-panel--status { border-color: var(--bench-ink); background: var(--bench-ink); color: var(--bench-paper); }
+.studio-app--press-bench .studio-analysis-panel--quality dd { margin: 0; color: var(--bench-text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; font-weight: 800; }
+.studio-app--press-bench .studio-analysis-panel--status { border-color: var(--bench-ink); background: var(--bench-ink); color: var(--bench-text); }
 .studio-app--press-bench .studio-analysis-panel--status .studio-analysis-panel__heading { border-bottom-color: #343832; }
 .studio-app--press-bench .studio-analysis-panel--status .studio-kicker { color: var(--bench-lime); }
-.studio-app--press-bench .studio-analysis-panel--status .studio-analysis-panel__heading h2 { color: var(--bench-paper); }
+.studio-app--press-bench .studio-analysis-panel--status .studio-analysis-panel__heading h2 { color: var(--bench-text); }
 .studio-app--press-bench .studio-analysis-status { display: grid; gap: 0; }
 .studio-app--press-bench .studio-analysis-status > div { position: relative; display: grid; grid-template-columns: 8px 1fr; column-gap: 8px; border-bottom: 1px solid #343832; padding: 15px 16px; }
 .studio-app--press-bench .studio-analysis-status > div:last-child { border-bottom: 0; }
 .studio-app--press-bench .studio-analysis-status > div > span { width: 7px; height: 7px; margin-top: 4px; border-radius: 50%; background: var(--bench-muted); }
 .studio-app--press-bench .studio-analysis-status > div > span.is-positive { background: var(--bench-lime); box-shadow: 0 0 0 3px rgb(185 221 69 / 15%); }
 .studio-app--press-bench .studio-analysis-status > div > span.is-warn { background: var(--bench-red); }
-.studio-app--press-bench .studio-analysis-status strong { color: var(--bench-paper); font-size: 11px; }
+.studio-app--press-bench .studio-analysis-status strong { color: var(--bench-text); font-size: 11px; }
 .studio-app--press-bench .studio-analysis-status small { grid-column: 2; margin-top: 3px; color: var(--bench-muted); font-size: 10px; line-height: 1.35; }
 .studio-app--press-bench .studio-analysis-panel--activity { box-shadow: none; }
 .studio-app--press-bench .studio-analysis-table { display: grid; }
@@ -248,17 +447,17 @@
 .studio-app--press-bench .studio-analysis-table span,.studio-app--press-bench .studio-analysis-table time { color: var(--bench-muted); font-size: 11px; }
 .studio-app--press-bench .studio-analysis-status-tag { display: inline-flex; width: max-content; border: 1px solid var(--bench-line); border-radius: 2px; padding: 3px 5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px !important; font-weight: 800; letter-spacing: .07em; }
 .studio-app--press-bench .studio-analysis-status-tag--approved { border-color: var(--bench-lime); background: var(--bench-lime); color: var(--bench-ink) !important; }
-.studio-app--press-bench .studio-analysis-status-tag--draft { border-color: var(--bench-sage); background: var(--bench-stock); color: var(--bench-ink) !important; }
+.studio-app--press-bench .studio-analysis-status-tag--draft { border-color: var(--bench-sage); background: var(--bench-stock); color: var(--bench-text) !important; }
 .studio-app--press-bench .studio-analysis-empty { display: grid; gap: 4px; min-height: 108px; align-content: center; padding: 16px; color: var(--bench-muted); }
-.studio-app--press-bench .studio-analysis-empty strong { color: var(--bench-ink); font-family: Georgia, "Times New Roman", serif; font-size: 23px; font-weight: 400; }
+.studio-app--press-bench .studio-analysis-empty strong { color: var(--bench-text); font-family: Georgia, "Times New Roman", serif; font-size: 23px; font-weight: 400; }
 .studio-app--press-bench .studio-onboarding { display: grid; min-height: 0; grid-template-columns: 190px minmax(0, 1fr); border: 1px solid var(--bench-ink); border-radius: 2px; background: var(--bench-ink); box-shadow: 5px 5px 0 rgb(185 221 69 / 65%); }
 .studio-app--press-bench .studio-onboarding header { min-height: 126px; border-right: 1px solid #343832; padding: 18px; }
-.studio-app--press-bench .studio-onboarding header h2 { color: var(--bench-paper); font-family: Georgia, "Times New Roman", serif; font-size: 27px; font-weight: 400; letter-spacing: -.05em; }
+.studio-app--press-bench .studio-onboarding header h2 { color: var(--bench-text); font-family: Georgia, "Times New Roman", serif; font-size: 27px; font-weight: 400; letter-spacing: -.05em; }
 .studio-app--press-bench .studio-onboarding header p { color: var(--bench-muted); }
-.studio-app--press-bench .studio-onboarding header button { border-color: #343832; color: var(--bench-paper); }
+.studio-app--press-bench .studio-onboarding header button { border-color: #343832; color: var(--bench-text); }
 .studio-app--press-bench .studio-onboarding ol { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .studio-app--press-bench .studio-onboarding li { min-height: 126px; border-right-color: #343832; padding: 18px 14px; }
-.studio-app--press-bench .studio-onboarding li strong { color: var(--bench-paper); }
+.studio-app--press-bench .studio-onboarding li strong { color: var(--bench-text); }
 .studio-app--press-bench .studio-onboarding li small { color: var(--bench-muted); }
 .studio-app--press-bench .studio-onboarding li > span { border-color: #343832; color: var(--bench-lime); }
 .studio-app--press-bench .studio-onboarding li.is-complete > span { border-color: var(--bench-lime); background: var(--bench-lime); color: var(--bench-ink); }
@@ -266,39 +465,67 @@
 /* Source and record routes operate as contact sheets on stock paper. */
 .studio-app--press-bench .studio-source-library { grid-template-columns: minmax(0, 1fr) 284px; gap: 18px; }
 .studio-app--press-bench .studio-source-library__main { border: 1px solid var(--bench-line); border-radius: 2px; background: var(--bench-paper); box-shadow: 5px 5px 0 rgb(17 19 15 / 10%); }
-.studio-app--press-bench .studio-source-library__brand { border: 1px solid var(--bench-ink); border-radius: 2px; background: var(--bench-ink); box-shadow: 5px 5px 0 rgb(185 221 69 / 55%); color: var(--bench-paper); }
-.studio-app--press-bench .studio-source-library__brand h2 { color: var(--bench-paper); font-family: Georgia, "Times New Roman", serif; }
+.studio-app--press-bench .studio-source-library__brand { border: 1px solid var(--bench-ink); border-radius: 2px; background: var(--bench-ink); box-shadow: 5px 5px 0 rgb(185 221 69 / 55%); color: var(--bench-text); }
+.studio-app--press-bench .studio-source-library__brand h2 { color: var(--bench-text); font-family: Georgia, "Times New Roman", serif; }
 .studio-app--press-bench .studio-source-library__brand p { color: var(--bench-muted); }
 .studio-app--press-bench .studio-product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
-.studio-app--press-bench .studio-product-card { border-color: var(--bench-line); border-radius: 2px; background: var(--bench-paper); box-shadow: none; }
-.studio-app--press-bench .studio-product-card:hover { box-shadow: 4px 4px 0 rgb(17 19 15 / 15%); transform: translate(-1px, -1px); }
-.studio-app--press-bench .studio-product-card__body h3 { font-family: Georgia, "Times New Roman", serif; }
+.studio-app--press-bench .studio-product-card { border-color: var(--bench-line); border-radius: 2px; background: var(--bench-paper); color: var(--bench-text); box-shadow: none; }
+.studio-app--press-bench .studio-product-card:hover { box-shadow: 4px 4px 0 var(--bench-lime); transform: translate(-1px, -1px); }
+/* .studio-app--press-bench redefines --studio-paper as a dark surface color for other
+   components (see the :root block above), but ProductList's card title/price/meta still
+   read var(--studio-paper) expecting the *light* landing-page meaning — so within this
+   theme they were resolving to near-black text on a near-black card (invisible). Pin them
+   to the bench's actual light text color instead. */
+.studio-app--press-bench .studio-product-card__body h3 { color: var(--bench-text); font-family: Georgia, "Times New Roman", serif; }
+.studio-app--press-bench .studio-product-card__price { color: var(--bench-lime); }
+.studio-app--press-bench .studio-product-card__meta { color: var(--bench-muted); }
+
+/* Hover-only detail overlay on the product image — the name/price stay visible on the
+   card at rest (fixed above); this adds the description on hover instead of cramming it
+   permanently onto an already-small card. */
+.studio-product-card__hover-details {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 12px;
+  background: linear-gradient(180deg, transparent 40%, rgba(10, 11, 8, .92) 100%);
+  opacity: 0;
+  transition: opacity .18s var(--studio-ease, ease);
+  pointer-events: none;
+}
+.studio-product-card:hover .studio-product-card__hover-details { opacity: 1; }
+.studio-product-card__hover-details p { margin: 0; color: #f4f3ed; font-size: 11px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.studio-product-card__hover-details small { color: #b9dd45; font-size: 10px; font-weight: 700; }
 .studio-app--press-bench .studio-product-form { position: sticky; top: 16px; border-color: var(--bench-line); border-radius: 2px; background: var(--bench-paper); box-shadow: 5px 5px 0 rgb(17 19 15 / 10%); }
 
 /* React Bits DepthCarousel adaptation: manual browsing of real product and post media. */
-.studio-app--press-bench .studio-asset-depth { margin: 18px 0 22px; overflow: hidden; border: 1px solid var(--bench-ink); border-radius: 2px; background: var(--bench-ink); box-shadow: 6px 6px 0 rgb(185 221 69 / 62%); color: var(--bench-paper); }
+.studio-app--press-bench .studio-asset-depth { margin: 18px 0 22px; overflow: hidden; border: 1px solid var(--bench-ink); border-radius: 2px; background: var(--bench-ink); box-shadow: 6px 6px 0 rgb(185 221 69 / 62%); color: var(--bench-text); }
 .studio-app--press-bench .studio-asset-depth__header { display: flex; min-height: 54px; align-items: center; justify-content: space-between; border-bottom: 1px solid #343832; padding: 10px 14px; }
 .studio-app--press-bench .studio-asset-depth__header .studio-kicker { color: var(--bench-lime); }
-.studio-app--press-bench .studio-asset-depth__header h3 { margin: 3px 0 0; color: var(--bench-paper); font-family: Georgia, "Times New Roman", serif; font-size: 21px; font-weight: 400; letter-spacing: -.045em; }
+.studio-app--press-bench .studio-asset-depth__header h3 { margin: 3px 0 0; color: var(--bench-text); font-family: Georgia, "Times New Roman", serif; font-size: 21px; font-weight: 400; letter-spacing: -.045em; }
 .studio-app--press-bench .studio-asset-depth__header > span { color: var(--bench-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }
 .studio-app--press-bench .studio-asset-depth__stage { position: relative; display: grid; height: 290px; place-items: center; overflow: hidden; outline: none; perspective: 1200px; }
 .studio-app--press-bench .studio-asset-depth__stage:focus-visible { box-shadow: inset 0 0 0 2px var(--bench-lime); }
 .studio-app--press-bench .studio-asset-depth__card { position: absolute; display: grid; width: min(58vw, 300px); aspect-ratio: 4 / 3; overflow: hidden; place-items: end start; border: 1px solid #343832; border-radius: 2px; background: var(--bench-panel); box-shadow: 8px 8px 0 rgb(17 19 15 / 28%); padding: 0; transform-style: preserve-3d; }
 .studio-app--press-bench .studio-asset-depth__card[aria-current="true"] { border-color: var(--bench-lime); }
 .studio-app--press-bench .studio-asset-depth__card img { width: 100%; height: 100%; object-fit: cover; }
-.studio-app--press-bench .studio-asset-depth__card span { position: absolute; left: 8px; bottom: 8px; border: 1px solid #343832; background: rgb(17 19 15 / 86%); padding: 3px 5px; color: var(--bench-paper); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.studio-app--press-bench .studio-asset-depth__card span { position: absolute; left: 8px; bottom: 8px; border: 1px solid #343832; background: rgb(17 19 15 / 86%); padding: 3px 5px; color: var(--bench-text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .studio-app--press-bench .studio-asset-depth__footer { display: flex; min-height: 56px; align-items: center; justify-content: space-between; gap: 14px; border-top: 1px solid #343832; padding: 10px 14px; }
 .studio-app--press-bench .studio-asset-depth__footer > div:first-child { display: grid; min-width: 0; gap: 2px; }
-.studio-app--press-bench .studio-asset-depth__footer strong { overflow: hidden; color: var(--bench-paper); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.studio-app--press-bench .studio-asset-depth__footer strong { overflow: hidden; color: var(--bench-text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .studio-app--press-bench .studio-asset-depth__footer small { color: var(--bench-muted); font-size: 10px; }
 .studio-app--press-bench .studio-asset-depth__footer [role="group"] { display: flex; gap: 6px; }
-.studio-app--press-bench .studio-asset-depth__footer button { display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid #343832; border-radius: 2px; background: transparent; color: var(--bench-paper); }
+.studio-app--press-bench .studio-asset-depth__footer button { display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid #343832; border-radius: 2px; background: transparent; color: var(--bench-text); }
 .studio-app--press-bench .studio-asset-depth__footer button:hover { border-color: var(--bench-lime); background: var(--bench-lime); color: var(--bench-ink); }
 
 /* Studio is the dominant production surface: source tray → proof table → inspector. */
 .studio-app--press-bench .studio-workspace-panel--studio { padding: 0; border: 0; background: transparent; box-shadow: none; }
 .studio-app--press-bench .studio-artboard-header { min-height: 70px; margin: 0 0 16px; border: 1px solid var(--bench-line); border-radius: 2px; background: var(--bench-paper); padding: 13px 16px; box-shadow: 5px 5px 0 rgb(17 19 15 / 10%); }
-.studio-app--press-bench .studio-artboard-header h2 { color: var(--bench-ink); font-family: Georgia, "Times New Roman", serif; font-size: clamp(27px, 3vw, 42px); }
+.studio-app--press-bench .studio-artboard-header h2 { color: var(--bench-text); font-family: Georgia, "Times New Roman", serif; font-size: clamp(27px, 3vw, 42px); }
 .studio-app--press-bench .studio-artboard-workspace { grid-template-columns: 274px minmax(480px, 1fr) 304px; gap: 0; overflow: hidden; border: 1px solid var(--bench-ink); border-radius: 2px; background: var(--bench-ink); box-shadow: 8px 8px 0 rgb(185 221 69 / 66%); }
 .studio-app--press-bench .studio-artboard-inspector,.studio-app--press-bench .studio-artboard-publish { border-color: #343832; background: var(--bench-panel); }
 .studio-app--press-bench .studio-artboard-inspector__title { border-bottom-color: #343832; }
@@ -361,7 +588,7 @@
   padding: 13px 16px;
 }
 .studio-app--press-bench .studio-source-library__section-head > span {
-  color: var(--bench-ink);
+  color: var(--bench-text);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 9px;
   font-weight: 800;
@@ -398,7 +625,7 @@
   border: 0;
   outline: 0;
   background: transparent;
-  color: var(--bench-ink);
+  color: var(--bench-text);
   font-size: 11px;
 }
 .studio-app--press-bench .studio-source-controls [role="group"] {
@@ -483,7 +710,7 @@
   border-radius: 1px;
   background: var(--bench-stock);
   padding: 3px 6px;
-  color: var(--bench-ink);
+  color: var(--bench-text);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 9px;
   font-weight: 800;
@@ -491,17 +718,17 @@
 }
 .studio-app--press-bench .studio-review-state--approved,
 .studio-app--press-bench .studio-review-state--exported,
-.studio-app--press-bench .studio-review-state--sent { border-color: var(--bench-lime); background: var(--bench-lime); }
+.studio-app--press-bench .studio-review-state--sent { border-color: var(--bench-lime); background: var(--bench-lime); color: var(--bench-ink); }
 .studio-app--press-bench .studio-review-state--draft,
 .studio-app--press-bench .studio-review-state--queued { border-color: var(--bench-sage); }
 .studio-app--press-bench .studio-review-ledger .studio-data-actions button {
   border-color: var(--bench-line);
   border-radius: 1px;
-  color: var(--bench-ink);
+  color: var(--bench-text);
 }
-.studio-app--press-bench .studio-review-ledger .studio-data-actions button:hover { border-color: var(--bench-ink); background: var(--bench-lime); }
+.studio-app--press-bench .studio-review-ledger .studio-data-actions button:hover { border-color: var(--bench-ink); background: var(--bench-lime); color: var(--bench-ink); }
 .studio-app--press-bench .studio-assets-library .studio-asset-grid { margin-top: 18px; }
-.studio-app--press-bench .studio-assets-library .studio-asset-card { position: relative; border-radius: 1px; }
+.studio-app--press-bench .studio-assets-library .studio-asset-card { position: relative; border-radius: 1px; background: var(--bench-paper); color: var(--bench-text); }
 .studio-app--press-bench .studio-assets-library .studio-asset-card::before {
   position: absolute;
   z-index: 1;
@@ -516,7 +743,7 @@
   font-weight: 800;
   letter-spacing: .11em;
 }
-.studio-app--press-bench .studio-assets-library .studio-asset-card:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--bench-ink); }
+.studio-app--press-bench .studio-assets-library .studio-asset-card:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--bench-lime); }
 
 /* A factual date lane: creation records stay distinct from scheduled server delivery receipts. */
 .studio-app--press-bench .studio-calendar-ledger__rows { display: grid; margin-top: 18px; border-top: 1px solid var(--bench-line); }
@@ -527,7 +754,7 @@
   gap: 12px;
   min-height: 76px;
   border-bottom: 1px solid var(--bench-line);
-  color: var(--bench-ink);
+  color: var(--bench-text);
   padding: 10px 0;
   text-decoration: none;
 }
@@ -544,27 +771,27 @@
 
 /* Canva / Later-inspired delivery path: connections, one valid choice, then durable receipts. */
 .studio-app--press-bench .studio-delivery-board { display: grid; gap: 18px; }
-.studio-app--press-bench .studio-delivery-path { position: relative; border-color: var(--bench-ink); background: var(--bench-ink); color: var(--bench-paper); box-shadow: 6px 6px 0 rgb(185 221 69 / 62%); }
+.studio-app--press-bench .studio-delivery-path { position: relative; border-color: var(--bench-ink); background: var(--bench-ink); color: var(--bench-text); box-shadow: 6px 6px 0 rgb(185 221 69 / 62%); }
 .studio-app--press-bench .studio-delivery-path .studio-panel-heading { border-bottom-color: #343832; }
-.studio-app--press-bench .studio-delivery-path .studio-panel-heading h2 { color: var(--bench-paper); }
+.studio-app--press-bench .studio-delivery-path .studio-panel-heading h2 { color: var(--bench-text); }
 .studio-app--press-bench .studio-delivery-path .studio-panel-heading p { color: var(--bench-muted); }
 .studio-app--press-bench .studio-delivery-path .studio-chip { border-color: #343832; background: var(--bench-panel); color: var(--bench-lime); }
 .studio-app--press-bench .studio-delivery-path ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; padding: 0; }
 .studio-app--press-bench .studio-delivery-path li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; min-height: 82px; align-items: center; border-right: 1px solid #343832; padding: 13px 16px; }
 .studio-app--press-bench .studio-delivery-path li:last-child { border-right: 0; }
 .studio-app--press-bench .studio-delivery-path li > span { display: grid; width: 27px; height: 27px; place-items: center; border: 1px solid #343832; border-radius: 50%; color: var(--bench-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; font-weight: 800; }
-.studio-app--press-bench .studio-delivery-path li strong { color: var(--bench-paper); font-size: 12px; }
+.studio-app--press-bench .studio-delivery-path li strong { color: var(--bench-text); font-size: 12px; }
 .studio-app--press-bench .studio-delivery-path li small { display: block; margin-top: 3px; color: var(--bench-muted); font-size: 10px; line-height: 1.35; }
 .studio-app--press-bench .studio-delivery-path li.is-ready > span { border-color: var(--bench-lime); background: var(--bench-lime); color: var(--bench-ink); }
 .studio-app--press-bench .studio-channel-board .studio-data-row,
 .studio-app--press-bench .studio-delivery-receipts .studio-data-row,
 .studio-app--press-bench .studio-readiness-board .studio-data-row { min-height: 57px; }
-.studio-app--press-bench .studio-channel-board .studio-text-button { border: 1px solid var(--bench-line); border-radius: 1px; padding: 7px 8px; color: var(--bench-ink); }
+.studio-app--press-bench .studio-channel-board .studio-text-button { border: 1px solid var(--bench-line); border-radius: 1px; padding: 7px 8px; color: var(--bench-text); }
 .studio-app--press-bench .studio-channel-board .studio-text-button:hover { border-color: var(--bench-ink); background: var(--bench-ink); color: var(--bench-lime); }
 .studio-app--press-bench .studio-delivery-picker { box-shadow: 6px 6px 0 var(--bench-ink); }
-.studio-app--press-bench .studio-delivery-picker .studio-form-grid label { color: var(--bench-ink); }
+.studio-app--press-bench .studio-delivery-picker .studio-form-grid label { color: var(--bench-text); }
 .studio-app--press-bench .studio-delivery-picker select,
-.studio-app--press-bench .studio-delivery-picker input { border: 1px solid var(--bench-ink); border-radius: 1px; background: var(--bench-paper); color: var(--bench-ink); }
+.studio-app--press-bench .studio-delivery-picker input { border: 1px solid var(--bench-line); border-radius: 1px; background: var(--bench-paper); color: var(--bench-text); }
 .studio-app--press-bench .studio-delivery-picker .studio-button--dark:hover { background: var(--bench-paper); }
 .studio-app--press-bench .studio-delivery-receipts .studio-panel-heading { background: var(--bench-stock); margin: -24px -24px 0; padding: 14px 16px; }
 .studio-app--press-bench .studio-delivery-receipts .studio-data-stack { margin-top: 13px; }
@@ -580,12 +807,12 @@
   background: var(--bench-paper);
   box-shadow: 5px 5px 0 rgb(17 19 15 / 10%);
 }
-.studio-app--press-bench .studio-batch-intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; border-color: var(--bench-ink); background: var(--bench-ink); color: var(--bench-paper); }
-.studio-app--press-bench .studio-batch-intro h2 { margin: 6px 0 7px; color: var(--bench-paper); font-family: Georgia, "Times New Roman", serif; font-size: clamp(26px, 3vw, 40px); font-weight: 400; letter-spacing: -.055em; }
+.studio-app--press-bench .studio-batch-intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; border-color: var(--bench-ink); background: var(--bench-ink); color: var(--bench-text); }
+.studio-app--press-bench .studio-batch-intro h2 { margin: 6px 0 7px; color: var(--bench-text); font-family: Georgia, "Times New Roman", serif; font-size: clamp(26px, 3vw, 40px); font-weight: 400; letter-spacing: -.055em; }
 .studio-app--press-bench .studio-batch-intro p { max-width: 55ch; margin: 0; color: var(--bench-muted); font-size: 11px; line-height: 1.5; }
 .studio-app--press-bench .studio-batch-intro__counter { display: flex; align-items: center; gap: 10px; border: 1px solid #343832; background: var(--bench-panel); padding: 10px 13px; }
 .studio-app--press-bench .studio-batch-intro__counter b { color: var(--bench-lime); font-family: Georgia, "Times New Roman", serif; font-size: 38px; font-weight: 400; line-height: .8; }
-.studio-app--press-bench .studio-batch-intro__counter span { color: var(--bench-paper); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 8px; font-weight: 800; letter-spacing: .1em; }
+.studio-app--press-bench .studio-batch-intro__counter span { color: var(--bench-text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 8px; font-weight: 800; letter-spacing: .1em; }
 .studio-app--press-bench .studio-batch-source .studio-batch-section-heading,
 .studio-app--press-bench .studio-batch-config > div:first-child { border-bottom: 1px solid var(--bench-line); padding-bottom: 13px; }
 .studio-app--press-bench .studio-batch-output { background: var(--bench-stock); }
@@ -593,7 +820,7 @@
 
 /* Settings reads as account record + service signal, not a generic profile page. */
 .studio-app--press-bench .studio-settings-board > .studio-workspace-panel:first-child { background: var(--bench-stock); }
-.studio-app--press-bench .studio-settings-board > .studio-workspace-panel:first-child .studio-panel-heading { border-bottom-color: var(--bench-ink); }
+.studio-app--press-bench .studio-settings-board > .studio-workspace-panel:first-child .studio-panel-heading { border-bottom-color: var(--bench-line); }
 .studio-app--press-bench .studio-readiness-board { border-color: var(--bench-ink); box-shadow: 6px 6px 0 var(--bench-ink); }
 .studio-app--press-bench .studio-readiness-board .studio-data-row { border-top-color: rgb(17 19 15 / 22%); }
 
@@ -605,57 +832,60 @@
 .studio-admin-rail nav section { margin-bottom: 22px; }
 .studio-admin-rail nav section > span { color: var(--admin-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 8px; font-weight: 800; letter-spacing: .14em; }
 .studio-admin-rail nav a { min-height: 35px; margin-top: 4px; border: 1px solid transparent; padding: 0 9px; }
-.studio-admin-rail nav a:hover { border-color: #343832; background: var(--admin-panel); color: var(--admin-paper); }
+.studio-admin-rail nav a:hover { border-color: #343832; background: var(--admin-panel); color: var(--admin-text); }
 .studio-admin-header { padding: 24px clamp(18px, 3.6vw, 48px) 20px; background: var(--admin-paper); }
 .studio-admin-header::after { position: absolute; right: clamp(18px, 3.6vw, 48px); bottom: 0; width: min(19vw, 212px); height: 3px; background: var(--admin-lime); content: ""; }
 .studio-admin-commandbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 46px; background: var(--admin-stock); padding: 0 clamp(18px, 3.6vw, 48px); color: var(--admin-muted); font-size: 10px; }
-.studio-admin-commandbar > div { display: flex; align-items: center; gap: 8px; color: var(--admin-ink); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; font-weight: 800; letter-spacing: .12em; }
+.studio-admin-commandbar > div { display: flex; align-items: center; gap: 8px; color: var(--admin-text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; font-weight: 800; letter-spacing: .12em; }
 .studio-admin-content { max-width: 1560px; padding: 22px clamp(18px, 3.6vw, 48px) 62px; }
 .studio-admin-app .studio-panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .studio-admin-app .studio-stat-grid { gap: 0; margin-top: 18px; border: 1px solid var(--admin-line); background: var(--admin-stock); }
 .studio-admin-app .studio-stat-grid > div { min-height: 128px; border-right-color: var(--admin-line); padding: 16px; }
 .studio-admin-app .studio-stat-grid > div:last-child { border-right: 0; }
-.studio-admin-app .studio-stat-grid strong { color: var(--admin-ink); font-family: Georgia, "Times New Roman", serif; font-size: 36px; font-weight: 400; letter-spacing: -.06em; }
+.studio-admin-app .studio-stat-grid strong { color: var(--admin-text); font-family: Georgia, "Times New Roman", serif; font-size: 36px; font-weight: 400; letter-spacing: -.06em; }
 .studio-admin-app .studio-data-row { border-top-color: var(--admin-line); }
 
 /* Separate governance plane remains distinct, but uses the same durable paper and lead rules. */
-.studio-admin-app { --admin-ink: #11130f; --admin-panel: #1a1c19; --admin-paper: #faf9f4; --admin-stock: #f4f3ed; --admin-sage: #5f762a; --admin-lime: #b9dd45; --admin-line: #c5c4bb; --admin-muted: #777870; grid-template-columns: 232px minmax(0, 1fr); background: var(--admin-stock); color: var(--admin-ink); }
+.studio-admin-app { --admin-ink: #11130f; --admin-panel: #24261e; --admin-paper: #1a1c19; --admin-stock: #15170f; --admin-sage: #9dad88; --admin-lime: #b9dd45; --admin-line: #343832; --admin-muted: #9a9b91; --admin-text: #f4f3ed; grid-template-columns: 232px minmax(0, 1fr); background: var(--admin-stock); color: var(--admin-text); }
 .studio-admin-rail { background: var(--admin-ink); border-right-color: #343832; }
 .studio-admin-rail__brand,.studio-admin-rail footer { border-color: #343832; }
-.studio-admin-rail__status { border-color: var(--admin-sage); background: var(--admin-panel); color: var(--admin-paper); }
+.studio-admin-rail__status { border-color: var(--admin-sage); background: var(--admin-panel); color: var(--admin-text); }
 .studio-admin-rail nav a { border-radius: 1px; }
-.studio-admin-rail nav a.is-active { border-left-color: var(--admin-lime); background: #343832; color: var(--admin-paper); }
+.studio-admin-rail nav a.is-active { border-left-color: var(--admin-lime); background: #343832; color: var(--admin-text); }
 .studio-admin-main { background-color: var(--admin-stock); background-image: linear-gradient(90deg, rgb(17 19 15 / 5%) 1px,transparent 1px),linear-gradient(rgb(17 19 15 / 5%) 1px,transparent 1px); }
 .studio-admin-header { min-height: 114px; border-bottom-color: var(--admin-line); }
-.studio-admin-header h1 { color: var(--admin-ink); font-family: Georgia, "Times New Roman", serif; font-size: clamp(30px, 4vw, 48px); }
+.studio-admin-header h1 { color: var(--admin-text); font-family: Georgia, "Times New Roman", serif; font-size: clamp(30px, 4vw, 48px); }
 .studio-admin-commandbar { border-bottom-color: var(--admin-line); }
-.studio-admin-app .studio-workspace-panel { border-color: var(--admin-line); border-radius: 2px; background: var(--admin-paper); box-shadow: 5px 5px 0 rgb(17 19 15 / 11%); color: var(--admin-ink); }
+.studio-admin-app .studio-workspace-panel { border-color: var(--admin-line); border-radius: 2px; background: var(--admin-paper); box-shadow: 5px 5px 0 rgb(17 19 15 / 11%); color: var(--admin-text); }
 .studio-admin-app .studio-workspace-panel--accent { background: var(--admin-paper); }
 
 /* Component-level utility colors are remapped here rather than touching public pages or user-selected artwork. */
 .studio-app--press-bench,
 .studio-admin-app {
   --inner-ink: #11130f;
-  --inner-panel: #1a1c19;
-  --inner-paper: #faf9f4;
-  --inner-stock: #f4f3ed;
-  --inner-line: #c5c4bb;
-  --inner-muted: #777870;
-  --inner-sage: #5f762a;
+  --inner-panel: #24261e;
+  --inner-paper: #1a1c19;
+  --inner-stock: #15170f;
+  --inner-line: #343832;
+  --inner-muted: #9a9b91;
+  --inner-sage: #9dad88;
   --inner-lime: #b9dd45;
+  --inner-text: #f4f3ed;
 }
 :is(.studio-app--press-bench,.studio-admin-app) [class*="text-[#"] { color: var(--inner-muted) !important; }
 :is(.studio-app--press-bench,.studio-admin-app) [class*="text-[var"] { color: var(--inner-ink) !important; }
 :is(.studio-app--press-bench,.studio-admin-app) [class*="text-[#5f762a]"] { color: var(--inner-sage) !important; }
 :is(.studio-app--press-bench,.studio-admin-app) [class*="text-[#b9ff43]"],
 :is(.studio-app--press-bench,.studio-admin-app) [class*="text-[#c6ff5e]"] { color: var(--inner-lime) !important; }
-:is(.studio-app--press-bench,.studio-admin-app) .text-white { color: var(--inner-paper) !important; }
+:is(.studio-app--press-bench,.studio-admin-app) [class*="text-[#944949]"] { color: #e0776b !important; }
+:is(.studio-app--press-bench,.studio-admin-app) .text-white { color: var(--inner-text) !important; }
 :is(.studio-app--press-bench,.studio-admin-app) [class*="border-[#"] { border-color: var(--inner-line) !important; }
 :is(.studio-app--press-bench,.studio-admin-app) [class*="bg-[#"],
 :is(.studio-app--press-bench,.studio-admin-app) [class*="bg-white"] { background-color: var(--inner-stock) !important; }
 :is(.studio-app--press-bench,.studio-admin-app) [class*="bg-[rgba"] { background-color: rgb(185 221 69 / 14%) !important; }
 :is(.studio-app--press-bench,.studio-admin-app) [class*="hover:bg-[#"]:hover { background-color: var(--inner-stock) !important; }
 :is(.studio-app--press-bench,.studio-admin-app) [class*="hover:bg-[rgba"]:hover { background-color: rgb(185 221 69 / 12%) !important; }
+:is(.studio-app--press-bench,.studio-admin-app) [class*="hover:bg-[#944949]"]:hover { background-color: #d9614f !important; }
 
 /* Landing-color alignment for all member work surfaces. Structural rules remain intentionally untouched. */
 .studio-app--press-bench .studio-route-controlbar { background: var(--bench-stock); }
@@ -772,4 +1002,79 @@
 
 @media (prefers-reduced-motion: reduce) {
   .studio-app--press-bench *, .studio-app--press-bench *::before, .studio-app--press-bench *::after, .studio-admin-app *, .studio-admin-app *::before, .studio-admin-app *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+
+/* Member role badges (Settings → Members & Roles): a plain uppercase word
+   next to each person read as an afterthought, so this gives each role its
+   own small pill — a filled lime tag for the workspace owner, a bordered
+   sage tag for admins, and a quiet neutral tag for regular members. */
+.studio-app--press-bench .studio-role-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 3px;
+  padding: 4px 9px;
+  border: 1px solid var(--bench-line);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.studio-app--press-bench .studio-role-badge--owner {
+  border-color: var(--bench-lime);
+  background: var(--bench-lime);
+  color: var(--bench-ink);
+}
+.studio-app--press-bench .studio-role-badge--admin {
+  border-color: var(--bench-sage);
+  background: rgb(157 173 136 / 14%);
+  color: var(--bench-sage);
+}
+.studio-app--press-bench .studio-role-badge--member {
+  border-color: var(--bench-line);
+  background: var(--bench-stock);
+  color: var(--bench-muted);
+}
+
+/* Member action row (Kick/Ban/Make admin): swapped the cramped inline text
+   links for small square icon buttons with tooltips — quieter at rest, each
+   one picking up its own accent color only on hover so the row doesn't read
+   as a wall of clickable text. */
+.studio-app--press-bench .studio-member-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 10px;
+}
+.studio-app--press-bench .studio-icon-button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--bench-line);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--bench-muted);
+  cursor: pointer;
+  transition: background .15s var(--studio-ease, ease), border-color .15s var(--studio-ease, ease), color .15s var(--studio-ease, ease);
+}
+.studio-app--press-bench .studio-icon-button:hover:not(:disabled) {
+  border-color: var(--bench-sage);
+  background: rgb(157 173 136 / 14%);
+  color: var(--bench-sage);
+}
+.studio-app--press-bench .studio-icon-button--admin:hover:not(:disabled) {
+  border-color: var(--bench-lime);
+  background: rgb(185 221 69 / 14%);
+  color: var(--bench-lime);
+}
+.studio-app--press-bench .studio-icon-button--danger:hover:not(:disabled) {
+  border-color: var(--bench-red);
+  background: rgb(217 97 79 / 14%);
+  color: var(--bench-red);
+}
+.studio-app--press-bench .studio-icon-button:disabled {
+  opacity: .45;
+  cursor: default;
 }

@@ -3,18 +3,25 @@ package com.maamora.studio.service;
 import com.maamora.studio.dto.request.BrandSettingsRequest;
 import com.maamora.studio.exception.ResourceNotFoundException;
 import com.maamora.studio.exception.UnauthorizedException;
+import com.maamora.studio.model.BrandMembership;
 import com.maamora.studio.model.BrandSettings;
 import com.maamora.studio.model.User;
 import com.maamora.studio.model.enums.AccountType;
+import com.maamora.studio.model.enums.BrandRole;
+import com.maamora.studio.repository.BrandBanRepository;
+import com.maamora.studio.repository.BrandMembershipRepository;
 import com.maamora.studio.repository.BrandSettingsRepository;
 import com.maamora.studio.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +30,8 @@ public class BrandSettingsService {
     private final BrandSettingsRepository brandSettingsRepository;
     private final UserRepository userRepository;
     private final StorageService storageService;
+    private final BrandBanRepository brandBanRepository;
+    private final BrandMembershipRepository brandMembershipRepository;
 
     // Excludes 0/O/1/I/L on purpose — those are the characters people most
     // often misread when a code is read aloud, handwritten, or typed from a
@@ -91,14 +100,34 @@ public class BrandSettingsService {
     }
 
     /**
+     * Detaches a user from their current brand and gives them a brand-new,
+     * empty personal workspace of their own instead — used when a
+     * kicked/banned member loses access to a brand, and when a brand owner
+     * deletes the whole brand out from under its other members. Never
+     * deletes the User row itself; the account keeps working, just with a
+     * fresh, empty workspace instead of the one it lost.
+     */
+    public void reassignToFreshPersonalWorkspace(User user) {
+        BrandSettings fresh = createPersonalWorkspace(user.getName());
+        user.setBrand(fresh);
+        user.setBrandRole(BrandRole.OWNER);
+        userRepository.save(user);
+        brandMembershipRepository.save(BrandMembership.builder().user(user).brand(fresh).brandRole(BrandRole.OWNER).build());
+    }
+
+    /**
      * Attaches a just-registered user to an existing brand instead of
      * creating a new one — this is the "join my team's workspace" path on
      * the register form. The code is the only thing that grants access;
      * knowing (or guessing) a brand's display name gets you nothing.
      */
-    public BrandSettings joinExisting(String joinCode) {
-        return brandSettingsRepository.findByJoinCode(normalizeCode(joinCode))
+    public BrandSettings joinExisting(String joinCode, String joiningEmail) {
+        BrandSettings brand = brandSettingsRepository.findByJoinCode(normalizeCode(joinCode))
                 .orElseThrow(() -> new UnauthorizedException("That workspace code doesn't match any brand. Double-check it with your teammate."));
+        if (joiningEmail != null && brandBanRepository.existsByBrand_IdAndBannedEmailIgnoreCase(brand.getId(), joiningEmail.trim().toLowerCase(Locale.ROOT))) {
+            throw new UnauthorizedException("You've been removed from this workspace and can't rejoin with this code.");
+        }
+        return brand;
     }
 
     /**
@@ -121,6 +150,23 @@ public class BrandSettingsService {
         return brandSettingsRepository.save(BrandSettings.builder()
                 .name(name)
                 .primaryColor(primaryColor)
+                .joinCode(generateUniqueJoinCode())
+                .build());
+    }
+
+    /**
+     * Safety net for getForUser() — every real signup path already assigns a
+     * brand (createForNewUser/createPersonalWorkspace/joinExisting; see
+     * AuthService.register()), so this should be unreachable in practice.
+     * If it's ever hit anyway (edge case, data inconsistency), this creates
+     * an empty, unconfigured placeholder brand rather than throwing, so the
+     * rest of the app still has something to work against instead of a
+     * dead end.
+     */
+    private BrandSettings createNeutralBrand() {
+        return brandSettingsRepository.save(BrandSettings.builder()
+                .name("My Workspace")
+                .accountType(AccountType.PERSONAL)
                 .joinCode(generateUniqueJoinCode())
                 .build());
     }

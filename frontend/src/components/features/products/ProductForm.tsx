@@ -20,10 +20,16 @@ interface FormGroupProps {
 function FormGroup({ id, label, error, children, wide }: FormGroupProps) {
     return (
         <div className={wide ? "studio-form-grid__wide" : undefined}>
+            {/* children (the input/textarea) live inside the label, matching the
+                pattern used elsewhere (e.g. StudioWorkspaceLive's <label>Text<input/></label>) —
+                that's what makes the shared ".studio-form-grid label { display:grid; gap }"
+                rule actually put space between the title and the field. Keeping
+                htmlFor+id too is redundant but harmless, and keeps existing
+                aria-describedby wiring intact. */}
             <label htmlFor={id}>
                 {label}
+                {children}
             </label>
-            {children}
             {error && (
                 <p role="alert" id={`${id}-error`} className="studio-inline-notice text-[#944949]">
                     {error.message}
@@ -33,7 +39,12 @@ function FormGroup({ id, label, error, children, wide }: FormGroupProps) {
     );
 }
 
-const inputStyles = "w-full border border-[#bdbdb4] bg-[#faf9f4] px-3 py-2 text-sm text-[var(--studio-ink)] placeholder:text-[#91918b] outline-none transition-colors focus:border-[var(--studio-lime)] disabled:opacity-50";
+// Background here is a light cream (#faf9f4), so the text must be dark ink,
+// not white — "text-white" on this light background made every field's
+// actual value invisible (only the muted placeholder text was ever legible),
+// which was especially obvious on the standalone edit-product page where no
+// other override happened to mask it.
+const inputStyles = "w-full border border-[#bdbdb4] bg-[#faf9f4] px-3 py-2 text-sm text-[#11130f] placeholder:text-[#91918b] outline-none transition-colors focus:border-[var(--studio-lime)] disabled:opacity-50";
 
 const IMAGE_FIELDS = ["imageUrl", "imageUrl2", "imageUrl3"] as const;
 
@@ -150,7 +161,7 @@ export function ProductForm({ onCreated, product, onSaved, onCancel }: ProductFo
                         <PackagePlus className="h-5 w-5" />
                     </div>
                     <div>
-                        <h2 className="font-serif text-xl font-normal tracking-tight text-[var(--studio-ink)]">Nouveau Produit</h2>
+                        <h2 className="font-serif text-xl font-normal tracking-tight text-white">Nouveau Produit</h2>
                         <p className="text-[11px] text-[#777870]">Ajouté au catalogue partagé de l&apos;équipe</p>
                     </div>
                 </div>
@@ -201,7 +212,7 @@ export function ProductForm({ onCreated, product, onSaved, onCancel }: ProductFo
 
                 <div className="studio-form-grid__wide">
                     <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Photos produit (max. 3)</span>
-                    <div className="mt-2 grid grid-cols-3 gap-3">
+                    <div className="mt-3 grid grid-cols-3 gap-3">
                         {IMAGE_FIELDS.map((field, slot) => {
                             const value = productImageValues[slot];
                             const isUploading = uploadingSlot === slot;

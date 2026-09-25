@@ -11,5 +11,10 @@ public record CreatePublishRequest(
         // or "INSTAGRAM". Optional — SocialPublishService picks a sensible
         // default (Instagram if this connection has one linked, otherwise the
         // Facebook Page) when omitted. Ignored for every other provider.
-        String metaTarget
+        String metaTarget,
+        // Optional. When set, SocialPublishService.queue() validates it's at
+        // least 30 seconds out and skips immediate processing — the job sits
+        // QUEUED until something picks it up at that time. Left null, a job
+        // publishes right away, same as before this field existed.
+        Instant scheduledFor
 ) {}

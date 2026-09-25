@@ -22,7 +22,7 @@ public record PublishJobResponse(
         return new PublishJobResponse(
                 job.getId(), job.getPost().getId(), job.getConnection().getId(), job.getProvider().name(),
                 job.getMetaTarget(), job.getStatus().name(), job.getExternalPostId(), job.getErrorMessage(),
-                job.getCreatedAt(), job.getUpdatedAt(), job.getPublishedAt()
+                job.getCreatedAt(), job.getUpdatedAt(), job.getScheduledFor(), job.getPublishedAt()
         );
     }
 }

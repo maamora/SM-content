@@ -143,7 +143,7 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={output.imageUrl || ""} alt={`Composition de marque pour ${output.productName}`} className={`w-full object-cover ${selectedFormat === "SQUARE_POST" ? "aspect-square" : "aspect-[9/16]"}`} />
                                 <div className="mt-3 flex items-center justify-between gap-2">
-                                    <span className="truncate text-xs font-bold text-[var(--studio-ink)]">{output.productName}</span>
+                                    <span className="truncate text-xs font-bold text-white">{output.productName}</span>
                                     {output.imageUrl && <a className="studio-text-button shrink-0" href={output.imageUrl} download={`studio-${output.productName}.png`}>Download</a>}
                                 </div>
                             </div>
@@ -156,7 +156,7 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                         <div className="studio-batch-section-heading"><div><span className="studio-kicker">STEP 01 / SOURCE</span><h3>Choose approved products.</h3></div><span>{approvedProducts.length} READY</span></div>
                         <div className="max-h-64 space-y-2 overflow-y-auto pr-2">
                             {approvedProducts.map(p => (
-                                <label key={p.id} className="flex cursor-pointer items-center gap-3 border border-[#deddd5] p-3 transition-colors hover:border-[var(--studio-ink)]">
+                                <label key={p.id} className="flex cursor-pointer items-center gap-3 border border-[#deddd5] p-3 transition-colors hover:border-[var(--studio-lime)]">
                                     <input
                                         type="checkbox"
                                         checked={selectedProducts.has(p.id)}
@@ -164,7 +164,7 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                                         className="h-4 w-4 accent-[var(--studio-lime)]"
                                     />
                                     <div>
-                                        <p className="text-sm font-bold text-[var(--studio-ink)]">{p.name}</p>
+                                        <p className="text-sm font-bold text-white">{p.name}</p>
                                         {p.price && <p className="text-[10px] font-mono text-[#91918b]">{p.price} MAD</p>}
                                     </div>
                                 </label>
@@ -186,7 +186,7 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                                     <button
                                         key={f.id}
                                         onClick={() => setSelectedFormat(f.id)}
-                                        className={`border px-4 py-2 text-xs font-bold transition-all ${selectedFormat === f.id ? "border-[#8aa65a] bg-[rgba(185,255,67,.14)] text-[#5f762a]" : "border-[#c5c4bb] text-[#777870] hover:border-[var(--studio-ink)]"
+                                        className={`border px-4 py-2 text-xs font-bold transition-all ${selectedFormat === f.id ? "border-[#8aa65a] bg-[rgba(185,255,67,.14)] text-[#5f762a]" : "border-[#c5c4bb] text-[#777870] hover:border-[var(--studio-lime)]"
                                             }`}
                                     >
                                         {f.name}
@@ -213,7 +213,7 @@ export default function BatchStudio({ products, onBatchChange }: BatchStudioProp
                                             onClick={() => setSelectedTemplateId(t.id)}
                                             className={`border px-3 py-2.5 text-left text-xs font-bold transition-all ${selectedTemplateId === t.id
                                                 ? "border-[#8aa65a] bg-[rgba(185,255,67,.14)] text-[#5f762a]"
-                                                : "border-[#c5c4bb] bg-[#faf9f4] text-[#777870] hover:border-[var(--studio-ink)]"
+                                                : "border-[#c5c4bb] bg-[#faf9f4] text-[#777870] hover:border-[var(--studio-lime)]"
                                                 }`}
                                         >
                                             {t.name}

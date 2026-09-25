@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 /** Selects the configured managed image provider and applies a bounded fallback for transient failures. */
@@ -13,21 +15,64 @@ import java.util.List;
 @Slf4j
 public class ImageGenerationProvider {
 
-    private final HiggsfieldImageService higgsfieldImageService;
-    private final FalImageService falImageService;
     private final StabilityImageService stabilityImageService;
-    private final OpenRouterImageService openRouterImageService;
-    private final OpenAIImageService openAIImageService;
-    private final DeapiImageService deapiImageService;
-    private final CloudflareWorkersAIImageService cloudflareWorkersAIImageService;
-    private final ApiFrameImageService apiFrameImageService;
     private final GeminiImageService geminiImageService;
+    private final XaiImageService xaiImageService;
+    private final MetaImageService metaImageService;
 
     @Value("${app.image.provider:disabled}")
     private String provider;
 
     @Value("${app.image.fallback-provider:disabled}")
     private String fallbackProvider;
+
+    /**
+     * Tracks the active provider being out of quota/credit/access so the
+     * frontend can show a "temporarily unavailable" notice instead of a
+     * confusing per-post error. cooldownUntil is set for time-based limits
+     * (rate limiting) and left null for balance/access issues that need a
+     * manual fix (top up credits, fix API access) rather than a timer.
+     */
+    private volatile Instant cooldownUntil;
+    private volatile String cooldownReason;
+
+    public record ImageProviderStatus(boolean available, String provider, boolean configured, String reason, String retryAt) {}
+
+    public ImageProviderStatus status() {
+        String active = activeProvider();
+        Instant until = cooldownUntil;
+        if (until != null && Instant.now().isAfter(until)) {
+            clearOutage();
+            until = null;
+        }
+        boolean configuredNow = !isDisabled(active) && serviceFor(active).isConfigured();
+        boolean available = cooldownReason == null;
+        return new ImageProviderStatus(available, active, configuredNow, cooldownReason, until == null ? null : until.toString());
+    }
+
+    private void recordOutageIfApplicable(RuntimeException failure) {
+        String message = failure.getMessage();
+        if (message == null) return;
+        String normalized = message.toLowerCase();
+        boolean exhausted = normalized.contains("credit") || normalized.contains("balance")
+                || normalized.contains("insufficient") || normalized.contains("quota")
+                || normalized.contains("payment required") || normalized.contains(" 402")
+                || normalized.contains("denied access") || normalized.contains("permission_denied");
+        boolean rateLimited = !exhausted && (normalized.contains("429") || normalized.contains("rate-limit")
+                || normalized.contains("rate limited") || normalized.contains("too many requests"));
+        if (exhausted) {
+            cooldownReason = compact(message);
+            cooldownUntil = null;
+        } else if (rateLimited) {
+            cooldownReason = compact(message);
+            cooldownUntil = Instant.now().plus(Duration.ofMinutes(5));
+        }
+    }
+
+    private void clearOutage() {
+        cooldownUntil = null;
+        cooldownReason = null;
+    }
 
     public String activeProvider() {
         return normalize(provider);
@@ -52,8 +97,11 @@ public class ImageGenerationProvider {
             throw new IllegalStateException("Image generation is disabled. Configure IMAGE_PROVIDER=gemini or disabled.");
         }
         try {
-            return service().generateImage(prompt, aspectRatio, references);
+            byte[] result = service().generateImage(prompt, aspectRatio, references);
+            clearOutage();
+            return result;
         } catch (RuntimeException primaryFailure) {
+            recordOutageIfApplicable(primaryFailure);
             String fallback = configuredFallbackProvider();
             if (!shouldFallback(primaryFailure, active, fallback)) {
                 throw primaryFailure;
@@ -79,8 +127,7 @@ public class ImageGenerationProvider {
 
     private boolean supportsReferences(String selectedProvider) {
         return switch (selectedProvider) {
-                case "gemini", "apiframe", "api-frame", "higgsfield", "fal", "fal.ai", "stability", "stability.ai", "openrouter", "open-router",
-                    "openai", "deapi", "de-api", "cloudflare", "cloudflare-ai", "workers-ai" -> true;
+            case "gemini", "stability", "stability.ai", "xai", "x.ai", "grok", "meta", "llama", "muse" -> true;
             default -> false;
         };
     }
@@ -116,14 +163,9 @@ public class ImageGenerationProvider {
     private ManagedImageService serviceFor(String selectedProvider) {
         return switch (selectedProvider) {
             case "gemini" -> geminiImageService;
-            case "fal", "fal.ai" -> falImageService;
-            case "higgsfield" -> higgsfieldImageService;
+            case "xai", "x.ai", "grok" -> xaiImageService;
+            case "meta", "llama", "muse" -> metaImageService;
             case "stability", "stability.ai" -> stabilityImageService;
-            case "openrouter", "open-router" -> openRouterImageService;
-            case "openai" -> openAIImageService;
-            case "deapi", "de-api" -> deapiImageService;
-            case "cloudflare", "cloudflare-ai", "workers-ai" -> cloudflareWorkersAIImageService;
-            case "apiframe", "api-frame" -> apiFrameImageService;
             case "disabled", "none" -> throw new IllegalStateException(
                     "Image generation is disabled. Configure IMAGE_PROVIDER=gemini or disabled.");
             default -> throw new IllegalStateException(

@@ -1,11 +1,14 @@
 "use client";
 /* PRESS BENCH PRIMITIVES: authenticated-only production shell with a compact tool dock, job strip, and route-specific work field. These components never replace data, API behavior, or honest unavailable states. */
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { CircleHelp } from "lucide-react";
+import { CircleHelp, LogOut, Palette, User } from "lucide-react";
 import { StudioMark } from "./StudioShell";
+import type { BrandSettings } from "@/lib/api/brand";
+import { logout } from "@/lib/api/auth";
 
 export type EditionNavItem = {
   key: string;
@@ -27,6 +30,9 @@ type EditionDeskShellProps = {
   footerPrimaryHref?: string;
   footerPrimaryLabel?: string;
   footerPrimaryIcon?: LucideIcon;
+  /** Tenant's own brand (logo + name) — shows in place of the generic STUDIO mark
+   *  once loaded. Optional/nullable since it loads asynchronously after mount. */
+  brand?: BrandSettings | null;
 };
 
 export function EditionDeskShell({
@@ -37,11 +43,35 @@ export function EditionDeskShell({
   footerPrimaryHref = "/contact",
   footerPrimaryLabel = "Support",
   footerPrimaryIcon: FooterPrimaryIcon = CircleHelp,
+  brand,
 }: EditionDeskShellProps) {
+  const router = useRouter();
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [menuOpen]);
+
+  const doLogout = () => { logout(); router.push("/login"); };
+
   return (
     <main className="studio-app studio-app--press-bench">
       <aside className="studio-workspace-sidebar studio-bench-dock" aria-label={`${contextLabel} navigation`}>
-        <div className="studio-workspace-sidebar__brand studio-bench-dock__brand"><StudioMark compact /><span>{contextLabel}</span></div>
+        <div className="studio-workspace-sidebar__brand studio-bench-dock__brand">
+          {brand?.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={brand.logoUrl} alt={brand.name || "Brand logo"} className="studio-bench-dock__brand-logo" />
+          ) : (
+            <StudioMark compact />
+          )}
+          <span>{contextLabel}</span>
+        </div>
         <nav className="studio-bench-dock__nav">
           {navigation.map((section) => (
             <div className="studio-workspace-nav__section" key={section.label ?? section.items.map((item) => item.key).join("-")}>
@@ -57,6 +87,32 @@ export function EditionDeskShell({
         <div className="studio-workspace-sidebar__bottom studio-bench-dock__footer">
           <Link href={footerPrimaryHref} title={footerPrimaryLabel}><FooterPrimaryIcon size={16} /><span>{footerPrimaryLabel}</span></Link>
           <Link href="/" title="Back to site"><span>←</span><span>Back to site</span></Link>
+          <div className="studio-bench-dock__profile-wrap" ref={menuRef}>
+            <button
+              type="button"
+              title="Your account"
+              aria-label="Your account"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              className="studio-bench-dock__profile"
+              onClick={() => setMenuOpen((value) => !value)}
+            >
+              <User size={18} />
+            </button>
+            {menuOpen && (
+              <div className="studio-bench-dock__profile-menu" role="menu">
+                <Link href="/dashboard/settings" role="menuitem" onClick={() => setMenuOpen(false)}>
+                  <User size={14} /> Profile
+                </Link>
+                <Link href="/dashboard/settings?tab=brand" role="menuitem" onClick={() => setMenuOpen(false)}>
+                  <Palette size={14} /> Brand settings
+                </Link>
+                <button type="button" role="menuitem" onClick={doLogout}>
+                  <LogOut size={14} /> Disconnect
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </aside>
       <div className="studio-workspace-main studio-bench-workspace">{children}</div>

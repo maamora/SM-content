@@ -16,7 +16,17 @@ export interface Post {
     createdAt: string | null;
 }
 
+export interface ImageProviderStatus {
+    available: boolean;
+    provider: string;
+    configured: boolean;
+    reason: string | null;
+    retryAt: string | null;
+}
+
 export const listPosts = () => apiFetch<Post[]>("/api/posts");
+
+export const getImageProviderStatus = () => apiFetch<ImageProviderStatus>("/api/posts/image-provider-status");
 
 export const deletePost = (id: string) =>
     apiFetch<void>(`/api/posts/${id}`, { method: "DELETE" });
