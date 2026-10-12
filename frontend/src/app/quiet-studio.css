@@ -321,8 +321,8 @@
 .studio-overview-next,
 .studio-workspace-readiness,
 .studio-workspace-panel,
-.studio-product-form,
-.studio-creative-card {
+.studio-app .studio-product-form,
+.studio-app .studio-creative-card {
   border: 1px solid var(--quiet-rule);
   border-radius: var(--quiet-radius);
   background: var(--quiet-sheet);
@@ -511,8 +511,11 @@
   letter-spacing: -0.02em;
 }
 
-.studio-product-form,
-.studio-worktable--brand .studio-workspace-panel {
+/* Scoped to .studio-app: unscoped, this painted the standalone edit-product
+   page's form (which has no .studio-app ancestor) solid white, clashing with
+   the dark page around it. */
+.studio-app .studio-product-form,
+.studio-app .studio-worktable--brand .studio-workspace-panel {
   padding: 22px;
   background: #fff;
   box-shadow: var(--quiet-shadow);
@@ -578,8 +581,8 @@
   gap: 18px;
 }
 
-.studio-form-grid label,
-.studio-artboard-field {
+.studio-app .studio-form-grid label,
+.studio-app .studio-artboard-field {
   color: #596259;
   font-size: 10px;
   font-weight: 700;

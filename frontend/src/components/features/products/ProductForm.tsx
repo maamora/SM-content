@@ -44,7 +44,10 @@ function FormGroup({ id, label, error, children, wide }: FormGroupProps) {
 // actual value invisible (only the muted placeholder text was ever legible),
 // which was especially obvious on the standalone edit-product page where no
 // other override happened to mask it.
-const inputStyles = "w-full border border-[#bdbdb4] bg-[#faf9f4] px-3 py-2 text-sm text-[#11130f] placeholder:text-[#91918b] outline-none transition-colors focus:border-[var(--studio-lime)] disabled:opacity-50";
+// Dark field styling to match the dark product form/page around it (the form
+// used to be a white card with cream fields, which clashed with the rest of
+// the dark app).
+const inputStyles = "w-full border border-[rgba(255,255,255,.22)] bg-[rgba(255,255,255,.05)] px-3 py-2 text-sm text-[#f4f3ed] placeholder:text-[#6f7068] outline-none transition-colors focus:border-[var(--studio-lime)] disabled:opacity-50";
 
 const IMAGE_FIELDS = ["imageUrl", "imageUrl2", "imageUrl3"] as const;
 
@@ -211,7 +214,7 @@ export function ProductForm({ onCreated, product, onSaved, onCancel }: ProductFo
                 </FormGroup>
 
                 <div className="studio-form-grid__wide">
-                    <span className="block text-[10px] font-black uppercase tracking-wider text-[#6f7068]">Photos produit (max. 3)</span>
+                    <span className="block text-[10px] font-black uppercase tracking-wider text-[#aaa9a2]">Photos produit (max. 3)</span>
                     <div className="mt-3 grid grid-cols-3 gap-3">
                         {IMAGE_FIELDS.map((field, slot) => {
                             const value = productImageValues[slot];
@@ -219,13 +222,13 @@ export function ProductForm({ onCreated, product, onSaved, onCancel }: ProductFo
                             return (
                                 <div key={field} className="relative">
                                     {value ? (
-                                        <div className="relative h-24 w-full overflow-hidden border border-[#bdbdb4] bg-[#e8e7df]">
+                                        <div className="relative h-24 w-full overflow-hidden border border-[rgba(255,255,255,.28)] bg-[#242421]">
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img src={value} alt={`Photo ${slot + 1}`} className="h-full w-full object-cover" />
                                             <button
                                                 type="button"
                                                 onClick={() => handleRemoveImage(slot)}
-                                                className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center border border-[var(--studio-ink)] bg-[var(--studio-ink)] text-white transition-colors hover:bg-[#944949]"
+                                                className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center border border-[rgba(255,255,255,.4)] bg-[var(--studio-ink)] text-white transition-colors hover:bg-[#944949]"
                                                 aria-label={`Retirer la photo ${slot + 1}`}
                                             >
                                                 <X className="h-3 w-3" />
@@ -242,7 +245,7 @@ export function ProductForm({ onCreated, product, onSaved, onCancel }: ProductFo
                                             // upload icon + "Photo N" text pinned to the top-left instead
                                             // of centered in the dropzone.
                                             style={{ display: "flex" }}
-                                            className={`h-24 w-full cursor-pointer flex-col items-center justify-center gap-1 border border-dashed border-[#bdbdb4] transition-colors hover:border-[var(--studio-lime)] hover:bg-[rgba(185,255,67,.12)] ${isUploading ? "pointer-events-none opacity-60" : ""}`}
+                                            className={`h-24 w-full cursor-pointer flex-col items-center justify-center gap-1 border border-dashed border-[rgba(255,255,255,.28)] transition-colors hover:border-[var(--studio-lime)] hover:bg-[rgba(185,255,67,.12)] ${isUploading ? "pointer-events-none opacity-60" : ""}`}
                                         >
                                             {isUploading ? (
                                                 <Loader2 className="h-4 w-4 animate-spin text-[#5f762a]" />
@@ -279,7 +282,7 @@ export function ProductForm({ onCreated, product, onSaved, onCancel }: ProductFo
                         <button
                             type="button"
                             onClick={onCancel}
-                            className="studio-button studio-button--paper flex-1"
+                            className="studio-button flex-1 border border-[rgba(255,255,255,.3)] bg-transparent text-[#f4f3ed] hover:border-[var(--studio-lime)] hover:bg-[rgba(185,255,67,.08)]"
                         >
                             Annuler
                         </button>
